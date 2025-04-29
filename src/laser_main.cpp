@@ -36,6 +36,14 @@ const double DEAD_ZONE = 40.0; // Dead zone in PIXELS for motor offset
 const double MIN_CONTOUR_AREA = 10.0;
 const double MIN_CIRCLE_RADIUS = 1.0;
 
+// HSV Thresholds (initial guesses)
+int lowH = 100;  // Lower Hue
+int highH = 130; // Upper Hue
+int lowS = 70;   // Lower Saturation
+int highS = 255; // Upper Saturation
+int lowV = 50;   // Lower Value
+int highV = 255; // Upper Value
+
 // --- Global Variables ---
 MotionController *controller = nullptr;
 Axis *axisX = nullptr;
@@ -231,6 +239,17 @@ int main()
             cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << endl;
             camera.Open();
 
+            // Create window for trackbars
+            namedWindow("Trackbars", WINDOW_AUTOSIZE);
+
+            // Create trackbars (each linked to one of the HSV threshold variables)
+            createTrackbar("LowH", "Trackbars", &lowH, 179); // Hue range: 0-179
+            createTrackbar("HighH", "Trackbars", &highH, 179);
+            createTrackbar("LowS", "Trackbars", &lowS, 255); // Saturation range: 0-255
+            createTrackbar("HighS", "Trackbars", &highS, 255);
+            createTrackbar("LowV", "Trackbars", &lowV, 255); // Value range: 0-255
+            createTrackbar("HighV", "Trackbars", &highV, 255);
+
             CEnumerationPtr exposureAuto(camera.GetNodeMap().GetNode("ExposureAuto"));
             if (IsAvailable(exposureAuto) && IsWritable(exposureAuto))
             {
@@ -280,7 +299,7 @@ int main()
                 throw std::runtime_error("PixelFormat node not available!"); // Stop if node missing
             }
 
-            camera.MaxNumBuffer = 3;
+            camera.MaxNumBuffer = 1;
             camera.StartGrabbing(GrabStrategy_LatestImageOnly);
             std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Let it warm up
             cout << "Checking camera grabbing status after StartGrabbing..." << endl;
@@ -299,6 +318,10 @@ int main()
             // --- Prime the camera to verify frames are coming ---
             bool grabbedFirstFrame = false;
             auto startTime = std::chrono::steady_clock::now();
+
+            auto loop_start_time = std::chrono::steady_clock::now();
+            int frame_count = 0;
+            double total_loop_time_ms = 0.0;
 
             while (!gShutdown && camera.IsGrabbing())
             {
@@ -339,6 +362,8 @@ int main()
 
             while (!gShutdown && camera.IsGrabbing())
             {
+
+                auto cycle_start = std::chrono::steady_clock::now();
                 try
                 {
                     camera.RetrieveResult(1000, ptrGrabResult, TimeoutHandling_ThrowException);
@@ -398,8 +423,8 @@ int main()
                     cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
 
                     // Define a range for your ball color (not red)
-                    Scalar lower_ball(100, 70, 50);
-                    Scalar upper_ball(130, 255, 255);
+                    Scalar lower_ball(lowH, lowS, lowV);
+                    Scalar upper_ball(highH, highS, highV);
 
                     // Create mask
                     Mat mask;
@@ -481,6 +506,14 @@ int main()
                     // --- Show the processed images ---
                     imshow("Processed Frame", rgbFrame);
                     imshow("Red Mask", mask);
+
+                    auto cycle_end = std::chrono::steady_clock::now();
+                    double cycle_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(cycle_end - cycle_start).count();
+                    total_loop_time_ms += cycle_time_ms;
+                    frame_count++;
+
+                    std::cout << "[PERF] Frame time: " << cycle_time_ms << " ms"
+                              << " | Avg time: " << (total_loop_time_ms / frame_count) << " ms" << std::endl;
 
                     // --- WaitKey immediately after imshow ---
                     int key = waitKey(1);
