@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/rsi/Documents/Laser/build",
-  "command": "/usr/bin/g++ -DRMP_DEFAULT_PATH=\\\"/rsi\\\" -I/rsi/examples/C++/include -I/usr/include/opencv4 -isystem /opt/pylon/include -g -std=gnu++20 -Wno-deprecated-enum-enum-conversion -o CMakeFiles/LaserDemo.dir/src/laser_main.cpp.o -c /home/rsi/Documents/Laser/src/laser_main.cpp",
-  "file": "/home/rsi/Documents/Laser/src/laser_main.cpp",
-  "output": "CMakeFiles/LaserDemo.dir/src/laser_main.cpp.o"
-}
-]

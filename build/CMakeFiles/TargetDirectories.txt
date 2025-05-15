@@ -1,3 +1,0 @@
-/home/rsi/Documents/Laser/build/CMakeFiles/LaserDemo.dir
-/home/rsi/Documents/Laser/build/CMakeFiles/edit_cache.dir
-/home/rsi/Documents/Laser/build/CMakeFiles/rebuild_cache.dir
