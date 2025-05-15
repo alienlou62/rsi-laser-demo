@@ -170,6 +170,7 @@ struct Stopwatch {
     DurationT total = DurationT::zero();
     DurationT min = DurationT::max();
     DurationT max = DurationT::zero();
+    DurationT last = DurationT::zero();
     uint64_t count = 0;
 
     time_point t_start;
@@ -186,10 +187,10 @@ struct Stopwatch {
             return;
         }
         time_point t_end = clock::now();
-        DurationT duration = std::chrono::duration_cast<DurationT>(t_end - t_start);
-        total += duration;
-        if (duration < min) min = duration;
-        if (duration > max) max = duration;
+        last = std::chrono::duration_cast<DurationT>(t_end - t_start);
+        total += last;
+        if (last < min) min = last;
+        if (last > max) max = last;
         ++count;
         running = false;
     }
@@ -212,6 +213,7 @@ void printStats(const std::string& name, const Stopwatch<DurationT>& stats) {
     constexpr const char* units = getDurationUnits<DurationT>();
     std::cout << name << ":\n";
     std::cout << "  Iterations: " << stats.count << "\n";
+    std::cout << "  Last:       " << stats.last.count() << " " << units << "\n";
     std::cout << "  Min:        " << stats.min.count() << " " << units << "\n";
     std::cout << "  Max:        " << stats.max.count() << " " << units << "\n";
     std::cout << "  Average:    " << stats.average() << " " << units << "\n";
