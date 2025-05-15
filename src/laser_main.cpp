@@ -162,9 +162,71 @@ void signal_handler(int signal)
     }
 }
 
+template <typename DurationT>
+struct Stopwatch {
+    using clock = std::chrono::steady_clock;
+    using time_point = typename clock::time_point;
+
+    DurationT total = DurationT::zero();
+    DurationT min = DurationT::max();
+    DurationT max = DurationT::zero();
+    uint64_t count = 0;
+
+    time_point t_start;
+    bool running = false;
+
+    void Start() {
+        t_start = clock::now();
+        running = true;
+    }
+
+    void Stop() {
+        if (!running) {
+            std::cerr << "Stopwatch::Stop() called without matching Start()!\n";
+            return;
+        }
+        time_point t_end = clock::now();
+        DurationT duration = std::chrono::duration_cast<DurationT>(t_end - t_start);
+        total += duration;
+        if (duration < min) min = duration;
+        if (duration > max) max = duration;
+        ++count;
+        running = false;
+    }
+};
+
+// Helper function for units
+template <typename DurationT>
+constexpr const char* getDurationUnits() {
+    if constexpr (std::is_same_v<DurationT, std::chrono::hours>)        return "h";
+    else if constexpr (std::is_same_v<DurationT, std::chrono::minutes>) return "min";
+    else if constexpr (std::is_same_v<DurationT, std::chrono::seconds>) return "s";
+    else if constexpr (std::is_same_v<DurationT, std::chrono::milliseconds>) return "ms";
+    else if constexpr (std::is_same_v<DurationT, std::chrono::microseconds>) return "us";
+    else if constexpr (std::is_same_v<DurationT, std::chrono::nanoseconds>)  return "ns";
+    else return "unknown";
+}
+
+template <typename DurationT>
+void printStats(const std::string& name, const Stopwatch<DurationT>& stats) {
+    constexpr const char* units = getDurationUnits<DurationT>();
+    std::cout << name << ":\n";
+    std::cout << "  Iterations: " << stats.count << "\n";
+    std::cout << "  Min:        " << stats.min.count() << " " << units << "\n";
+    std::cout << "  Max:        " << stats.max.count() << " " << units << "\n";
+    std::cout << "  Average:    " << stats.average() << " " << units << "\n";
+}
+
 // --- Main Function ---
 int main()
 {
+    using std::chrono::steady_clock;
+    using std::chrono::milliseconds;
+    using std::chrono::microseconds;
+    using std::chrono::duration_cast;
+
+    const milliseconds loopInterval(5); // 5ms loop interval
+
     const std::string SAMPLE_APP_NAME = "Pylon_RSI_Tracking_BayerOnly";
     std::signal(SIGINT, signal_handler);
     SampleAppsHelper::PrintHeader(SAMPLE_APP_NAME);
@@ -305,11 +367,6 @@ int main()
             // --- Prime the camera to verify frames are coming ---
             bool grabbedFirstFrame = false;
             auto startTime = std::chrono::steady_clock::now();
-
-            auto loop_start_time = std::chrono::steady_clock::now();
-            int frame_count = 0;
-            double total_loop_time_ms = 0.0;
-
             while (!gShutdown && camera.IsGrabbing())
             {
                 try
@@ -347,16 +404,20 @@ int main()
             CGrabResultPtr ptrGrabResult;
             bool target_found_last_frame = false;
 
+            // --- Main Loop ---
+            Stopwatch<milliseconds> loopStopwatch, retrieveStopwatch, processingStopwatch, motionStopwatch;
+            steady_clock::time_point next = steady_clock::now();
             while (!gShutdown && camera.IsGrabbing())
             {
-                auto cycle_start = std::chrono::steady_clock::now();
+                // When the next loop iteration is due
+                next += interval;
+
+                loopStopwatch.Start();
                 try
                 {
-                    auto retrieve_start = std::chrono::steady_clock::now();
+                    retrieveStopwatch.Start();
                     camera.RetrieveResult(200, ptrGrabResult, TimeoutHandling_Return);
-                    auto retrieve_end = std::chrono::steady_clock::now();
-                    double retrieve_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(retrieve_end - retrieve_start).count();
-                    std::cout << "[PERF] RetrieveResult took " << retrieve_time_ms << " ms" << std::endl;
+                    retrieveStopwatch.Stop();
                 }
                 catch (const TimeoutException &timeout_e)
                 {
@@ -369,6 +430,7 @@ int main()
                     continue;
                 }
 
+                processingStopwatch.Start();
                 if (ptrGrabResult->GrabSucceeded())
                 {
                     cout << "Grab succeeded" << endl;
@@ -462,6 +524,7 @@ int main()
                         }
                     }
 
+                    double offsetX = 0; double offsetY = 0;
                     bool target_currently_found = false;
                     if (largestContourIndex != -1)
                     {
@@ -479,9 +542,8 @@ int main()
                             circle(rgbFrame, center, 5, Scalar(0, 255, 0), -1);
                             circle(rgbFrame, Point(CENTER_X, CENTER_Y), DEAD_ZONE, Scalar(0, 0, 255), 1);
 
-                            double offsetX = center.x - CENTER_X;
-                            double offsetY = center.y - CENTER_Y;
-                            MoveMotorsWithLimits(axisX, axisY, offsetX, offsetY);
+                            offsetX = center.x - CENTER_X;
+                            offsetY = center.y - CENTER_Y;
                             //}
                         }
                     }
@@ -489,23 +551,19 @@ int main()
                     if (!target_currently_found && target_found_last_frame && !motorsPaused)
                     {
                         printf("Target lost, stopping motors.\n");
-                        MoveMotorsWithLimits(axisX, axisY, 0, 0);
+                        offsetX = 0; offsetY = 0;
                         target_found_last_frame = false;
                     }
+                    processingStopwatch.Stop();
+
+                    motionStopwatch.Start();
+                    MoveMotorsWithLimits(axisX, axisY, offsetX, offsetY);
+                    motionStopwatch.Stop();
 
                     imshow("Processed Frame", rgbFrame);
                     imshow("Red Mask", mask);
 
-                    auto cycle_end = std::chrono::steady_clock::now();
-                    double cycle_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(cycle_end - cycle_start).count();
-                    total_loop_time_ms += cycle_time_ms;
-                    frame_count++;
-
-                    static double smoothedFrameTime = 0.0;
-                    smoothedFrameTime = 0.9 * smoothedFrameTime + 0.1 * cycle_time_ms;
-                    std::cout << "[PERF] Smoothed Frame Time: " << smoothedFrameTime << " ms" << std::endl;
-
-                    std::this_thread::sleep_for(std::chrono::milliseconds(5)); // Limits loop to ~200 FPS max
+                    loopStopwatch.Stop();
 
                     // --- WaitKey immediately after imshow ---
                     int key = waitKey(1);
@@ -524,8 +582,24 @@ int main()
                         camera.StopGrabbing(); // <<< stop camera manually
                         break;                 // <<< immediately break from loop
                     }
+
+                    // --- Sleep to maintain loop interval ---
+                    this_thread::sleep_until(next);
+
+                    // Check for timer overruns
+                    if (steady_clock::now() > next)
+                    {
+                        cerr << "Warning: Loop overruns detected! Loop time exceeded " << loopInterval.count() << "ms." << endl;
+                        next = steady_clock::now(); // Reset next to current time
+                    }
                 }
             }
+
+            // Print loop statistics
+            printStats("Loop", loopStopwatch);
+            printStats("Retrieve", retrieveStopwatch);
+            printStats("Processing", processingStopwatch);
+            printStats("Motion", motionStopwatch);
 
             cout << "Stopping camera grabbing..." << endl;
             try
