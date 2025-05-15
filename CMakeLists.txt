@@ -4,30 +4,30 @@ set(CMAKE_CXX_STANDARD 20)
 
 project(LaserDemo)
 
-# Include RSI SDK headers
-include_directories(/rsi/examples/C++/include)
-
-# Include Pylon SDK headers
-include_directories(/opt/pylon/include)
+# Include the RapidSoftware.cmake file, which defines paths to RapidSoftware headers and libraries
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/RapidSoftware.cmake)
 
 # Find OpenCV
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(OpenCV REQUIRED opencv4)
-include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Find Pylon library
 find_package(PYLON REQUIRED)
 
 # Add your main source file
-add_executable(LaserDemo src/laser_main.cpp)
+add_executable(LaserDemo src/laser_main.cpp src/SampleAppsHelper.h)
+setup_rmp_target(LaserDemo)
 
-# Set RMP Default Path
-target_compile_definitions(LaserDemo PUBLIC RMP_DEFAULT_PATH="/rsi")
+target_include_directories(LaserDemo PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/src
+  ${OpenCV_INCLUDE_DIRS}
+  /opt/pylon/include
+)
 
-# Link libraries
-target_link_libraries(LaserDemo PRIVATE pylon::pylon)
-target_link_libraries(LaserDemo PRIVATE /rsi/librapidcode.so)
-target_link_libraries(LaserDemo PRIVATE ${OpenCV_LIBRARIES})
+target_link_libraries(LaserDemo PUBLIC
+  ${OpenCV_LIBRARIES}
+  pylon::pylon
+)
 
 # Optional flags
 target_compile_options(LaserDemo PRIVATE "-Wno-deprecated-enum-enum-conversion")
