@@ -587,9 +587,9 @@ int main()
                     this_thread::sleep_until(next);
 
                     // Check for timer overruns
-                    if (steady_clock::now() > next)
+                    if (steady_clock::now() > next + loopInterval)
                     {
-                        cerr << "Warning: Loop overruns detected! Loop time exceeded " << loopInterval.count() << "ms." << endl;
+                        // cerr << "Warning: Loop overruns detected! Loop time exceeded " << loopInterval.count() << "ms." << endl;
                         next = steady_clock::now(); // Reset next to current time
                     }
                 }
