@@ -15,3 +15,9 @@ cd build
 cmake ..
 make
 ./Basics_Grab
+
+| Metric                 | Value     | Notes                                                          |
+| ---------------------- | --------- | -------------------------------------------------------------- |
+| **Frame Rate**         | \~200 FPS | Measured during normal operation                               |
+| **Cycle Time**         | \~40 ms   | Includes capture, processing, and actuation                    |
+| **Detection Accuracy** | \~95%     | Occasionally detects smaller background objects (can be tuned) |
