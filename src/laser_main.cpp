@@ -170,6 +170,11 @@ int main()
             CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
             cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << endl;
             camera.Open();
+
+
+            CFeaturePersistence::Load("/home/rsi/Documents/Laser/src/acA640-300gc_22441779.pfs", &camera.GetNodeMap());
+
+
             // --- Lock TLParams before configuration ---
             GenApi::CIntegerPtr tlLocked(camera.GetTLNodeMap().GetNode("TLParamsLocked"));
             if (IsAvailable(tlLocked) && IsWritable(tlLocked))
