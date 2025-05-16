@@ -41,7 +41,7 @@ const double MIN_CIRCLE_RADIUS = 1.0;
 // HSV Thresholds (initial guesses)
 int lowH = 105;  // Lower Hue
 int highH = 126; // Upper Hue
-int lowS = 0;   // Lower Saturation
+int lowS = 0;    // Lower Saturation
 int highS = 255; // Upper Saturation
 int lowV = 35;   // Lower Value
 int highV = 190; // Upper Value
@@ -167,10 +167,10 @@ void signal_handler(int signal)
 // --- Main Function ---
 int main()
 {
-    using std::chrono::steady_clock;
-    using std::chrono::milliseconds;
-    using std::chrono::microseconds;
     using std::chrono::duration_cast;
+    using std::chrono::microseconds;
+    using std::chrono::milliseconds;
+    using std::chrono::steady_clock;
 
     const milliseconds loopInterval(5); // 5ms loop interval
 
@@ -227,7 +227,13 @@ int main()
             CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
             cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << endl;
             camera.Open();
-
+            // --- Lock TLParams before configuration ---
+            GenApi::CIntegerPtr tlLocked(camera.GetTLNodeMap().GetNode("TLParamsLocked"));
+            if (IsAvailable(tlLocked) && IsWritable(tlLocked))
+            {
+                tlLocked->SetValue(1);
+            }
+/*
             // --- Camera Configuration (Force BayerBG8, No Mono8 Fallback) ---
             INodeMap &nodemap = camera.GetNodeMap();
 
@@ -294,10 +300,16 @@ int main()
                 throw std::runtime_error("PixelFormat node not available!"); // Stop if node missing
             }
 
-            camera.MaxNumBuffer = 3;
-            GenApi::CIntegerPtr(camera.GetNodeMap().GetNode("GevSCPD"))->SetValue(30000);
+            camera.MaxNumBuffer = 4;
+            GenApi::CIntegerPtr(camera.GetNodeMap().GetNode("GevSCPD"))->SetValue(30000);*/
             camera.StartGrabbing(GrabStrategy_OneByOne);
-            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Let it warm up
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Let it warm up
+                                                                          // --- Unlock TLParams after configuration ---
+            if (IsAvailable(tlLocked) && IsWritable(tlLocked))
+            {
+                tlLocked->SetValue(0);
+            }
+
             cout << "Checking camera grabbing status after StartGrabbing..." << endl;
             if (!camera.IsGrabbing())
             {
@@ -471,7 +483,8 @@ int main()
                         }
                     }
 
-                    double offsetX = 0; double offsetY = 0;
+                    double offsetX = 0;
+                    double offsetY = 0;
                     bool target_currently_found = false;
                     if (largestContourIndex != -1)
                     {
@@ -498,7 +511,8 @@ int main()
                     if (!target_currently_found && target_found_last_frame && !motorsPaused)
                     {
                         printf("Target lost, stopping motors.\n");
-                        offsetX = 0; offsetY = 0;
+                        offsetX = 0;
+                        offsetY = 0;
                         target_found_last_frame = false;
                     }
                     processingStopwatch.Stop();
