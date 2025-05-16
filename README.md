@@ -13,15 +13,15 @@ and dynamically position a laser to center it in real time.
 Loop:
   - Iterations: 126
   - Last:       256 ms
-  Min:        20 ms
-  Max:        443 ms
-  Average:    61.7381 ms
+  - Min:        20 ms
+  - Max:        443 ms
+  - Average:    61.7381 ms
 Retrieve:
-  Iterations: 129
-  Last:       0 ms
-  Min:        0 ms
-  Max:        96 ms
-  Average:    0.875969 ms
+  - Iterations: 129
+  - Last:       0 ms
+  - Min:        0 ms
+  - Max:        96 ms
+  - Average:    0.875969 ms
 Processing:
   Iterations: 126
   Last:       245 ms
