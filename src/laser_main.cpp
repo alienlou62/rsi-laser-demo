@@ -107,8 +107,8 @@ void ConfigureAxes()
     constexpr int NUM_AXES = 2; // Number of axes to configure
 
     // Add a motion supervisor for the multiaxis
-    controller->AxisCountSet(controller->AxisCountGet() + 1);
-    multiAxis = controller->MultiAxisGet(controller->MotionCountGet() - 1);
+    controller->AxisCountSet(NUM_AXES + 1);
+    multiAxis = controller->MultiAxisGet(NUM_AXES);
     SampleAppsHelper::CheckErrors(multiAxis);
 
     for (int i = 0; i < NUM_AXES; i++)
