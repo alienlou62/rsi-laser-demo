@@ -16,18 +16,21 @@ Loop:
   - Min:        20 ms
   - Max:        443 ms
   - Average:    61.7381 ms
+    
 Retrieve:
   - Iterations: 129
   - Last:       0 ms
   - Min:        0 ms
   - Max:        96 ms
   - Average:    0.875969 ms
+    
 Processing:
-  Iterations: 126
-  Last:       245 ms
-  Min:        14 ms
-  Max:        245 ms
-  Average:    48.2302 ms
+  - Iterations: 126
+  - Last:       245 ms
+  - Min:        14 ms
+  - Max:        245 ms
+  - Average:    48.2302 ms
+
 Motion:
   Iterations: 126
   Last:       7 ms
