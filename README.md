@@ -16,8 +16,28 @@ cmake ..
 make
 ./Basics_Grab
 
-| Metric                 | Value     | Notes                                                          |
-| ---------------------- | --------- | -------------------------------------------------------------- |
-| **Frame Rate**         | \~200 FPS | Measured during normal operation                               |
-| **Cycle Time**         | \~40 ms   | Includes capture, processing, and actuation                    |
-| **Detection Accuracy** | \~95%     | Occasionally detects smaller background objects (can be tuned) |
+### Current Timing Metrics
+Loop:
+  Iterations: 126
+  Last:       256 ms
+  Min:        20 ms
+  Max:        443 ms
+  Average:    61.7381 ms
+Retrieve:
+  Iterations: 129
+  Last:       0 ms
+  Min:        0 ms
+  Max:        96 ms
+  Average:    0.875969 ms
+Processing:
+  Iterations: 126
+  Last:       245 ms
+  Min:        14 ms
+  Max:        245 ms
+  Average:    48.2302 ms
+Motion:
+  Iterations: 126
+  Last:       7 ms
+  Min:        2 ms
+  Max:        29 ms
+  Average:    5.09524 ms
