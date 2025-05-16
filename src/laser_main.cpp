@@ -48,11 +48,10 @@ int highV = 190; // Upper Value
 
 // --- Global Variables ---
 MotionController *controller = nullptr;
-Axis *axisX = nullptr;
-Axis *axisY = nullptr;
+MultiAxis *multiAxis = nullptr;
 bool motorsPaused = false;
 
-void MoveMotorsWithLimits(Axis *axisX, Axis *axisY, double offsetX, double offsetY)
+void MoveMotorsWithLimits(double offsetX, double offsetY)
 {
     static const double POSITION_DEAD_ZONE = 0.0005;
     static const double PIXEL_DEAD_ZONE = DEAD_ZONE;
@@ -64,10 +63,8 @@ void MoveMotorsWithLimits(Axis *axisX, Axis *axisY, double offsetX, double offse
     {
         try
         {
-            if (axisX && axisX->AmpEnableGet())
-                axisX->MoveVelocity(0);
-            if (axisY && axisY->AmpEnableGet())
-                axisY->MoveVelocity(0);
+            if (multiAxis && multiAxis->AmpEnableGet())
+                multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
         }
         catch (const std::exception &ex)
         {
@@ -79,8 +76,7 @@ void MoveMotorsWithLimits(Axis *axisX, Axis *axisY, double offsetX, double offse
     // --- Dead zone logic ---
     if (std::abs(offsetX) < PIXEL_DEAD_ZONE && std::abs(offsetY) < PIXEL_DEAD_ZONE)
     {
-        axisX->MoveVelocity(0);
-        axisY->MoveVelocity(0);
+        multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
         return;
     }
 
@@ -101,18 +97,15 @@ void MoveMotorsWithLimits(Axis *axisX, Axis *axisY, double offsetX, double offse
             velY = 0.0;
 
         // --- Velocity mode only (no MoveSCurve to position) ---
-        axisX->MoveVelocity(velX);
-        axisY->MoveVelocity(velY);
+        multiAxis->MoveVelocity(std::array{velX, velY}.data());
     }
     catch (const std::exception &ex)
     {
         cerr << "Error during velocity control: " << ex.what() << endl;
         try
         {
-            if (axisX)
-                axisX->MoveVelocity(0);
-            if (axisY)
-                axisY->MoveVelocity(0);
+            if (multiAxis)
+                multiAxis->MoveVelocity(0);
         }
         catch (...)
         {
@@ -120,8 +113,8 @@ void MoveMotorsWithLimits(Axis *axisX, Axis *axisY, double offsetX, double offse
     }
 }
 
-// --- Configure Function (Copied from your "older code") ---
-void Configure()
+// --- Create the motion controller ---
+void CreateController()
 { /* ... Function body exactly as before ... */
     MotionController::CreationParameters createParams;
     createParams.CpuAffinity = 3;
@@ -132,31 +125,44 @@ void Configure()
     printf("RSI Controller Created!\n");
 }
 
+void ConfigureAxes()
+{
+    constexpr int NUM_AXES = 2; // Number of axes to configure
+
+    // Add a motion supervisor for the multiaxis
+    controller->AxisCountSet(controller->AxisCountGet() + 1);
+    multiAxis = controller->MultiAxisGet(controller->MotionCountGet() - 1);
+    SampleAppsHelper::CheckErrors(multiAxis);
+
+    for (int i = 0; i < NUM_AXES; i++)
+    {
+        Axis* axis = controller->AxisGet(i);
+        SampleAppsHelper::CheckErrors(axis);
+        axis->UserUnitsSet(67108864);
+        axis->ErrorLimitActionSet(RSIAction::RSIActionNONE);
+        axis->HardwarePosLimitActionSet(RSIAction::RSIActionNONE);
+        axis->HardwareNegLimitActionSet(RSIAction::RSIActionNONE);
+        axis->PositionSet(0);
+        multiAxis->AxisAdd(axis);
+    }
+
+    multiAxis->Abort();
+    multiAxis->ClearFaults();
+}
+
 volatile sig_atomic_t gShutdown = 0;
 void signal_handler(int signal)
 {
     cout << "Signal handler ran, setting shutdown flag..." << endl;
     gShutdown = 1;
 
-    if (axisX)
+    if (multiAxis)
     {
         try
         {
-            axisX->MoveVelocity(0);
+            multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            axisX->AmpEnableSet(false);
-        }
-        catch (...)
-        {
-        }
-    }
-    if (axisY)
-    {
-        try
-        {
-            axisY->MoveVelocity(0);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            axisY->AmpEnableSet(false);
+            multiAxis->AmpEnableSet(false);
         }
         catch (...)
         {
@@ -182,42 +188,13 @@ int main()
     try
     { // Outer try for RMP
         // --- RMP Initialization ---
-        Configure();
+        CreateController();
         SampleAppsHelper::StartTheNetwork(controller);
-        axisX = controller->AxisGet(0);
-        SampleAppsHelper::CheckErrors(axisX);
-        axisY = controller->AxisGet(1);
-        SampleAppsHelper::CheckErrors(axisY);
-        // Axis Configs
-        axisX->UserUnitsSet(67108864);
-        axisY->UserUnitsSet(67108864);
-        axisX->ErrorLimitTriggerValueSet(.5);
-        axisY->ErrorLimitTriggerValueSet(.5);
-        axisX->ErrorLimitActionSet(RSIAction::RSIActionNONE);
-        axisY->ErrorLimitActionSet(RSIAction::RSIActionNONE);
-        axisX->HardwarePosLimitTriggerStateSet(1);
-        axisX->HardwareNegLimitTriggerStateSet(1); /* ... other limit settings ... */
-        axisX->HardwarePosLimitActionSet(RSIAction::RSIActionNONE);
-        axisX->HardwareNegLimitActionSet(RSIAction::RSIActionNONE);
-        axisX->HardwarePosLimitDurationSet(2);
-        axisX->HardwareNegLimitDurationSet(2);
-        axisY->HardwarePosLimitTriggerStateSet(1);
-        axisY->HardwareNegLimitTriggerStateSet(1); /* ... other limit settings ... */
-        axisY->HardwarePosLimitActionSet(RSIAction::RSIActionNONE);
-        axisY->HardwareNegLimitActionSet(RSIAction::RSIActionNONE);
-        axisY->HardwarePosLimitDurationSet(2);
-        axisY->HardwareNegLimitDurationSet(2);
-        axisX->ClearFaults();
-        axisY->ClearFaults();
+        ConfigureAxes();
 
         // Enable Amps
         printf("Enabling Amplifiers...\n");
-        axisX->AmpEnableSet(true);
-        axisY->AmpEnableSet(true);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        axisX->CommandPositionSet(0.0);
-        axisY->CommandPositionSet(0.0);
-        printf("Initial positions commanded to zero.\n");
+        multiAxis->AmpEnableSet(true);
         // --- End RMP Initialization ---
 
         // --- Pylon Initialization & Camera Loop ---
@@ -383,7 +360,7 @@ int main()
                     cerr << "Camera Retrieve Timeout: " << timeout_e.GetDescription() << endl;
                     if (target_found_last_frame && !motorsPaused)
                     {
-                        MoveMotorsWithLimits(axisX, axisY, 0, 0);
+                        MoveMotorsWithLimits(0, 0);
                     }
                     target_found_last_frame = false;
                     continue;
@@ -518,7 +495,7 @@ int main()
                     processingStopwatch.Stop();
 
                     motionStopwatch.Start();
-                    MoveMotorsWithLimits(axisX, axisY, offsetX, offsetY);
+                    MoveMotorsWithLimits(offsetX, offsetY);
                     motionStopwatch.Stop();
 
                     imshow("Processed Frame", rgbFrame);
@@ -534,7 +511,7 @@ int main()
                         motorsPaused = !motorsPaused;
                         printf("Motors %s.\n", motorsPaused ? "paused" : "resumed");
                         if (motorsPaused)
-                            MoveMotorsWithLimits(axisX, axisY, 0, 0);
+                            MoveMotorsWithLimits(0, 0);
                     }
                     else if (key == 27) // ESC key
                     {
@@ -619,95 +596,49 @@ int main()
     {
         try
         {
-            if (axisX)
+            if (multiAxis)
             {
                 try
                 {
-                    if (axisX->AmpEnableGet())
-                        axisX->AmpEnableSet(false);
+                    if (multiAxis->AmpEnableGet())
+                        multiAxis->AmpEnableSet(false);
 
-                    bool motionDoneX = false;
+                    bool motionDone = false;
                     try
                     {
-                        motionDoneX = axisX->MotionDoneWait(2000);
+                        motionDone = multiAxis->MotionDoneWait(2000);
                     }
                     catch (...)
                     {
-                        cerr << "Axis X: MotionDoneWait threw exception during cleanup." << endl;
+                        cerr << "MultiAxis: MotionDoneWait threw exception during cleanup." << endl;
                     }
 
-                    if (!motionDoneX)
+                    if (!motionDone)
                     {
-                        cerr << "Axis X still moving during cleanup. Forcing immediate stop." << endl;
+                        cerr << "MultiAxis still moving during cleanup. Forcing immediate stop." << endl;
                         try
                         {
-                            axisX->MoveVelocity(0);
+                            multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
                             std::this_thread::sleep_for(std::chrono::milliseconds(500));
                         }
                         catch (...)
                         {
-                            cerr << "Axis X: Failed to force MoveVelocity(0)." << endl;
+                            cerr << "MultiAxis: Failed to force MoveVelocity(0, 0)." << endl;
                         }
                     }
 
                     try
                     {
-                        axisX->ClearFaults();
+                        multiAxis->ClearFaults();
                     }
                     catch (...)
                     {
-                        cerr << "Axis X: Failed to clear faults during cleanup." << endl;
+                        cerr << "MultiAxis: Failed to clear faults during cleanup." << endl;
                     }
                 }
                 catch (...)
                 {
-                    cerr << "Unexpected error cleaning up Axis X." << endl;
-                }
-            }
-
-            if (axisY)
-            {
-                try
-                {
-                    if (axisY->AmpEnableGet())
-                        axisY->AmpEnableSet(false);
-
-                    bool motionDoneY = false;
-                    try
-                    {
-                        motionDoneY = axisY->MotionDoneWait(2000);
-                    }
-                    catch (...)
-                    {
-                        cerr << "Axis Y: MotionDoneWait threw exception during cleanup." << endl;
-                    }
-
-                    if (!motionDoneY)
-                    {
-                        cerr << "Axis Y still moving during cleanup. Forcing immediate stop." << endl;
-                        try
-                        {
-                            axisY->MoveVelocity(0);
-                            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                        }
-                        catch (...)
-                        {
-                            cerr << "Axis Y: Failed to force MoveVelocity(0)." << endl;
-                        }
-                    }
-
-                    try
-                    {
-                        axisY->ClearFaults();
-                    }
-                    catch (...)
-                    {
-                        cerr << "Axis Y: Failed to clear faults during cleanup." << endl;
-                    }
-                }
-                catch (...)
-                {
-                    cerr << "Unexpected error cleaning up Axis Y." << endl;
+                    cerr << "Unexpected error cleaning up MultiAxis." << endl;
                 }
             }
 
