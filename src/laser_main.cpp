@@ -59,20 +59,6 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
     static const double MIN_VELOCITY = 0.0001;
     static const double jerkPct = 30.0; // Smoother than 50%
 
-    if (motorsPaused)
-    {
-        try
-        {
-            if (multiAxis && multiAxis->AmpEnableGet())
-                multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
-        }
-        catch (const std::exception &ex)
-        {
-            cerr << "Error stopping motors during pause: " << ex.what() << endl;
-        }
-        return;
-    }
-
     // --- Dead zone logic ---
     if (std::abs(offsetX) < PIXEL_DEAD_ZONE && std::abs(offsetY) < PIXEL_DEAD_ZONE)
     {
@@ -91,10 +77,8 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
         double velY = -std::copysign(1.0, normY) * std::pow(std::abs(normY), 1.5) * MAX_VELOCITY;
 
         // --- Avoid tiny jitter motions ---
-        if (std::abs(velX) < MIN_VELOCITY)
-            velX = 0.0;
-        if (std::abs(velY) < MIN_VELOCITY)
-            velY = 0.0;
+        if (std::abs(velX) < MIN_VELOCITY) velX = 0.0;
+        if (std::abs(velY) < MIN_VELOCITY) velY = 0.0;
 
         // --- Velocity mode only (no MoveSCurve to position) ---
         multiAxis->MoveVelocity(std::array{velX, velY}.data());
@@ -102,14 +86,7 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
     catch (const std::exception &ex)
     {
         cerr << "Error during velocity control: " << ex.what() << endl;
-        try
-        {
-            if (multiAxis)
-                multiAxis->MoveVelocity(0);
-        }
-        catch (...)
-        {
-        }
+        if (multiAxis) multiAxis->Abort();
     }
 }
 
@@ -156,18 +133,7 @@ void signal_handler(int signal)
     cout << "Signal handler ran, setting shutdown flag..." << endl;
     gShutdown = 1;
 
-    if (multiAxis)
-    {
-        try
-        {
-            multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            multiAxis->AmpEnableSet(false);
-        }
-        catch (...)
-        {
-        }
-    }
+    if (multiAxis) multiAxis->Abort();
 }
 
 // --- Main Function ---
@@ -511,7 +477,9 @@ int main()
                         motorsPaused = !motorsPaused;
                         printf("Motors %s.\n", motorsPaused ? "paused" : "resumed");
                         if (motorsPaused)
-                            MoveMotorsWithLimits(0, 0);
+                            multiAxis->Stop();
+                        else
+                            multiAxis->Resume();
                     }
                     else if (key == 27) // ESC key
                     {
@@ -598,48 +566,8 @@ int main()
         {
             if (multiAxis)
             {
-                try
-                {
-                    if (multiAxis->AmpEnableGet())
-                        multiAxis->AmpEnableSet(false);
-
-                    bool motionDone = false;
-                    try
-                    {
-                        motionDone = multiAxis->MotionDoneWait(2000);
-                    }
-                    catch (...)
-                    {
-                        cerr << "MultiAxis: MotionDoneWait threw exception during cleanup." << endl;
-                    }
-
-                    if (!motionDone)
-                    {
-                        cerr << "MultiAxis still moving during cleanup. Forcing immediate stop." << endl;
-                        try
-                        {
-                            multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
-                            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                        }
-                        catch (...)
-                        {
-                            cerr << "MultiAxis: Failed to force MoveVelocity(0, 0)." << endl;
-                        }
-                    }
-
-                    try
-                    {
-                        multiAxis->ClearFaults();
-                    }
-                    catch (...)
-                    {
-                        cerr << "MultiAxis: Failed to clear faults during cleanup." << endl;
-                    }
-                }
-                catch (...)
-                {
-                    cerr << "Unexpected error cleaning up MultiAxis." << endl;
-                }
+                multiAxis->Abort();
+                multiAxis->ClearFaults();
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
