@@ -15,7 +15,8 @@ pkg_check_modules(OpenCV REQUIRED opencv4)
 find_package(PYLON REQUIRED)
 
 # Add your main source file
-add_executable(LaserDemo src/laser_main.cpp src/SampleAppsHelper.h)
+file(GLOB SRC_FILES src/*.cpp src/*.h)
+add_executable(LaserDemo ${SRC_FILES})
 setup_rmp_target(LaserDemo)
 
 target_include_directories(LaserDemo PUBLIC
