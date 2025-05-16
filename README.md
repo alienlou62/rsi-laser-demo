@@ -9,13 +9,6 @@ and dynamically position a laser to center it in real time.
 - Two-axis gimbal system
 - Dynamic motor control using RSI's RMP
 
-### Build Instructions
-```bash
-cd build
-cmake ..
-make
-./Basics_Grab
-
 ### Current Timing Metrics
 Loop:
   Iterations: 126
