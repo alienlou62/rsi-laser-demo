@@ -194,6 +194,11 @@ struct Stopwatch {
         ++count;
         running = false;
     }
+
+    double average() const {
+        if (count == 0) return 0.0;
+        return static_cast<double>(total.count()) / static_cast<double>(count);
+    }
 };
 
 // Helper function for units
@@ -412,7 +417,7 @@ int main()
             while (!gShutdown && camera.IsGrabbing())
             {
                 // When the next loop iteration is due
-                next += interval;
+                next += loopInterval;
 
                 loopStopwatch.Start();
                 try
