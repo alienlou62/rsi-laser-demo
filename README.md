@@ -32,8 +32,8 @@ Processing:
   - Average:    48.2302 ms
 
 Motion:
-  Iterations: 126
-  Last:       7 ms
-  Min:        2 ms
-  Max:        29 ms
-  Average:    5.09524 ms
+  - Iterations: 126
+  - Last:       7 ms
+  - Min:        2 ms
+  - Max:        29 ms
+  - Average:    5.09524 ms
