@@ -11,8 +11,8 @@ and dynamically position a laser to center it in real time.
 
 ### Current Timing Metrics
 Loop:
-  Iterations: 126
-  Last:       256 ms
+  - Iterations: 126
+  - Last:       256 ms
   Min:        20 ms
   Max:        443 ms
   Average:    61.7381 ms
