@@ -141,8 +141,8 @@ void signal_handler(int signal)
 }
 
 // --- Image Processing Function ---
-bool processFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, double& offsetX, double& offsetY, Mat& rgbFrame, Mat& mask, bool& target_found_last_frame, Stopwatch<std::chrono::milliseconds>& processingStopwatch) {
-    processingStopwatch.Start();
+bool processFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, double& offsetX, double& offsetY, Mat& rgbFrame, Mat& mask, bool& target_found_last_frame, TimingStats<std::chrono::milliseconds>& processingTiming) {
+    auto processingStopwatch = ScopedStopwatch(processingTiming);
     offsetX = 0;
     offsetY = 0;
     bool target_currently_found = false;
@@ -264,7 +264,6 @@ bool processFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, d
         }
         result = true;
     }
-    processingStopwatch.Stop();
     return result;
 }
 
@@ -376,19 +375,16 @@ int main()
             bool target_found_last_frame = false;
 
             // --- Main Loop ---
-            Stopwatch<milliseconds> loopStopwatch, retrieveStopwatch, processingStopwatch, motionStopwatch;
-            steady_clock::time_point next = steady_clock::now();
+            TimingStats<milliseconds> loopTiming, retrieveTiming, processingTiming, motionTiming;
             while (!gShutdown && camera.IsGrabbing())
-            {
-                // When the next loop iteration is due
-                next += loopInterval;
-
-                loopStopwatch.Start();
+            {   
+                ScopedRateLimiter rateLimiter(loopInterval);
+                auto loopStopwatch = ScopedStopwatch(loopTiming);
+                
                 try
                 {
-                    retrieveStopwatch.Start();
+                    auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
                     camera.RetrieveResult(200, ptrGrabResult, TimeoutHandling_Return);
-                    retrieveStopwatch.Stop();
                 }
                 catch (const TimeoutException &timeout_e)
                 {
@@ -407,20 +403,18 @@ int main()
                 if (ptrGrabResult->GrabSucceeded())
                 {
                     cout << "Grab succeeded" << endl;
-                    processed = processFrame(ptrGrabResult, camera, offsetX, offsetY, rgbFrame, mask, target_found_last_frame, processingStopwatch);
+                    processed = processFrame(ptrGrabResult, camera, offsetX, offsetY, rgbFrame, mask, target_found_last_frame, processingTiming);
                 }
 
                 if (processed)
                 {
-                    motionStopwatch.Start();
+                    auto motionStopwatch = ScopedStopwatch(motionTiming);
                     MoveMotorsWithLimits(offsetX, offsetY);
                     motionStopwatch.Stop();
 
                     imshow("Processed Frame", rgbFrame);
                     imshow("Red Mask", mask);
                 }
-
-                loopStopwatch.Stop();
 
                 // --- WaitKey immediately after imshow ---
                 int key = waitKey(1);
@@ -441,23 +435,13 @@ int main()
                     camera.StopGrabbing(); // <<< stop camera manually
                     break;                 // <<< immediately break from loop
                 }
-
-                // --- Sleep to maintain loop interval ---
-                this_thread::sleep_until(next);
-
-                // Check for timer overruns
-                if (steady_clock::now() > next + loopInterval)
-                {
-                    // cerr << "Warning: Loop overruns detected! Loop time exceeded " << loopInterval.count() << "ms." << endl;
-                    next = steady_clock::now(); // Reset next to current time
-                }
             }
 
             // Print loop statistics
-            printStats("Loop", loopStopwatch);
-            printStats("Retrieve", retrieveStopwatch);
-            printStats("Processing", processingStopwatch);
-            printStats("Motion", motionStopwatch);
+            printStats("Loop", loopTiming);
+            printStats("Retrieve", retrieveTiming);
+            printStats("Processing", processingTiming);
+            printStats("Motion", motionTiming);
 
             cout << "Stopping camera grabbing..." << endl;
             try
