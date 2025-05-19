@@ -51,8 +51,8 @@ int lowV = 35;   // Lower Value
 int highV = 190; // Upper Value
 
 // --- Global Variables ---
-MotionController *controller = nullptr;
-MultiAxis *multiAxis = nullptr;
+shared_ptr<MotionController> g_controller(nullptr);
+shared_ptr<MultiAxis> g_multiAxis(nullptr);
 bool motorsPaused = false;
 
 void MoveMotorsWithLimits(double offsetX, double offsetY)
@@ -66,7 +66,7 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
     // --- Dead zone logic ---
     if (std::abs(offsetX) < PIXEL_DEAD_ZONE && std::abs(offsetY) < PIXEL_DEAD_ZONE)
     {
-        multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
+        g_multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
         return;
     }
 
@@ -85,35 +85,50 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
         if (std::abs(velY) < MIN_VELOCITY) velY = 0.0;
 
         // --- Velocity mode only (no MoveSCurve to position) ---
-        multiAxis->MoveVelocity(std::array{velX, velY}.data());
+        g_multiAxis->MoveVelocity(std::array{velX, velY}.data());
     }
     catch (const std::exception &ex)
     {
         cerr << "Error during velocity control: " << ex.what() << endl;
-        if (multiAxis) multiAxis->Abort();
+        if (g_multiAxis) g_multiAxis->Abort();
     }
 }
 
 // --- Create the motion controller ---
-void CreateController()
-{ /* ... Function body exactly as before ... */
+shared_ptr<MotionController> CreateController()
+{
     MotionController::CreationParameters createParams;
     createParams.CpuAffinity = 3;
     strncpy(createParams.RmpPath, "/rsi/", createParams.PathLengthMaximum);
     strncpy(createParams.NicPrimary, "enp3s0", createParams.PathLengthMaximum); // *** VERIFY ***
-    controller = MotionController::Create(&createParams);
-    SampleAppsHelper::CheckErrors(controller);
+
+    shared_ptr<MotionController> controller(MotionController::Create(&createParams),
+        [](MotionController *controller) { 
+            controller->Delete(); 
+            controller = nullptr;
+        }
+    );
+    
+    SampleAppsHelper::CheckErrors(controller.get());
     printf("RSI Controller Created!\n");
+    
+    return controller;
 }
 
-void ConfigureAxes()
+shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
 {
     constexpr int NUM_AXES = 2; // Number of axes to configure
 
     // Add a motion supervisor for the multiaxis
     controller->AxisCountSet(NUM_AXES + 1);
-    multiAxis = controller->MultiAxisGet(NUM_AXES);
-    SampleAppsHelper::CheckErrors(multiAxis);
+    shared_ptr<MultiAxis> multiAxis(controller->MultiAxisGet(NUM_AXES),
+        [](MultiAxis *multiAxis) {
+            multiAxis->Abort();
+            multiAxis->ClearFaults();
+            multiAxis = nullptr;
+        }
+    );
+    SampleAppsHelper::CheckErrors(multiAxis.get());
 
     for (int i = 0; i < NUM_AXES; i++)
     {
@@ -129,6 +144,7 @@ void ConfigureAxes()
 
     multiAxis->Abort();
     multiAxis->ClearFaults();
+    return multiAxis;
 }
 
 volatile sig_atomic_t gShutdown = 0;
@@ -137,7 +153,7 @@ void signal_handler(int signal)
     cout << "Signal handler ran, setting shutdown flag..." << endl;
     gShutdown = 1;
 
-    if (multiAxis) multiAxis->Abort();
+    if (g_multiAxis) g_multiAxis->Abort();
 }
 
 // --- Image Processing Function ---
@@ -270,267 +286,180 @@ bool processFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, d
 // --- Main Function ---
 int main()
 {
-    using std::chrono::duration_cast;
-    using std::chrono::microseconds;
-    using std::chrono::milliseconds;
-    using std::chrono::steady_clock;
-
-    const milliseconds loopInterval(5); // 5ms loop interval
+    const std::chrono::milliseconds loopInterval(5); // 5ms loop interval
 
     const std::string SAMPLE_APP_NAME = "Pylon_RSI_Tracking_BayerOnly";
-    std::signal(SIGINT, signal_handler);
     SampleAppsHelper::PrintHeader(SAMPLE_APP_NAME);
     int exitCode = 0;
 
-    try
-    { // Outer try for RMP
-        // --- RMP Initialization ---
-        CreateController();
-        SampleAppsHelper::StartTheNetwork(controller);
-        ConfigureAxes();
+    // --- RMP Initialization ---
+    g_controller = CreateController();
+    SampleAppsHelper::StartTheNetwork(g_controller.get());
+    g_multiAxis = ConfigureAxes(g_controller);
 
-        // Enable Amps
-        printf("Enabling Amplifiers...\n");
-        multiAxis->AmpEnableSet(true);
-        // --- End RMP Initialization ---
+    // Register signal handler to stop the MultiAxis and initiate graceful shutdown on CTRL+C
+    std::signal(SIGINT, signal_handler);
 
-        // --- Pylon Initialization & Camera Loop ---
-        PylonInitialize();
-        try
-        { // Inner try for Pylon/OpenCV
-            CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
-            cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << endl;
-            camera.Open();
+    // Enable Amps
+    printf("Enabling Amplifiers...\n");
+    g_multiAxis->AmpEnableSet(true);
+    // --- End RMP Initialization ---
 
+    // --- Pylon Initialization & Camera Loop ---
+    auto pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
+    CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
+    cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << endl;
+    camera.Open();
 
-            CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
+    CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
 
-
-            // --- Lock TLParams before configuration ---
-            GenApi::CIntegerPtr tlLocked(camera.GetTLNodeMap().GetNode("TLParamsLocked"));
-            if (IsAvailable(tlLocked) && IsWritable(tlLocked))
-            {
-                tlLocked->SetValue(1);
-            }
-
-            camera.StartGrabbing(GrabStrategy_OneByOne);
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Let it warm up
-                                                                          // --- Unlock TLParams after configuration ---
-            if (IsAvailable(tlLocked) && IsWritable(tlLocked))
-            {
-                tlLocked->SetValue(0);
-            }
-
-            cout << "Checking camera grabbing status after StartGrabbing..." << endl;
-            if (!camera.IsGrabbing())
-            {
-                cerr << "Error: Camera is NOT grabbing after StartGrabbing call!" << endl;
-                // maybe attempt StartGrabbing() again here
-            }
-            else
-            {
-                cout << "Camera is confirmed to be grabbing." << endl;
-            }
-
-            cout << "Camera grabbing started." << endl;
-
-            // --- Prime the camera to verify frames are coming ---
-            bool grabbedFirstFrame = false;
-            auto startTime = std::chrono::steady_clock::now();
-            while (!gShutdown && camera.IsGrabbing())
-            {
-                try
-                {
-                    CGrabResultPtr grabResult;
-                    camera.RetrieveResult(5000, grabResult, TimeoutHandling_Return);
-                    if (grabResult && grabResult->GrabSucceeded())
-                    {
-                        grabbedFirstFrame = true;
-                        cout << "Priming: First frame grabbed successfully." << endl;
-                        break;
-                    }
-                }
-                catch (const GenericException &e)
-                {
-                    cerr << "Exception during priming grab: " << e.GetDescription() << endl;
-                }
-
-                auto now = std::chrono::steady_clock::now();
-                if (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() > 10)
-                {
-                    cerr << "Timeout waiting for first frame. Exiting startup." << endl;
-                    gShutdown = 1;
-                    break;
-                }
-            }
-
-            if (!grabbedFirstFrame)
-            {
-                cerr << "First frame not received, shutting down camera." << endl;
-                camera.StopGrabbing();
-                throw std::runtime_error("Camera failed to start streaming images.");
-            }
-
-            CGrabResultPtr ptrGrabResult;
-            bool target_found_last_frame = false;
-
-            // --- Main Loop ---
-            TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
-            while (!gShutdown && camera.IsGrabbing())
-            {   
-                ScopedRateLimiter rateLimiter(loopInterval);
-                auto loopStopwatch = ScopedStopwatch(loopTiming);
-                
-                try
-                {
-                    auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-                    camera.RetrieveResult(200, ptrGrabResult, TimeoutHandling_Return);
-                }
-                catch (const TimeoutException &timeout_e)
-                {
-                    cerr << "Camera Retrieve Timeout: " << timeout_e.GetDescription() << endl;
-                    if (target_found_last_frame && !motorsPaused)
-                    {
-                        MoveMotorsWithLimits(0, 0);
-                    }
-                    target_found_last_frame = false;
-                    continue;
-                }
-
-                double offsetX = 0, offsetY = 0;
-                Mat rgbFrame, mask;
-                bool processed = false;
-                if (ptrGrabResult->GrabSucceeded())
-                {
-                    cout << "Grab succeeded" << endl;
-                    processed = processFrame(ptrGrabResult, camera, offsetX, offsetY, rgbFrame, mask, target_found_last_frame, processingTiming);
-                }
-
-                if (processed)
-                {
-                    auto motionStopwatch = ScopedStopwatch(motionTiming);
-                    MoveMotorsWithLimits(offsetX, offsetY);
-                    motionStopwatch.Stop();
-
-                    imshow("Processed Frame", rgbFrame);
-                    imshow("Red Mask", mask);
-                }
-
-                // --- WaitKey immediately after imshow ---
-                int key = waitKey(1);
-
-                if (key == 'q' || key == 'Q')
-                {
-                    motorsPaused = !motorsPaused;
-                    printf("Motors %s.\n", motorsPaused ? "paused" : "resumed");
-                    if (motorsPaused)
-                        multiAxis->Stop();
-                    else
-                        multiAxis->Resume();
-                }
-                else if (key == 27) // ESC key
-                {
-                    cout << "ESC pressed, initiating shutdown..." << endl;
-                    gShutdown = 1;         // <<< set shutdown flag
-                    camera.StopGrabbing(); // <<< stop camera manually
-                    break;                 // <<< immediately break from loop
-                }
-            }
-
-            // Print loop statistics
-            printStats("Loop", loopTiming);
-            printStats("Retrieve", retrieveTiming);
-            printStats("Processing", processingTiming);
-            printStats("Motion", motionTiming);
-
-            cout << "Stopping camera grabbing..." << endl;
-            try
-            {
-                if (camera.IsGrabbing())
-                {
-                    camera.StopGrabbing();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Let buffers clear
-                }
-                if (camera.IsOpen())
-                {
-                    camera.Close();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Allow graceful camera closing
-                }
-            }
-            catch (const GenericException &e)
-            {
-                cerr << "Error during camera shutdown: " << e.GetDescription() << endl;
-            }
-        } // End Inner Pylon/OpenCV Try
-        catch (const GenericException &e)
-        {
-            cerr << "Pylon Exception: " << e.GetDescription() << endl;
-            exitCode = 1;
-        }
-        catch (const std::exception &e)
-        {
-            cerr << "Standard Exception (Pylon/OpenCV): " << e.what() << endl;
-            exitCode = 1;
-        }
-        catch (...)
-        {
-            cerr << "Unknown Exception (Pylon/OpenCV)." << endl;
-            exitCode = 1;
-        }
-
-        cout << "Terminating Pylon system..." << endl;
-        PylonTerminate();
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    } // End Outer RMP Try
-    catch (const std::exception &ex)
+    // --- Lock TLParams before configuration ---
+    GenApi::CIntegerPtr tlLocked(camera.GetTLNodeMap().GetNode("TLParamsLocked"));
+    if (IsAvailable(tlLocked) && IsWritable(tlLocked))
     {
-        cerr << "Top Level Exception (RMP Init?): " << ex.what() << endl;
-        exitCode = 1;
-    }
-    catch (...)
-    {
-        cerr << "Unknown Top Level Exception." << endl;
-        exitCode = 1;
+        tlLocked->SetValue(1);
     }
 
-    // --- RMP/RSI Cleanup ---
-    cout << "Starting RMP/RSI Cleanup..." << endl;
-    cout << "Starting RMP/RSI Cleanup..." << endl;
-    if (controller)
+    camera.StartGrabbing(GrabStrategy_OneByOne);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Let it warm up
+                                                                    // --- Unlock TLParams after configuration ---
+    if (IsAvailable(tlLocked) && IsWritable(tlLocked))
     {
-        try
-        {
-            if (multiAxis)
-            {
-                multiAxis->Abort();
-                multiAxis->ClearFaults();
-            }
+        tlLocked->SetValue(0);
+    }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-            cout << "Deleting RMP/RSI Controller..." << endl;
-            try
-            {
-                controller->Delete();
-                controller = nullptr;
-            }
-            catch (...)
-            {
-                cerr << "Controller delete failed during cleanup." << endl;
-            }
-        }
-        catch (const std::exception &cleanup_ex)
-        {
-            cerr << "Exception during RMP/RSI cleanup: " << cleanup_ex.what() << endl;
-            if (exitCode == 0)
-                exitCode = 1;
-        }
+    cout << "Checking camera grabbing status after StartGrabbing..." << endl;
+    if (!camera.IsGrabbing())
+    {
+        cerr << "Error: Camera is NOT grabbing after StartGrabbing call!" << endl;
+        // maybe attempt StartGrabbing() again here
     }
     else
     {
-        cout << "RMP/RSI Controller not initialized, skipping cleanup." << endl;
+        cout << "Camera is confirmed to be grabbing." << endl;
     }
-    cout << "Cleanup finished." << endl;
+
+    cout << "Camera grabbing started." << endl;
+
+    // --- Prime the camera to verify frames are coming ---
+    bool grabbedFirstFrame = false;
+    auto startTime = std::chrono::steady_clock::now();
+    while (!gShutdown && camera.IsGrabbing())
+    {
+        try
+        {
+            CGrabResultPtr grabResult;
+            camera.RetrieveResult(5000, grabResult, TimeoutHandling_Return);
+            if (grabResult && grabResult->GrabSucceeded())
+            {
+                grabbedFirstFrame = true;
+                cout << "Priming: First frame grabbed successfully." << endl;
+                break;
+            }
+        }
+        catch (const GenericException &e)
+        {
+            cerr << "Exception during priming grab: " << e.GetDescription() << endl;
+        }
+
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() > 10)
+        {
+            cerr << "Timeout waiting for first frame. Exiting startup." << endl;
+            gShutdown = 1;
+            break;
+        }
+    }
+
+    if (!grabbedFirstFrame)
+    {
+        cerr << "First frame not received, shutting down camera." << endl;
+        camera.StopGrabbing();
+        throw std::runtime_error("Camera failed to start streaming images.");
+    }
+
+    CGrabResultPtr ptrGrabResult;
+    bool target_found_last_frame = false;
+
+    // --- Main Loop ---
+    TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
+    while (!gShutdown && camera.IsGrabbing())
+    {   
+        ScopedRateLimiter rateLimiter(loopInterval);
+        auto loopStopwatch = ScopedStopwatch(loopTiming);
+        
+        try
+        {
+            auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
+            camera.RetrieveResult(200, ptrGrabResult, TimeoutHandling_Return);
+        }
+        catch (const TimeoutException &timeout_e)
+        {
+            cerr << "Camera Retrieve Timeout: " << timeout_e.GetDescription() << endl;
+            if (target_found_last_frame && !motorsPaused)
+            {
+                MoveMotorsWithLimits(0, 0);
+            }
+            target_found_last_frame = false;
+            continue;
+        }
+
+        double offsetX = 0, offsetY = 0;
+        Mat rgbFrame, mask;
+        bool processed = false;
+        if (ptrGrabResult->GrabSucceeded())
+        {
+            cout << "Grab succeeded" << endl;
+            processed = processFrame(ptrGrabResult, camera, offsetX, offsetY, rgbFrame, mask, target_found_last_frame, processingTiming);
+        }
+
+        if (processed)
+        {
+            auto motionStopwatch = ScopedStopwatch(motionTiming);
+            MoveMotorsWithLimits(offsetX, offsetY);
+            motionStopwatch.Stop();
+
+            imshow("Processed Frame", rgbFrame);
+            imshow("Red Mask", mask);
+        }
+
+        // --- WaitKey immediately after imshow ---
+        int key = waitKey(1);
+
+        if (key == 'q' || key == 'Q')
+        {
+            motorsPaused = !motorsPaused;
+            printf("Motors %s.\n", motorsPaused ? "paused" : "resumed");
+            if (motorsPaused)
+                g_multiAxis->Stop();
+            else
+                g_multiAxis->Resume();
+        }
+        else if (key == 27) // ESC key
+        {
+            cout << "ESC pressed, initiating shutdown..." << endl;
+            break;                 // <<< immediately break from loop
+        }
+    }
+
+    // Print loop statistics
+    printStats("Loop", loopTiming);
+    printStats("Retrieve", retrieveTiming);
+    printStats("Processing", processingTiming);
+    printStats("Motion", motionTiming);
+
+    cout << "Stopping camera grabbing..." << endl;
+    try
+    {
+        camera.StopGrabbing();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Let buffers clear
+        camera.Close();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Allow graceful camera closing
+    }
+    catch (const GenericException &e)
+    {
+        cerr << "Error during camera shutdown: " << e.GetDescription() << endl;
+    }
 
     destroyAllWindows();
     SampleAppsHelper::PrintFooter(SAMPLE_APP_NAME, exitCode);
