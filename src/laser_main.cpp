@@ -140,6 +140,134 @@ void signal_handler(int signal)
     if (multiAxis) multiAxis->Abort();
 }
 
+// --- Image Processing Function ---
+bool processFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, double& offsetX, double& offsetY, Mat& rgbFrame, Mat& mask, bool& target_found_last_frame, Stopwatch<std::chrono::milliseconds>& processingStopwatch) {
+    processingStopwatch.Start();
+    offsetX = 0;
+    offsetY = 0;
+    bool target_currently_found = false;
+    bool result = false;
+
+    int width = ptrGrabResult->GetWidth();
+    int height = ptrGrabResult->GetHeight();
+
+    std::cout << "Pixel type raw value: " << ptrGrabResult->GetPixelType() << std::endl;
+    CEnumerationPtr pixelFormatNode(camera.GetNodeMap().GetNode("PixelFormat"));
+    if (IsAvailable(pixelFormatNode))
+    {
+        cout << "PixelFormat (string): " << pixelFormatNode->ToString() << endl;
+    }
+    else
+    {
+        cout << "PixelFormat node not available!" << endl;
+    }
+
+    /*if (ptrGrabResult->GetPixelType() != Pylon::PixelType_BayerBG8)
+    {
+        cerr << "Error: Unexpected pixel format received: "
+             << Pylon::CPixelTypeMapper::GetNameByPixelType(ptrGrabResult->GetPixelType())
+             << ". Expected BayerBG8." << endl;
+        processingStopwatch.Stop();
+        return false;
+    }*/
+
+    const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
+    Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
+    if (bayerFrame.empty())
+    {
+        cerr << "Error: Retrieved empty bayer frame!" << endl;
+    }
+    else
+    {
+        // Convert Bayer to RGB
+        cvtColor(bayerFrame, rgbFrame, COLOR_BayerBG2RGB);
+
+        // OpenCV Processing
+        GaussianBlur(rgbFrame, rgbFrame, Size(5, 5), 0);
+        Mat hsvFrame;
+        cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
+
+        // Define a range for your ball color (not red)
+        Scalar lower_ball(lowH, lowS, lowV);
+        Scalar upper_ball(highH, highS, highV);
+
+        // Create mask
+        inRange(hsvFrame, lower_ball, upper_ball, mask);
+
+        // Morphological operations
+        Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
+        erode(mask, mask, kernel);
+        dilate(mask, mask, kernel);
+        // Optional extra smoothing step to close internal gaps
+        morphologyEx(mask, mask, MORPH_CLOSE, kernel);
+
+        // Continue with contours
+        vector<vector<Point>> contours;
+        findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+        // Remove small contours by area
+        contours.erase(
+            std::remove_if(contours.begin(), contours.end(),
+                        [](const vector<Point> &c)
+                        {
+                            return contourArea(c) < 500.0; // adjust threshold
+                        }),
+            contours.end());
+
+        int largestContourIndex = -1;
+        double largestContourArea = 0;
+
+        if (contours.empty())
+        {
+            cout << "contours empty" << endl;
+        }
+        else
+        {
+            for (int i = 0; i < contours.size(); i++)
+            {
+                double area = contourArea(contours[i]);
+                std::cout << "[DEBUG] Contour #" << i << " — Area: " << area << std::endl;
+
+                if (area > largestContourArea)
+                {
+                    largestContourArea = area;
+                    largestContourIndex = i;
+                }
+            }
+        }
+
+        if (largestContourIndex != -1)
+        {
+            Point2f center;
+            float radius;
+            minEnclosingCircle(contours[largestContourIndex], center, radius);
+            std::cout << "Detected radius: " << radius << std::endl;
+            if (radius > MIN_CIRCLE_RADIUS)
+            {
+                target_currently_found = true;
+                target_found_last_frame = true;
+                circle(rgbFrame, center, (int)radius, Scalar(0, 255, 0), 2);
+                circle(rgbFrame, center, 5, Scalar(0, 255, 0), -1);
+                circle(rgbFrame, Point(CENTER_X, CENTER_Y), DEAD_ZONE, Scalar(0, 0, 255), 1);
+
+                offsetX = center.x - CENTER_X;
+                offsetY = center.y - CENTER_Y;
+            }
+        }
+
+        if (!target_currently_found && target_found_last_frame && !motorsPaused)
+        {
+            printf("Target lost, stopping motors.\n");
+            offsetX = 0;
+            offsetY = 0;
+            target_found_last_frame = false;
+        }
+        result = true;
+    }
+    processingStopwatch.Stop();
+    return result;
+}
+
 // --- Main Function ---
 int main()
 {
@@ -273,172 +401,55 @@ int main()
                     continue;
                 }
 
-                processingStopwatch.Start();
+                double offsetX = 0, offsetY = 0;
+                Mat rgbFrame, mask;
+                bool processed = false;
                 if (ptrGrabResult->GrabSucceeded())
                 {
                     cout << "Grab succeeded" << endl;
+                    processed = processFrame(ptrGrabResult, camera, offsetX, offsetY, rgbFrame, mask, target_found_last_frame, processingStopwatch);
+                }
 
-                    int width = ptrGrabResult->GetWidth();
-                    int height = ptrGrabResult->GetHeight();
-
-                    std::cout << "Pixel type raw value: " << ptrGrabResult->GetPixelType() << std::endl;
-                    CEnumerationPtr pixelFormatNode(camera.GetNodeMap().GetNode("PixelFormat"));
-                    if (IsAvailable(pixelFormatNode))
-                    {
-                        cout << "PixelFormat (string): " << pixelFormatNode->ToString() << endl;
-                    }
-                    else
-                    {
-                        cout << "PixelFormat node not available!" << endl;
-                    }
-
-                    /*if (ptrGrabResult->GetPixelType() != Pylon::PixelType_BayerBG8)
-                    {
-                        cerr << "Error: Unexpected pixel format received: "
-                             << Pylon::CPixelTypeMapper::GetNameByPixelType(ptrGrabResult->GetPixelType())
-                             << ". Expected BayerBG8." << endl;
-                        continue;
-                    }*/
-
-                    const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
-                    Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
-                    Mat rgbFrame;
-                    if (bayerFrame.empty())
-                    {
-                        cerr << "Error: Retrieved empty bayer frame!" << endl;
-                        continue;
-                    }
-
-                    // Convert Bayer to RGB
-                    cvtColor(bayerFrame, rgbFrame, COLOR_BayerBG2RGB);
-
-                    // OpenCV Processing
-                    GaussianBlur(rgbFrame, rgbFrame, Size(5, 5), 0);
-                    Mat hsvFrame;
-                    cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
-
-                    // Define a range for your ball color (not red)
-                    Scalar lower_ball(lowH, lowS, lowV);
-                    Scalar upper_ball(highH, highS, highV);
-
-                    // Create mask
-                    Mat mask;
-                    inRange(hsvFrame, lower_ball, upper_ball, mask);
-
-                    // Morphological operations
-                    Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
-                    erode(mask, mask, kernel);
-                    dilate(mask, mask, kernel);
-                    // Optional extra smoothing step to close internal gaps
-                    morphologyEx(mask, mask, MORPH_CLOSE, kernel);
-
-                    // Continue with contours
-                    vector<vector<Point>> contours;
-                    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-                    // Remove small contours by area
-                    contours.erase(
-                        std::remove_if(contours.begin(), contours.end(),
-                                       [](const vector<Point> &c)
-                                       {
-                                           return contourArea(c) < 500.0; // adjust threshold
-                                       }),
-                        contours.end());
-
-                    int largestContourIndex = -1;
-                    double largestContourArea = 0;
-
-                    if (contours.empty())
-                    {
-                        cout << "contours empty" << endl;
-                    }
-                    else
-                    {
-                        for (int i = 0; i < contours.size(); i++)
-                        {
-                            double area = contourArea(contours[i]);
-                            std::cout << "[DEBUG] Contour #" << i << " — Area: " << area << std::endl;
-
-                            if (area > largestContourArea)
-                            {
-                                largestContourArea = area;
-                                largestContourIndex = i;
-                            }
-                        }
-                    }
-
-                    double offsetX = 0;
-                    double offsetY = 0;
-                    bool target_currently_found = false;
-                    if (largestContourIndex != -1)
-                    {
-                        Point2f center;
-                        float radius;
-                        minEnclosingCircle(contours[largestContourIndex], center, radius);
-                        std::cout << "Detected radius: " << radius << std::endl;
-                        if (radius > MIN_CIRCLE_RADIUS)
-                        {
-                            // if (radius > MIN_CIRCLE_RADIUS)
-                            //{
-                            target_currently_found = true;
-                            target_found_last_frame = true;
-                            circle(rgbFrame, center, (int)radius, Scalar(0, 255, 0), 2);
-                            circle(rgbFrame, center, 5, Scalar(0, 255, 0), -1);
-                            circle(rgbFrame, Point(CENTER_X, CENTER_Y), DEAD_ZONE, Scalar(0, 0, 255), 1);
-
-                            offsetX = center.x - CENTER_X;
-                            offsetY = center.y - CENTER_Y;
-                            //}
-                        }
-                    }
-
-                    if (!target_currently_found && target_found_last_frame && !motorsPaused)
-                    {
-                        printf("Target lost, stopping motors.\n");
-                        offsetX = 0;
-                        offsetY = 0;
-                        target_found_last_frame = false;
-                    }
-                    processingStopwatch.Stop();
-
+                if (processed)
+                {
                     motionStopwatch.Start();
                     MoveMotorsWithLimits(offsetX, offsetY);
                     motionStopwatch.Stop();
 
                     imshow("Processed Frame", rgbFrame);
                     imshow("Red Mask", mask);
+                }
 
-                    loopStopwatch.Stop();
+                loopStopwatch.Stop();
 
-                    // --- WaitKey immediately after imshow ---
-                    int key = waitKey(1);
+                // --- WaitKey immediately after imshow ---
+                int key = waitKey(1);
 
-                    if (key == 'q' || key == 'Q')
-                    {
-                        motorsPaused = !motorsPaused;
-                        printf("Motors %s.\n", motorsPaused ? "paused" : "resumed");
-                        if (motorsPaused)
-                            multiAxis->Stop();
-                        else
-                            multiAxis->Resume();
-                    }
-                    else if (key == 27) // ESC key
-                    {
-                        cout << "ESC pressed, initiating shutdown..." << endl;
-                        gShutdown = 1;         // <<< set shutdown flag
-                        camera.StopGrabbing(); // <<< stop camera manually
-                        break;                 // <<< immediately break from loop
-                    }
+                if (key == 'q' || key == 'Q')
+                {
+                    motorsPaused = !motorsPaused;
+                    printf("Motors %s.\n", motorsPaused ? "paused" : "resumed");
+                    if (motorsPaused)
+                        multiAxis->Stop();
+                    else
+                        multiAxis->Resume();
+                }
+                else if (key == 27) // ESC key
+                {
+                    cout << "ESC pressed, initiating shutdown..." << endl;
+                    gShutdown = 1;         // <<< set shutdown flag
+                    camera.StopGrabbing(); // <<< stop camera manually
+                    break;                 // <<< immediately break from loop
+                }
 
-                    // --- Sleep to maintain loop interval ---
-                    this_thread::sleep_until(next);
+                // --- Sleep to maintain loop interval ---
+                this_thread::sleep_until(next);
 
-                    // Check for timer overruns
-                    if (steady_clock::now() > next + loopInterval)
-                    {
-                        // cerr << "Warning: Loop overruns detected! Loop time exceeded " << loopInterval.count() << "ms." << endl;
-                        next = steady_clock::now(); // Reset next to current time
-                    }
+                // Check for timer overruns
+                if (steady_clock::now() > next + loopInterval)
+                {
+                    // cerr << "Warning: Loop overruns detected! Loop time exceeded " << loopInterval.count() << "ms." << endl;
+                    next = steady_clock::now(); // Reset next to current time
                 }
             }
 
