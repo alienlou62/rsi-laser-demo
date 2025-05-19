@@ -141,7 +141,7 @@ void signal_handler(int signal)
 }
 
 // --- Image Processing Function ---
-bool processFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, double& offsetX, double& offsetY, Mat& rgbFrame, Mat& mask, bool& target_found_last_frame, TimingStats<std::chrono::milliseconds>& processingTiming) {
+bool processFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, double& offsetX, double& offsetY, Mat& rgbFrame, Mat& mask, bool& target_found_last_frame, TimingStats& processingTiming) {
     auto processingStopwatch = ScopedStopwatch(processingTiming);
     offsetX = 0;
     offsetY = 0;
@@ -375,7 +375,7 @@ int main()
             bool target_found_last_frame = false;
 
             // --- Main Loop ---
-            TimingStats<milliseconds> loopTiming, retrieveTiming, processingTiming, motionTiming;
+            TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
             while (!gShutdown && camera.IsGrabbing())
             {   
                 ScopedRateLimiter rateLimiter(loopInterval);

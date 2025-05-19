@@ -5,17 +5,19 @@
 #include <iostream>
 #include <string>
 
-template <typename DurationT>
-struct TimingStats {
-    DurationT total = DurationT::zero();
-    DurationT min = DurationT::max();
-    DurationT max = DurationT::zero();
-    DurationT last = DurationT::zero();
+struct TimingStats
+{
+    using StorageDuration = std::chrono::nanoseconds;
+
+    StorageDuration total = StorageDuration::zero();
+    StorageDuration min = StorageDuration::max();
+    StorageDuration max = StorageDuration::zero();
+    StorageDuration last = StorageDuration::zero();
     uint64_t count = 0;
 
     template <typename OtherDuration>
     void operator()(OtherDuration duration) {
-        DurationT d = std::chrono::duration_cast<DurationT>(duration);
+        StorageDuration d = std::chrono::duration_cast<StorageDuration>(duration);
         last = d;
         total += d;
         if (d < min) min = d;
@@ -40,15 +42,19 @@ constexpr const char* getDurationUnits() {
     else return "unknown";
 }
 
-template <typename DurationT>
-void printStats(const std::string& name, const TimingStats<DurationT>& stats) {
-    constexpr const char* units = getDurationUnits<DurationT>();
+template <typename OutputDuration = std::chrono::microseconds>
+void printStats(const std::string& name, const TimingStats& stats) {
+    constexpr const char* units = getDurationUnits<OutputDuration>();
+    auto toOut = [](const auto& d) { return std::chrono::duration_cast<OutputDuration>(d).count(); };
+
     std::cout << name << ":\n";
     std::cout << "  Iterations: " << stats.count << "\n";
-    std::cout << "  Last:       " << stats.last.count() << " " << units << "\n";
-    std::cout << "  Min:        " << stats.min.count() << " " << units << "\n";
-    std::cout << "  Max:        " << stats.max.count() << " " << units << "\n";
-    std::cout << "  Average:    " << stats.average() << " " << units << "\n";
+    std::cout << "  Last:       " << toOut(stats.last) << " " << units << "\n";
+    std::cout << "  Min:        " << toOut(stats.min) << " " << units << "\n";
+    std::cout << "  Max:        " << toOut(stats.max) << " " << units << "\n";
+    std::cout << "  Average:    " << (stats.count ? 
+        (static_cast<double>(toOut(stats.total)) / stats.count) : 0.0)
+        << " " << units << "\n";
 }
 
 template <typename StatsT>
