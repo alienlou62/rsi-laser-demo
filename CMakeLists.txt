@@ -32,3 +32,7 @@ target_link_libraries(LaserDemo PUBLIC
 
 # Optional flags
 target_compile_options(LaserDemo PRIVATE "-Wno-deprecated-enum-enum-conversion")
+
+target_compile_definitions(LaserDemo PRIVATE
+  CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs"
+)

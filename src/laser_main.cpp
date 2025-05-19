@@ -8,6 +8,10 @@
 #include <thread>                               // For std::this_thread::sleep_for
 #include <chrono>                               // For std::chrono::milliseconds
 
+#ifndef CONFIG_FILE
+#define CONFIG_FILE ""
+#endif
+
 // --- RMP/RSI Headers ---
 // !! REMINDER: Compile using the RMP SDK's build system (CMake) to resolve RMP_DEFAULT_PATH !!
 #include "SampleAppsHelper.h"
@@ -172,7 +176,7 @@ int main()
             camera.Open();
 
 
-            CFeaturePersistence::Load("/home/rsi/Documents/Laser/src/acA640-300gc_22441779.pfs", &camera.GetNodeMap());
+            CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
 
 
             // --- Lock TLParams before configuration ---
@@ -181,75 +185,7 @@ int main()
             {
                 tlLocked->SetValue(1);
             }
-/*
-            // --- Camera Configuration (Force BayerBG8, No Mono8 Fallback) ---
-            INodeMap &nodemap = camera.GetNodeMap();
 
-            CEnumerationPtr exposureAuto(nodemap.GetNode("ExposureAuto"));
-            if (IsAvailable(exposureAuto) && IsWritable(exposureAuto))
-            {
-                exposureAuto->FromString("Off");
-            }
-
-            CFloatPtr exposureTime(nodemap.GetNode("ExposureTime"));
-            if (IsAvailable(exposureTime) && IsWritable(exposureTime))
-            {
-                exposureTime->SetValue(5000.0); // µs
-            }
-
-            cout << "Configuring camera..." << endl;
-            // Set TriggerSelector to FrameStart before disabling TriggerMode
-            CEnumerationPtr triggerSelector(nodemap.GetNode("TriggerSelector"));
-            if (IsAvailable(triggerSelector) && IsWritable(triggerSelector))
-            {
-                triggerSelector->FromString("FrameStart");
-            }
-
-            CEnumerationPtr triggerMode(nodemap.GetNode("TriggerMode"));
-            if (IsAvailable(triggerMode) && IsWritable(triggerMode))
-            {
-                triggerMode->FromString("Off");
-            }
-
-            CEnumerationPtr acqMode(nodemap.GetNode("AcquisitionMode"));
-            if (IsAvailable(acqMode))
-                acqMode->FromString("Continuous");
-            // *** Attempt to set ONLY BayerBG8 Pixel Format ***
-            CEnumerationPtr pixelFormat(nodemap.GetNode("PixelFormat"));
-
-            // Create window for trackbars
-            namedWindow("Trackbars", WINDOW_AUTOSIZE);
-
-            // Create trackbars (each linked to one of the HSV threshold variables)
-            createTrackbar("LowH", "Trackbars", &lowH, 179); // Hue range: 0-179
-            createTrackbar("HighH", "Trackbars", &highH, 179);
-            createTrackbar("LowS", "Trackbars", &lowS, 255); // Saturation range: 0-255
-            createTrackbar("HighS", "Trackbars", &highS, 255);
-            createTrackbar("LowV", "Trackbars", &lowV, 255); // Value range: 0-255
-            createTrackbar("HighV", "Trackbars", &highV, 255);
-
-            if (IsAvailable(pixelFormat))
-            {
-                try
-                {
-                    pixelFormat->FromString("BayerBG8"); // Set desired Bayer format
-                    cout << "- PixelFormat: BayerBG8" << endl;
-                }
-                catch (const GenericException &e)
-                {
-                    // If setting Bayer fails, throw an error and exit.
-                    string errMsg = "Error: Failed to set required PixelFormat 'BayerBG8'. Exception: ";
-                    errMsg += e.GetDescription();
-                    throw std::runtime_error(errMsg); // Stop execution
-                }
-            }
-            else
-            {
-                throw std::runtime_error("PixelFormat node not available!"); // Stop if node missing
-            }
-
-            camera.MaxNumBuffer = 4;
-            GenApi::CIntegerPtr(camera.GetNodeMap().GetNode("GevSCPD"))->SetValue(30000);*/
             camera.StartGrabbing(GrabStrategy_OneByOne);
             std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Let it warm up
                                                                           // --- Unlock TLParams after configuration ---
