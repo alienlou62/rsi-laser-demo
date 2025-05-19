@@ -43,17 +43,94 @@ const double MIN_CONTOUR_AREA = 10.0;
 const double MIN_CIRCLE_RADIUS = 1.0;
 
 // HSV Thresholds (initial guesses)
-int lowH = 105;  // Lower Hue
-int highH = 126; // Upper Hue
-int lowS = 0;    // Lower Saturation
-int highS = 255; // Upper Saturation
-int lowV = 35;   // Lower Value
-int highV = 190; // Upper Value
+const int lowH = 105;  // Lower Hue
+const int highH = 126; // Upper Hue
+const int lowS = 0;    // Lower Saturation
+const int highS = 255; // Upper Saturation
+const int lowV = 35;   // Lower Value
+const int highV = 190; // Upper Value
 
 // --- Global Variables ---
 shared_ptr<MotionController> g_controller(nullptr);
 shared_ptr<MultiAxis> g_multiAxis(nullptr);
-bool motorsPaused = false;
+bool g_motorsPaused = false;
+
+// --- Create the motion controller ---
+shared_ptr<MotionController> CreateController()
+{
+    MotionController::CreationParameters createParams;
+    createParams.CpuAffinity = 3;
+    strncpy(createParams.RmpPath, "/rsi/", createParams.PathLengthMaximum);
+    strncpy(createParams.NicPrimary, "enp3s0", createParams.PathLengthMaximum); // *** VERIFY ***
+
+    shared_ptr<MotionController> controller(MotionController::Create(&createParams),
+        [](MotionController *controller) { 
+            controller->Delete(); 
+            controller = nullptr;
+        }
+    );
+    
+    SampleAppsHelper::CheckErrors(controller.get());
+    printf("RSI Controller Created!\n");
+    
+    return controller;
+}
+
+shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
+{
+    constexpr int NUM_AXES = 2; // Number of axes to configure
+    constexpr int USER_UNITS = 67108864;
+
+    // Add a motion supervisor for the multiaxis
+    controller->AxisCountSet(NUM_AXES + 1);
+    shared_ptr<MultiAxis> multiAxis(controller->MultiAxisGet(NUM_AXES),
+        [](MultiAxis *multiAxis) {
+            multiAxis->Abort();
+            multiAxis->ClearFaults();
+            multiAxis = nullptr;
+        }
+    );
+    SampleAppsHelper::CheckErrors(multiAxis.get());
+
+    for (int i = 0; i < NUM_AXES; i++)
+    {
+        Axis* axis = controller->AxisGet(i);
+        SampleAppsHelper::CheckErrors(axis);
+        axis->UserUnitsSet(USER_UNITS);
+        axis->ErrorLimitActionSet(RSIAction::RSIActionNONE);
+        axis->HardwarePosLimitActionSet(RSIAction::RSIActionNONE);
+        axis->HardwareNegLimitActionSet(RSIAction::RSIActionNONE);
+        axis->PositionSet(0);
+        multiAxis->AxisAdd(axis);
+    }
+
+    multiAxis->Abort();
+    multiAxis->ClearFaults();
+    return multiAxis;
+}
+
+volatile sig_atomic_t g_shutdown = 0;
+void signal_handler(int signal)
+{
+    cout << "Signal handler ran, setting shutdown flag..." << endl;
+    g_shutdown = 1;
+
+    if (g_multiAxis) g_multiAxis->Abort();
+}
+
+void InitializeRMP()
+{
+    g_controller = CreateController();
+    SampleAppsHelper::StartTheNetwork(g_controller.get());
+    g_multiAxis = ConfigureAxes(g_controller);
+
+    // Register signal handler to stop the MultiAxis and initiate graceful shutdown on CTRL+C
+    std::signal(SIGINT, signal_handler);
+
+    // Enable Amps
+    printf("Enabling Amplifiers...\n");
+    g_multiAxis->AmpEnableSet(true);
+}
 
 void MoveMotorsWithLimits(double offsetX, double offsetY)
 {
@@ -92,68 +169,6 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
         cerr << "Error during velocity control: " << ex.what() << endl;
         if (g_multiAxis) g_multiAxis->Abort();
     }
-}
-
-// --- Create the motion controller ---
-shared_ptr<MotionController> CreateController()
-{
-    MotionController::CreationParameters createParams;
-    createParams.CpuAffinity = 3;
-    strncpy(createParams.RmpPath, "/rsi/", createParams.PathLengthMaximum);
-    strncpy(createParams.NicPrimary, "enp3s0", createParams.PathLengthMaximum); // *** VERIFY ***
-
-    shared_ptr<MotionController> controller(MotionController::Create(&createParams),
-        [](MotionController *controller) { 
-            controller->Delete(); 
-            controller = nullptr;
-        }
-    );
-    
-    SampleAppsHelper::CheckErrors(controller.get());
-    printf("RSI Controller Created!\n");
-    
-    return controller;
-}
-
-shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
-{
-    constexpr int NUM_AXES = 2; // Number of axes to configure
-
-    // Add a motion supervisor for the multiaxis
-    controller->AxisCountSet(NUM_AXES + 1);
-    shared_ptr<MultiAxis> multiAxis(controller->MultiAxisGet(NUM_AXES),
-        [](MultiAxis *multiAxis) {
-            multiAxis->Abort();
-            multiAxis->ClearFaults();
-            multiAxis = nullptr;
-        }
-    );
-    SampleAppsHelper::CheckErrors(multiAxis.get());
-
-    for (int i = 0; i < NUM_AXES; i++)
-    {
-        Axis* axis = controller->AxisGet(i);
-        SampleAppsHelper::CheckErrors(axis);
-        axis->UserUnitsSet(67108864);
-        axis->ErrorLimitActionSet(RSIAction::RSIActionNONE);
-        axis->HardwarePosLimitActionSet(RSIAction::RSIActionNONE);
-        axis->HardwareNegLimitActionSet(RSIAction::RSIActionNONE);
-        axis->PositionSet(0);
-        multiAxis->AxisAdd(axis);
-    }
-
-    multiAxis->Abort();
-    multiAxis->ClearFaults();
-    return multiAxis;
-}
-
-volatile sig_atomic_t gShutdown = 0;
-void signal_handler(int signal)
-{
-    cout << "Signal handler ran, setting shutdown flag..." << endl;
-    gShutdown = 1;
-
-    if (g_multiAxis) g_multiAxis->Abort();
 }
 
 // --- Image Processing Function ---
@@ -271,7 +286,7 @@ bool processFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, d
             }
         }
 
-        if (!target_currently_found && target_found_last_frame && !motorsPaused)
+        if (!target_currently_found && target_found_last_frame && !g_motorsPaused)
         {
             printf("Target lost, stopping motors.\n");
             offsetX = 0;
@@ -292,18 +307,7 @@ int main()
     SampleAppsHelper::PrintHeader(SAMPLE_APP_NAME);
     int exitCode = 0;
 
-    // --- RMP Initialization ---
-    g_controller = CreateController();
-    SampleAppsHelper::StartTheNetwork(g_controller.get());
-    g_multiAxis = ConfigureAxes(g_controller);
-
-    // Register signal handler to stop the MultiAxis and initiate graceful shutdown on CTRL+C
-    std::signal(SIGINT, signal_handler);
-
-    // Enable Amps
-    printf("Enabling Amplifiers...\n");
-    g_multiAxis->AmpEnableSet(true);
-    // --- End RMP Initialization ---
+    InitializeRMP();
 
     // --- Pylon Initialization & Camera Loop ---
     auto pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
@@ -344,7 +348,7 @@ int main()
     // --- Prime the camera to verify frames are coming ---
     bool grabbedFirstFrame = false;
     auto startTime = std::chrono::steady_clock::now();
-    while (!gShutdown && camera.IsGrabbing())
+    while (!g_shutdown && camera.IsGrabbing())
     {
         try
         {
@@ -366,7 +370,7 @@ int main()
         if (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() > 10)
         {
             cerr << "Timeout waiting for first frame. Exiting startup." << endl;
-            gShutdown = 1;
+            g_shutdown = 1;
             break;
         }
     }
@@ -383,7 +387,7 @@ int main()
 
     // --- Main Loop ---
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
-    while (!gShutdown && camera.IsGrabbing())
+    while (!g_shutdown && camera.IsGrabbing())
     {   
         ScopedRateLimiter rateLimiter(loopInterval);
         auto loopStopwatch = ScopedStopwatch(loopTiming);
@@ -396,7 +400,7 @@ int main()
         catch (const TimeoutException &timeout_e)
         {
             cerr << "Camera Retrieve Timeout: " << timeout_e.GetDescription() << endl;
-            if (target_found_last_frame && !motorsPaused)
+            if (target_found_last_frame && !g_motorsPaused)
             {
                 MoveMotorsWithLimits(0, 0);
             }
@@ -428,9 +432,9 @@ int main()
 
         if (key == 'q' || key == 'Q')
         {
-            motorsPaused = !motorsPaused;
-            printf("Motors %s.\n", motorsPaused ? "paused" : "resumed");
-            if (motorsPaused)
+            g_motorsPaused = !g_motorsPaused;
+            printf("Motors %s.\n", g_motorsPaused ? "paused" : "resumed");
+            if (g_motorsPaused)
                 g_multiAxis->Stop();
             else
                 g_multiAxis->Resume();
