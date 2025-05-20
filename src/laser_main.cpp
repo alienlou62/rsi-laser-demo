@@ -383,6 +383,7 @@ int main()
     }
 
     // --- Main Loop ---
+    bool lastPaused = false;
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
     while (!g_shutdown && g_camera.IsGrabbing())
     {   
@@ -404,10 +405,13 @@ int main()
             continue;
         }
 
-        if (g_paused)
+        // Only stop/resume if the flag changed
+        bool paused = g_paused; // Avoid reading the flag multiple times since its volatile
+        if (paused && !lastPaused)
             g_multiAxis->Stop();
-        else
+        else if (!paused && lastPaused)
             g_multiAxis->Resume();
+        lastPaused = paused;
 
         auto motionStopwatch = ScopedStopwatch(motionTiming);
         MoveMotorsWithLimits();
