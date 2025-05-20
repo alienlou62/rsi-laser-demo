@@ -56,7 +56,6 @@ CGrabResultPtr g_ptrGrabResult;
 
 shared_ptr<MotionController> g_controller(nullptr);
 shared_ptr<MultiAxis> g_multiAxis(nullptr);
-bool g_motorsPaused = false;
 double g_offsetX = 0.0;
 double g_offsetY = 0.0;
 
@@ -115,12 +114,24 @@ shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
 }
 
 volatile sig_atomic_t g_shutdown = 0;
-void sigint_handler(int signal)
+void sigquit_handler(int signal)
 {
-    cout << "Signal handler ran, setting shutdown flag..." << endl;
-    g_shutdown = 1;
+    cout << "SIGQUIT handler ran, setting shutdown flag..." << endl;
+    g_shutdown = true;
 
     if (g_multiAxis) g_multiAxis->Abort();
+}
+
+volatile sig_atomic_t g_paused = 0;
+void sigint_handler(int signal)
+{
+    cout << "SIGINT handler ran, toggling paused flag..." << endl;
+
+    g_paused = !g_paused;
+    if (g_paused && g_multiAxis)
+        g_multiAxis->Stop();
+    else
+        g_multiAxis->Resume();
 }
 
 void InitializeRMP()
@@ -129,10 +140,9 @@ void InitializeRMP()
     SampleAppsHelper::StartTheNetwork(g_controller.get());
     g_multiAxis = ConfigureAxes(g_controller);
 
-    // Register signal handler to stop the MultiAxis and initiate graceful shutdown on CTRL+C
+    std::signal(SIGQUIT, sigquit_handler);
     std::signal(SIGINT, sigint_handler);
 
-    // Enable Amps
     printf("Enabling Amplifiers...\n");
     g_multiAxis->AmpEnableSet(true);
 }
@@ -344,7 +354,7 @@ bool ProcessFrame(TimingStats& processingTiming) {
             }
         }
 
-        if (!target_currently_found && target_found_last_frame && !g_motorsPaused)
+        if (!target_currently_found && target_found_last_frame)
         {
             printf("Target lost, stopping motors.\n");
             g_offsetX = 0;
@@ -381,23 +391,6 @@ int main()
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
     while (!g_shutdown && g_camera.IsGrabbing())
     {   
-        int key = waitKey(1);
-
-        if (key == 'q' || key == 'Q')
-        {
-            g_motorsPaused = !g_motorsPaused;
-            printf("Motors %s.\n", g_motorsPaused ? "paused" : "resumed");
-            if (g_motorsPaused)
-                g_multiAxis->Stop();
-            else
-                g_multiAxis->Resume();
-        }
-        else if (key == 27) // ESC key
-        {
-            cout << "ESC pressed, initiating shutdown..." << endl;
-            break;                 // <<< immediately break from loop
-        }
-
         ScopedRateLimiter rateLimiter(loopInterval);
         auto loopStopwatch = ScopedStopwatch(loopTiming);
         
