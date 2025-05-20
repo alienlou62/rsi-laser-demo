@@ -411,10 +411,17 @@ int main()
 
         auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
         g_camera.RetrieveResult(200, g_ptrGrabResult, TimeoutHandling_Return);
-        if (!g_ptrGrabResult->GrabSucceeded())
-        {
-            // how many times are we failing to grab**
+
+        if (!g_ptrGrabResult || !g_ptrGrabResult->GrabSucceeded()) {
             cerr << "Error: Camera failed to retrieve result!" << endl;
+
+            if (!g_ptrGrabResult) {
+                cerr << "  Reason: Grab result pointer is null." << endl;
+            } else {
+                cerr << "  Error Code: " << g_ptrGrabResult->GetErrorCode() << endl;
+                cerr << "  Error Description: " << g_ptrGrabResult->GetErrorDescription() << endl;
+            }
+
             ++grabFailures;
             continue;
         }
@@ -423,21 +430,53 @@ int main()
         Mat rgbFrame;
         int width = g_ptrGrabResult->GetWidth();
         int height = g_ptrGrabResult->GetHeight();
-        const uint8_t *pImageBuffer = (uint8_t *)g_ptrGrabResult->GetBuffer();
+        const uint8_t *pImageBuffer = static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer());
+
+        if (!pImageBuffer) {
+            cerr << "Error: Image buffer is null!" << endl;
+            ++grabFailures;
+            continue;
+        }
+        if (width <= 0 || height <= 0) {
+            cerr << "Error: Invalid image dimensions! Width: " << width << ", Height: " << height << endl;
+            ++grabFailures;
+            continue;
+        }
+
         Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
-        if (bayerFrame.empty())
-        {
+        if (bayerFrame.empty()) {
             cerr << "Error: Retrieved empty bayer frame!" << endl;
             ++grabFailures;
             continue;
         }
-        else
-        {
+
+        // Try-catch around conversion for even more robustness
+        try {
             // Convert Bayer to RGB
             cvtColor(bayerFrame, rgbFrame, COLOR_BayerBG2RGB);
+
+            if (rgbFrame.empty()) {
+                cerr << "Error: Bayer-to-RGB conversion produced empty frame!" << endl;
+                ++grabFailures;
+                continue;
+            }
+
             imshow("RGB Frame", rgbFrame);
             waitKey(1);
+        } catch (const cv::Exception &e) {
+            cerr << "OpenCV exception during Bayer-to-RGB conversion: " << e.what() << endl;
+            ++grabFailures;
+            continue;
+        } catch (const std::exception &e) {
+            cerr << "Standard exception during Bayer-to-RGB conversion: " << e.what() << endl;
+            ++grabFailures;
+            continue;
+        } catch (...) {
+            cerr << "Unknown error during Bayer-to-RGB conversion." << endl;
+            ++grabFailures;
+            continue;
         }
+
 
         // if (!ProcessFrame(processingTiming))
         // {
