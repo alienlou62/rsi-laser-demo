@@ -50,6 +50,9 @@ const int highS = 255; // Upper Saturation
 const int lowV = 35;   // Lower Value
 const int highV = 190; // Upper Value
 
+int grabFailures = 0;
+int processFailures = 0;
+
 // --- Global Variables ---
 CInstantCamera g_camera;
 CGrabResultPtr g_ptrGrabResult;
@@ -68,16 +71,16 @@ shared_ptr<MotionController> CreateController()
     strncpy(createParams.NicPrimary, "enp3s0", createParams.PathLengthMaximum); // *** VERIFY ***
 
     shared_ptr<MotionController> controller(MotionController::Create(&createParams),
-        [](MotionController *controller) {
-            cout << "Deleting controller..." << endl; 
-            controller->Delete(); 
-            controller = nullptr;
-        }
-    );
-    
+                                            [](MotionController *controller)
+                                            {
+                                                cout << "Deleting controller..." << endl;
+                                                controller->Delete();
+                                                controller = nullptr;
+                                            });
+
     SampleAppsHelper::CheckErrors(controller.get());
     printf("RSI Controller Created!\n");
-    
+
     return controller;
 }
 
@@ -89,18 +92,18 @@ shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
     // Add a motion supervisor for the multiaxis
     controller->AxisCountSet(NUM_AXES + 1);
     shared_ptr<MultiAxis> multiAxis(controller->MultiAxisGet(NUM_AXES),
-        [](MultiAxis *multiAxis) {
-            cout << "Deleting multiAxis..." << endl;
-            multiAxis->Abort();
-            multiAxis->ClearFaults();
-            multiAxis = nullptr;
-        }
-    );
+                                    [](MultiAxis *multiAxis)
+                                    {
+                                        cout << "Deleting multiAxis..." << endl;
+                                        multiAxis->Abort();
+                                        multiAxis->ClearFaults();
+                                        multiAxis = nullptr;
+                                    });
     SampleAppsHelper::CheckErrors(multiAxis.get());
 
     for (int i = 0; i < NUM_AXES; i++)
     {
-        Axis* axis = controller->AxisGet(i);
+        Axis *axis = controller->AxisGet(i);
         SampleAppsHelper::CheckErrors(axis);
         axis->UserUnitsSet(USER_UNITS);
         axis->ErrorLimitActionSet(RSIAction::RSIActionNONE);
@@ -168,8 +171,10 @@ void MoveMotorsWithLimits()
         double velY = -std::copysign(1.0, normY) * std::pow(std::abs(normY), 1.5) * MAX_VELOCITY;
 
         // --- Avoid tiny jitter motions ---
-        if (std::abs(velX) < MIN_VELOCITY) velX = 0.0;
-        if (std::abs(velY) < MIN_VELOCITY) velY = 0.0;
+        if (std::abs(velX) < MIN_VELOCITY)
+            velX = 0.0;
+        if (std::abs(velY) < MIN_VELOCITY)
+            velY = 0.0;
 
         // --- Velocity mode only (no MoveSCurve to position) ---
         g_multiAxis->MoveVelocity(std::array{velX, velY}.data());
@@ -177,12 +182,14 @@ void MoveMotorsWithLimits()
     catch (const std::exception &ex)
     {
         cerr << "Error during velocity control: " << ex.what() << endl;
-        if (g_multiAxis) g_multiAxis->Abort();
+        if (g_multiAxis)
+            g_multiAxis->Abort();
     }
 }
 
 // --- Camera Setup and Priming Utilities ---
-void ConfigureCamera() {
+void ConfigureCamera()
+{
     g_camera.Attach(CTlFactory::GetInstance().CreateFirstDevice());
     cout << "Using device: " << g_camera.GetDeviceInfo().GetModelName() << endl;
     g_camera.Open();
@@ -190,19 +197,23 @@ void ConfigureCamera() {
     CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap());
     // Lock TLParams
     GenApi::CIntegerPtr tlLocked(g_camera.GetTLNodeMap().GetNode("TLParamsLocked"));
-    if (IsAvailable(tlLocked) && IsWritable(tlLocked)) {
+    if (IsAvailable(tlLocked) && IsWritable(tlLocked))
+    {
         tlLocked->SetValue(1);
     }
     g_camera.StartGrabbing(GrabStrategy_OneByOne);
     std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Let it warm up
-    if (IsAvailable(tlLocked) && IsWritable(tlLocked)) {
+    if (IsAvailable(tlLocked) && IsWritable(tlLocked))
+    {
         tlLocked->SetValue(0);
     }
 }
 
-bool PrimeCamera() {
+bool PrimeCamera()
+{
     std::cout << "Checking g_camera grabbing status after StartGrabbing..." << std::endl;
-    if (!g_camera.IsGrabbing()) {
+    if (!g_camera.IsGrabbing())
+    {
         std::cerr << "Error: Camera is NOT grabbing after StartGrabbing call!" << std::endl;
         return false;
     }
@@ -211,21 +222,27 @@ bool PrimeCamera() {
 
     bool grabbedFirstFrame = false;
     auto startTime = std::chrono::steady_clock::now();
-    while (!g_shutdown && g_camera.IsGrabbing()) {
-        try {
+    while (!g_shutdown && g_camera.IsGrabbing())
+    {
+        try
+        {
             CGrabResultPtr grabResult;
             g_camera.RetrieveResult(5000, grabResult, TimeoutHandling_Return);
-            if (grabResult && grabResult->GrabSucceeded()) {
+            if (grabResult && grabResult->GrabSucceeded())
+            {
                 grabbedFirstFrame = true;
                 std::cout << "Priming: First frame grabbed successfully." << std::endl;
                 break;
             }
-        } catch (const GenericException &e) {
+        }
+        catch (const GenericException &e)
+        {
             std::cerr << "Exception during priming grab: " << e.GetDescription() << std::endl;
         }
 
         auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() > 10) {
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() > 10)
+        {
             std::cerr << "Timeout waiting for first frame. Exiting startup." << std::endl;
             g_shutdown = true;
             break;
@@ -235,7 +252,8 @@ bool PrimeCamera() {
 }
 
 // --- Image Processing Function ---
-bool ProcessFrame(TimingStats& processingTiming) {
+bool ProcessFrame(TimingStats &processingTiming)
+{
     auto processingStopwatch = ScopedStopwatch(processingTiming);
     Mat rgbFrame, mask;
     static bool target_found_last_frame = false;
@@ -302,10 +320,10 @@ bool ProcessFrame(TimingStats& processingTiming) {
         // Remove small contours by area
         contours.erase(
             std::remove_if(contours.begin(), contours.end(),
-                        [](const vector<Point> &c)
-                        {
-                            return contourArea(c) < 500.0; // adjust threshold
-                        }),
+                           [](const vector<Point> &c)
+                           {
+                               return contourArea(c) < 500.0; // adjust threshold
+                           }),
             contours.end());
 
         int largestContourIndex = -1;
@@ -378,7 +396,8 @@ int main()
     auto pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
     ConfigureCamera();
 
-    if (!PrimeCamera()) {
+    if (!PrimeCamera())
+    {
         throw std::runtime_error("Camera failed to start streaming images.");
     }
 
@@ -386,22 +405,26 @@ int main()
     bool lastPaused = false;
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
     while (!g_shutdown && g_camera.IsGrabbing())
-    {   
+    {
         ScopedRateLimiter rateLimiter(loopInterval);
         auto loopStopwatch = ScopedStopwatch(loopTiming);
-        
+
         auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
         g_camera.RetrieveResult(200, g_ptrGrabResult, TimeoutHandling_Return);
         if (!g_ptrGrabResult->GrabSucceeded())
         {
+            // how many times are we failing to grab**
             cerr << "Error: Camera failed to retrieve result!" << endl;
+            ++grabFailures;
             continue;
         }
         retrieveStopwatch.Stop();
 
         if (!ProcessFrame(processingTiming))
         {
+            // how many times are we failign to process**
             cerr << "Error: Failed to process frame!" << endl;
+            ++processFailures;
             continue;
         }
 
@@ -414,7 +437,7 @@ int main()
         lastPaused = paused;
 
         auto motionStopwatch = ScopedStopwatch(motionTiming);
-        MoveMotorsWithLimits();
+        // MoveMotorsWithLimits();
         motionStopwatch.Stop();
     }
 
@@ -424,8 +447,12 @@ int main()
     printStats("Processing", processingTiming);
     printStats("Motion", motionTiming);
 
+    cout << "--------------------------------------------" << endl;
+    cout << "Grab Failures:     " << grabFailures << endl;
+    cout << "Process Failures:  " << processFailures << endl;
+
     destroyAllWindows();
-    
+
     SampleAppsHelper::PrintFooter(SAMPLE_APP_NAME, exitCode);
 
     return exitCode;
