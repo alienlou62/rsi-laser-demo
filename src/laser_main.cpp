@@ -195,30 +195,11 @@ void ConfigureCamera()
     g_camera.Open();
 
     CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap());
-    // Lock TLParams
-    GenApi::CIntegerPtr tlLocked(g_camera.GetTLNodeMap().GetNode("TLParamsLocked"));
-    if (IsAvailable(tlLocked) && IsWritable(tlLocked))
-    {
-        tlLocked->SetValue(1);
-    }
-    g_camera.StartGrabbing(GrabStrategy_OneByOne);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Let it warm up
-    if (IsAvailable(tlLocked) && IsWritable(tlLocked))
-    {
-        tlLocked->SetValue(0);
-    }
 }
 
 bool PrimeCamera()
 {
-    std::cout << "Checking g_camera grabbing status after StartGrabbing..." << std::endl;
-    if (!g_camera.IsGrabbing())
-    {
-        std::cerr << "Error: Camera is NOT grabbing after StartGrabbing call!" << std::endl;
-        return false;
-    }
-    std::cout << "Camera is confirmed to be grabbing." << std::endl;
-    std::cout << "Camera grabbing started." << std::endl;
+    g_camera.StartGrabbing(GrabStrategy_LatestImageOnly);
 
     bool grabbedFirstFrame = false;
     auto startTime = std::chrono::steady_clock::now();
