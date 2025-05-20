@@ -42,7 +42,7 @@ constexpr const char* getDurationUnits() {
     else return "unknown";
 }
 
-template <typename OutputDuration = std::chrono::microseconds>
+template <typename OutputDuration = std::chrono::milliseconds>
 void printStats(const std::string& name, const TimingStats& stats) {
     constexpr const char* units = getDurationUnits<OutputDuration>();
     auto toOut = [](const auto& d) { return std::chrono::duration_cast<OutputDuration>(d).count(); };
