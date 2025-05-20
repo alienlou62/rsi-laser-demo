@@ -194,7 +194,20 @@ void ConfigureCamera()
     cout << "Using device: " << g_camera.GetDeviceInfo().GetModelName() << endl;
     g_camera.Open();
 
-    CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap());
+    CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap()); 
+    INodeMap &nodemap = g_camera.GetNodeMap();
+
+    CBooleanPtr ptrFrameRateEnable(nodemap.GetNode("AcquisitionFrameRateEnable"));
+    if (IsWritable(ptrFrameRateEnable))
+        ptrFrameRateEnable->SetValue(true);
+
+    CFloatPtr ptrFrameRate(nodemap.GetNode("AcquisitionFrameRate"));
+    if (IsWritable(ptrFrameRate))
+    {
+        double desiredFps = 100.0;
+        ptrFrameRate->SetValue(desiredFps);
+        std::cout << "Frame rate set to " << ptrFrameRate->GetValue() << " FPS" << std::endl;
+    }
 }
 
 bool PrimeCamera()
