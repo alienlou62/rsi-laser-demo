@@ -395,7 +395,8 @@ int main()
         auto loopStopwatch = ScopedStopwatch(loopTiming);
         
         auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-        if (!g_camera.RetrieveResult(200, g_ptrGrabResult, TimeoutHandling_Return))
+        g_camera.RetrieveResult(200, g_ptrGrabResult, TimeoutHandling_Return);
+        if (!g_ptrGrabResult->GrabSucceeded())
         {
             cerr << "Error: Camera failed to retrieve result!" << endl;
             continue;
