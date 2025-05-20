@@ -68,7 +68,8 @@ shared_ptr<MotionController> CreateController()
     strncpy(createParams.NicPrimary, "enp3s0", createParams.PathLengthMaximum); // *** VERIFY ***
 
     shared_ptr<MotionController> controller(MotionController::Create(&createParams),
-        [](MotionController *controller) { 
+        [](MotionController *controller) {
+            cout << "Deleting controller..." << endl; 
             controller->Delete(); 
             controller = nullptr;
         }
@@ -89,6 +90,7 @@ shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
     controller->AxisCountSet(NUM_AXES + 1);
     shared_ptr<MultiAxis> multiAxis(controller->MultiAxisGet(NUM_AXES),
         [](MultiAxis *multiAxis) {
+            cout << "Deleting multiAxis..." << endl;
             multiAxis->Abort();
             multiAxis->ClearFaults();
             multiAxis = nullptr;
@@ -118,20 +120,13 @@ void sigquit_handler(int signal)
 {
     cout << "SIGQUIT handler ran, setting shutdown flag..." << endl;
     g_shutdown = true;
-
-    if (g_multiAxis) g_multiAxis->Abort();
 }
 
 volatile sig_atomic_t g_paused = 0;
 void sigint_handler(int signal)
 {
     cout << "SIGINT handler ran, toggling paused flag..." << endl;
-
     g_paused = !g_paused;
-    if (g_paused && g_multiAxis)
-        g_multiAxis->Stop();
-    else
-        g_multiAxis->Resume();
 }
 
 void InitializeRMP()
@@ -408,6 +403,11 @@ int main()
             cerr << "Error: Failed to process frame!" << endl;
             continue;
         }
+
+        if (g_paused)
+            g_multiAxis->Stop();
+        else
+            g_multiAxis->Resume();
 
         auto motionStopwatch = ScopedStopwatch(motionTiming);
         MoveMotorsWithLimits();
