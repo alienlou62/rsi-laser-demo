@@ -352,7 +352,7 @@ int main()
     std::signal(SIGQUIT, sigquit_handler);
     std::signal(SIGINT, sigint_handler);
 
-    // InitializeRMP();
+    InitializeRMP();
 
     // --- Pylon Initialization & Camera Loop ---
     auto pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
@@ -448,28 +448,28 @@ int main()
             continue;
         }
 
-        // // Only stop/resume if the flag changed
-        // bool paused = g_paused; // Avoid reading the flag multiple times since its volatile
-        // if (paused && !lastPaused)
-        //     g_multiAxis->Stop();
-        // else if (!paused && lastPaused)
-        //     g_multiAxis->Resume();
-        // lastPaused = paused;
+        // Only stop/resume if the flag changed
+        bool paused = g_paused; // Avoid reading the flag multiple times since its volatile
+        if (paused && !lastPaused)
+            g_multiAxis->Stop();
+        else if (!paused && lastPaused)
+            g_multiAxis->Resume();
+        lastPaused = paused;
 
-        // auto motionStopwatch = ScopedStopwatch(motionTiming);
-        // MoveMotorsWithLimits();
-        // motionStopwatch.Stop();
+        auto motionStopwatch = ScopedStopwatch(motionTiming);
+        MoveMotorsWithLimits();
+        motionStopwatch.Stop();
     }
 
     // Print loop statistics
     printStats("Loop", loopTiming);
     printStats("Retrieve", retrieveTiming);
-    // printStats("Processing", processingTiming);
-    // printStats("Motion", motionTiming);
+    printStats("Processing", processingTiming);
+    printStats("Motion", motionTiming);
 
     cout << "--------------------------------------------" << endl;
     cout << "Grab Failures:     " << grabFailures << endl;
-    // cout << "Process Failures:  " << processFailures << endl;
+    cout << "Process Failures:  " << processFailures << endl;
 
     destroyAllWindows();
 
