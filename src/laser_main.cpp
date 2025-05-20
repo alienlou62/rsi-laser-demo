@@ -138,9 +138,6 @@ void InitializeRMP()
     SampleAppsHelper::StartTheNetwork(g_controller.get());
     g_multiAxis = ConfigureAxes(g_controller);
 
-    std::signal(SIGQUIT, sigquit_handler);
-    std::signal(SIGINT, sigint_handler);
-
     printf("Enabling Amplifiers...\n");
     g_multiAxis->AmpEnableSet(true);
 }
@@ -197,17 +194,17 @@ void ConfigureCamera()
     CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap()); 
     INodeMap &nodemap = g_camera.GetNodeMap();
 
-    CBooleanPtr ptrFrameRateEnable(nodemap.GetNode("AcquisitionFrameRateEnable"));
-    if (IsWritable(ptrFrameRateEnable))
-        ptrFrameRateEnable->SetValue(true);
+    // CBooleanPtr ptrFrameRateEnable(nodemap.GetNode("AcquisitionFrameRateEnable"));
+    // if (IsWritable(ptrFrameRateEnable))
+    //     ptrFrameRateEnable->SetValue(true);
 
-    CFloatPtr ptrFrameRate(nodemap.GetNode("AcquisitionFrameRate"));
-    if (IsWritable(ptrFrameRate))
-    {
-        double desiredFps = 100.0;
-        ptrFrameRate->SetValue(desiredFps);
-        std::cout << "Frame rate set to " << ptrFrameRate->GetValue() << " FPS" << std::endl;
-    }
+    // CFloatPtr ptrFrameRate(nodemap.GetNode("AcquisitionFrameRate"));
+    // if (IsWritable(ptrFrameRate))
+    // {
+    //     double desiredFps = 100.0;
+    //     ptrFrameRate->SetValue(desiredFps);
+    //     std::cout << "Frame rate set to " << ptrFrameRate->GetValue() << " FPS" << std::endl;
+    // }
 }
 
 bool PrimeCamera()
@@ -383,6 +380,9 @@ int main()
     const std::string SAMPLE_APP_NAME = "Pylon_RSI_Tracking_BayerOnly";
     SampleAppsHelper::PrintHeader(SAMPLE_APP_NAME);
     int exitCode = 0;
+
+    std::signal(SIGQUIT, sigquit_handler);
+    std::signal(SIGINT, sigint_handler);
 
     // InitializeRMP();
 
