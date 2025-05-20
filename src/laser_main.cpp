@@ -51,9 +51,14 @@ const int lowV = 35;   // Lower Value
 const int highV = 190; // Upper Value
 
 // --- Global Variables ---
+CInstantCamera g_camera;
+CGrabResultPtr g_ptrGrabResult;
+
 shared_ptr<MotionController> g_controller(nullptr);
 shared_ptr<MultiAxis> g_multiAxis(nullptr);
 bool g_motorsPaused = false;
+double g_offsetX = 0.0;
+double g_offsetY = 0.0;
 
 // --- Create the motion controller ---
 shared_ptr<MotionController> CreateController()
@@ -110,7 +115,7 @@ shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
 }
 
 volatile sig_atomic_t g_shutdown = 0;
-void signal_handler(int signal)
+void sigint_handler(int signal)
 {
     cout << "Signal handler ran, setting shutdown flag..." << endl;
     g_shutdown = 1;
@@ -125,14 +130,14 @@ void InitializeRMP()
     g_multiAxis = ConfigureAxes(g_controller);
 
     // Register signal handler to stop the MultiAxis and initiate graceful shutdown on CTRL+C
-    std::signal(SIGINT, signal_handler);
+    std::signal(SIGINT, sigint_handler);
 
     // Enable Amps
     printf("Enabling Amplifiers...\n");
     g_multiAxis->AmpEnableSet(true);
 }
 
-void MoveMotorsWithLimits(double offsetX, double offsetY)
+void MoveMotorsWithLimits()
 {
     static const double POSITION_DEAD_ZONE = 0.0005;
     static const double PIXEL_DEAD_ZONE = DEAD_ZONE;
@@ -141,7 +146,7 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
     static const double jerkPct = 30.0; // Smoother than 50%
 
     // --- Dead zone logic ---
-    if (std::abs(offsetX) < PIXEL_DEAD_ZONE && std::abs(offsetY) < PIXEL_DEAD_ZONE)
+    if (std::abs(g_offsetX) < PIXEL_DEAD_ZONE && std::abs(g_offsetY) < PIXEL_DEAD_ZONE)
     {
         g_multiAxis->MoveVelocity(std::array{0.0, 0.0}.data());
         return;
@@ -150,8 +155,8 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
     try
     {
         // --- Normalize pixel offsets to [-1, 1] ---
-        double normX = std::clamp(offsetX / MAX_OFFSET, -1.0, 1.0);
-        double normY = std::clamp(offsetY / MAX_OFFSET, -1.0, 1.0);
+        double normX = std::clamp(g_offsetX / MAX_OFFSET, -1.0, 1.0);
+        double normY = std::clamp(g_offsetY / MAX_OFFSET, -1.0, 1.0);
 
         // --- Exponential scaling to reduce velocity when near center ---
         double velX = -std::copysign(1.0, normX) * std::pow(std::abs(normX), 1.5) * MAX_VELOCITY;
@@ -172,26 +177,27 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
 }
 
 // --- Camera Setup and Priming Utilities ---
-void ConfigureCamera(CInstantCamera& camera) {
-    cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << endl;
-    camera.Open();
+void ConfigureCamera() {
+    g_camera.Attach(CTlFactory::GetInstance().CreateFirstDevice());
+    cout << "Using device: " << g_camera.GetDeviceInfo().GetModelName() << endl;
+    g_camera.Open();
 
-    CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
+    CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap());
     // Lock TLParams
-    GenApi::CIntegerPtr tlLocked(camera.GetTLNodeMap().GetNode("TLParamsLocked"));
+    GenApi::CIntegerPtr tlLocked(g_camera.GetTLNodeMap().GetNode("TLParamsLocked"));
     if (IsAvailable(tlLocked) && IsWritable(tlLocked)) {
         tlLocked->SetValue(1);
     }
-    camera.StartGrabbing(GrabStrategy_OneByOne);
+    g_camera.StartGrabbing(GrabStrategy_OneByOne);
     std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Let it warm up
     if (IsAvailable(tlLocked) && IsWritable(tlLocked)) {
         tlLocked->SetValue(0);
     }
 }
 
-bool PrimeCamera(CInstantCamera& camera, volatile sig_atomic_t& shutdownFlag) {
-    std::cout << "Checking camera grabbing status after StartGrabbing..." << std::endl;
-    if (!camera.IsGrabbing()) {
+bool PrimeCamera() {
+    std::cout << "Checking g_camera grabbing status after StartGrabbing..." << std::endl;
+    if (!g_camera.IsGrabbing()) {
         std::cerr << "Error: Camera is NOT grabbing after StartGrabbing call!" << std::endl;
         return false;
     }
@@ -200,10 +206,10 @@ bool PrimeCamera(CInstantCamera& camera, volatile sig_atomic_t& shutdownFlag) {
 
     bool grabbedFirstFrame = false;
     auto startTime = std::chrono::steady_clock::now();
-    while (!shutdownFlag && camera.IsGrabbing()) {
+    while (!g_shutdown && g_camera.IsGrabbing()) {
         try {
             CGrabResultPtr grabResult;
-            camera.RetrieveResult(5000, grabResult, TimeoutHandling_Return);
+            g_camera.RetrieveResult(5000, grabResult, TimeoutHandling_Return);
             if (grabResult && grabResult->GrabSucceeded()) {
                 grabbedFirstFrame = true;
                 std::cout << "Priming: First frame grabbed successfully." << std::endl;
@@ -216,7 +222,7 @@ bool PrimeCamera(CInstantCamera& camera, volatile sig_atomic_t& shutdownFlag) {
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() > 10) {
             std::cerr << "Timeout waiting for first frame. Exiting startup." << std::endl;
-            shutdownFlag = 1;
+            g_shutdown = true;
             break;
         }
     }
@@ -224,18 +230,18 @@ bool PrimeCamera(CInstantCamera& camera, volatile sig_atomic_t& shutdownFlag) {
 }
 
 // --- Image Processing Function ---
-bool ProcessFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, double& offsetX, double& offsetY, Mat& rgbFrame, Mat& mask, bool& target_found_last_frame, TimingStats& processingTiming) {
+bool ProcessFrame(TimingStats& processingTiming) {
     auto processingStopwatch = ScopedStopwatch(processingTiming);
-    offsetX = 0;
-    offsetY = 0;
+    Mat rgbFrame, mask;
+    static bool target_found_last_frame = false;
     bool target_currently_found = false;
     bool result = false;
 
-    int width = ptrGrabResult->GetWidth();
-    int height = ptrGrabResult->GetHeight();
+    int width = g_ptrGrabResult->GetWidth();
+    int height = g_ptrGrabResult->GetHeight();
 
-    std::cout << "Pixel type raw value: " << ptrGrabResult->GetPixelType() << std::endl;
-    CEnumerationPtr pixelFormatNode(camera.GetNodeMap().GetNode("PixelFormat"));
+    std::cout << "Pixel type raw value: " << g_ptrGrabResult->GetPixelType() << std::endl;
+    CEnumerationPtr pixelFormatNode(g_camera.GetNodeMap().GetNode("PixelFormat"));
     if (IsAvailable(pixelFormatNode))
     {
         cout << "PixelFormat (string): " << pixelFormatNode->ToString() << endl;
@@ -254,7 +260,7 @@ bool ProcessFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, d
         return false;
     }*/
 
-    const uint8_t *pImageBuffer = (uint8_t *)ptrGrabResult->GetBuffer();
+    const uint8_t *pImageBuffer = (uint8_t *)g_ptrGrabResult->GetBuffer();
     Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
     if (bayerFrame.empty())
     {
@@ -333,19 +339,22 @@ bool ProcessFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, d
                 circle(rgbFrame, center, 5, Scalar(0, 255, 0), -1);
                 circle(rgbFrame, Point(CENTER_X, CENTER_Y), DEAD_ZONE, Scalar(0, 0, 255), 1);
 
-                offsetX = center.x - CENTER_X;
-                offsetY = center.y - CENTER_Y;
+                g_offsetX = center.x - CENTER_X;
+                g_offsetY = center.y - CENTER_Y;
             }
         }
 
         if (!target_currently_found && target_found_last_frame && !g_motorsPaused)
         {
             printf("Target lost, stopping motors.\n");
-            offsetX = 0;
-            offsetY = 0;
+            g_offsetX = 0;
+            g_offsetY = 0;
             target_found_last_frame = false;
         }
         result = true;
+
+        imshow("Processed Frame", rgbFrame);
+        imshow("Red Mask", mask);
     }
     return result;
 }
@@ -362,20 +371,15 @@ int main()
 
     // --- Pylon Initialization & Camera Loop ---
     auto pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
-    CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
-    ConfigureCamera(camera);
+    ConfigureCamera();
 
-    if (!PrimeCamera(camera, g_shutdown)) {
-        camera.StopGrabbing();
+    if (!PrimeCamera()) {
         throw std::runtime_error("Camera failed to start streaming images.");
     }
 
-    CGrabResultPtr ptrGrabResult;
-    bool target_found_last_frame = false;
-
     // --- Main Loop ---
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
-    while (!g_shutdown && camera.IsGrabbing())
+    while (!g_shutdown && g_camera.IsGrabbing())
     {   
         int key = waitKey(1);
 
@@ -398,27 +402,22 @@ int main()
         auto loopStopwatch = ScopedStopwatch(loopTiming);
         
         auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-        if (!camera.RetrieveResult(200, ptrGrabResult, TimeoutHandling_Return))
+        if (!g_camera.RetrieveResult(200, g_ptrGrabResult, TimeoutHandling_Return))
         {
             cerr << "Error: Camera failed to retrieve result!" << endl;
             continue;
         }
         retrieveStopwatch.Stop();
 
-        double offsetX = 0, offsetY = 0;
-        Mat rgbFrame, mask;
-        if (!ProcessFrame(ptrGrabResult, camera, offsetX, offsetY, rgbFrame, mask, target_found_last_frame, processingTiming))
+        if (!ProcessFrame(processingTiming))
         {
             cerr << "Error: Failed to process frame!" << endl;
             continue;
         }
 
         auto motionStopwatch = ScopedStopwatch(motionTiming);
-        MoveMotorsWithLimits(offsetX, offsetY);
+        MoveMotorsWithLimits();
         motionStopwatch.Stop();
-
-        imshow("Processed Frame", rgbFrame);
-        imshow("Red Mask", mask);
     }
 
     // Print loop statistics
