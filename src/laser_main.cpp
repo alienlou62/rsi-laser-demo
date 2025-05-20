@@ -390,7 +390,7 @@ int main()
     SampleAppsHelper::PrintHeader(SAMPLE_APP_NAME);
     int exitCode = 0;
 
-    InitializeRMP();
+    // InitializeRMP();
 
     // --- Pylon Initialization & Camera Loop ---
     auto pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
@@ -420,36 +420,55 @@ int main()
         }
         retrieveStopwatch.Stop();
 
-        if (!ProcessFrame(processingTiming))
+        Mat rgbFrame;
+        int width = g_ptrGrabResult->GetWidth();
+        int height = g_ptrGrabResult->GetHeight();
+        const uint8_t *pImageBuffer = (uint8_t *)g_ptrGrabResult->GetBuffer();
+        Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
+        if (bayerFrame.empty())
         {
-            // how many times are we failign to process**
-            cerr << "Error: Failed to process frame!" << endl;
-            ++processFailures;
+            cerr << "Error: Retrieved empty bayer frame!" << endl;
+            ++grabFailures;
             continue;
         }
+        else
+        {
+            // Convert Bayer to RGB
+            cvtColor(bayerFrame, rgbFrame, COLOR_BayerBG2RGB);
+            imshow("RGB Frame", rgbFrame);
+            waitKey(1);
+        }
 
-        // Only stop/resume if the flag changed
-        bool paused = g_paused; // Avoid reading the flag multiple times since its volatile
-        if (paused && !lastPaused)
-            g_multiAxis->Stop();
-        else if (!paused && lastPaused)
-            g_multiAxis->Resume();
-        lastPaused = paused;
+        // if (!ProcessFrame(processingTiming))
+        // {
+        //     // how many times are we failign to process**
+        //     cerr << "Error: Failed to process frame!" << endl;
+        //     ++processFailures;
+        //     continue;
+        // }
 
-        auto motionStopwatch = ScopedStopwatch(motionTiming);
+        // // Only stop/resume if the flag changed
+        // bool paused = g_paused; // Avoid reading the flag multiple times since its volatile
+        // if (paused && !lastPaused)
+        //     g_multiAxis->Stop();
+        // else if (!paused && lastPaused)
+        //     g_multiAxis->Resume();
+        // lastPaused = paused;
+
+        // auto motionStopwatch = ScopedStopwatch(motionTiming);
         // MoveMotorsWithLimits();
-        motionStopwatch.Stop();
+        // motionStopwatch.Stop();
     }
 
     // Print loop statistics
     printStats("Loop", loopTiming);
     printStats("Retrieve", retrieveTiming);
-    printStats("Processing", processingTiming);
-    printStats("Motion", motionTiming);
+    // printStats("Processing", processingTiming);
+    // printStats("Motion", motionTiming);
 
     cout << "--------------------------------------------" << endl;
     cout << "Grab Failures:     " << grabFailures << endl;
-    cout << "Process Failures:  " << processFailures << endl;
+    // cout << "Process Failures:  " << processFailures << endl;
 
     destroyAllWindows();
 
