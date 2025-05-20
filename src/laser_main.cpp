@@ -171,6 +171,58 @@ void MoveMotorsWithLimits(double offsetX, double offsetY)
     }
 }
 
+// --- Camera Setup and Priming Utilities ---
+void ConfigureCamera(CInstantCamera& camera) {
+    cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << endl;
+    camera.Open();
+
+    CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
+    // Lock TLParams
+    GenApi::CIntegerPtr tlLocked(camera.GetTLNodeMap().GetNode("TLParamsLocked"));
+    if (IsAvailable(tlLocked) && IsWritable(tlLocked)) {
+        tlLocked->SetValue(1);
+    }
+    camera.StartGrabbing(GrabStrategy_OneByOne);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Let it warm up
+    if (IsAvailable(tlLocked) && IsWritable(tlLocked)) {
+        tlLocked->SetValue(0);
+    }
+}
+
+bool PrimeCamera(CInstantCamera& camera, volatile sig_atomic_t& shutdownFlag) {
+    std::cout << "Checking camera grabbing status after StartGrabbing..." << std::endl;
+    if (!camera.IsGrabbing()) {
+        std::cerr << "Error: Camera is NOT grabbing after StartGrabbing call!" << std::endl;
+        return false;
+    }
+    std::cout << "Camera is confirmed to be grabbing." << std::endl;
+    std::cout << "Camera grabbing started." << std::endl;
+
+    bool grabbedFirstFrame = false;
+    auto startTime = std::chrono::steady_clock::now();
+    while (!shutdownFlag && camera.IsGrabbing()) {
+        try {
+            CGrabResultPtr grabResult;
+            camera.RetrieveResult(5000, grabResult, TimeoutHandling_Return);
+            if (grabResult && grabResult->GrabSucceeded()) {
+                grabbedFirstFrame = true;
+                std::cout << "Priming: First frame grabbed successfully." << std::endl;
+                break;
+            }
+        } catch (const GenericException &e) {
+            std::cerr << "Exception during priming grab: " << e.GetDescription() << std::endl;
+        }
+
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() > 10) {
+            std::cerr << "Timeout waiting for first frame. Exiting startup." << std::endl;
+            shutdownFlag = 1;
+            break;
+        }
+    }
+    return grabbedFirstFrame;
+}
+
 // --- Image Processing Function ---
 bool ProcessFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, double& offsetX, double& offsetY, Mat& rgbFrame, Mat& mask, bool& target_found_last_frame, TimingStats& processingTiming) {
     auto processingStopwatch = ScopedStopwatch(processingTiming);
@@ -298,55 +350,6 @@ bool ProcessFrame(const CGrabResultPtr& ptrGrabResult, CInstantCamera& camera, d
     return result;
 }
 
-// --- Camera Setup and Priming Utilities ---
-void ConfigureCamera(CInstantCamera& camera) {
-    CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
-    // Lock TLParams
-    GenApi::CIntegerPtr tlLocked(camera.GetTLNodeMap().GetNode("TLParamsLocked"));
-    if (IsAvailable(tlLocked) && IsWritable(tlLocked)) {
-        tlLocked->SetValue(1);
-    }
-    camera.StartGrabbing(GrabStrategy_OneByOne);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // Let it warm up
-    if (IsAvailable(tlLocked) && IsWritable(tlLocked)) {
-        tlLocked->SetValue(0);
-    }
-}
-
-bool PrimeCamera(CInstantCamera& camera, volatile sig_atomic_t& shutdownFlag) {
-    std::cout << "Checking camera grabbing status after StartGrabbing..." << std::endl;
-    if (!camera.IsGrabbing()) {
-        std::cerr << "Error: Camera is NOT grabbing after StartGrabbing call!" << std::endl;
-        return false;
-    }
-    std::cout << "Camera is confirmed to be grabbing." << std::endl;
-    std::cout << "Camera grabbing started." << std::endl;
-
-    bool grabbedFirstFrame = false;
-    auto startTime = std::chrono::steady_clock::now();
-    while (!shutdownFlag && camera.IsGrabbing()) {
-        try {
-            CGrabResultPtr grabResult;
-            camera.RetrieveResult(5000, grabResult, TimeoutHandling_Return);
-            if (grabResult && grabResult->GrabSucceeded()) {
-                grabbedFirstFrame = true;
-                std::cout << "Priming: First frame grabbed successfully." << std::endl;
-                break;
-            }
-        } catch (const GenericException &e) {
-            std::cerr << "Exception during priming grab: " << e.GetDescription() << std::endl;
-        }
-
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() > 10) {
-            std::cerr << "Timeout waiting for first frame. Exiting startup." << std::endl;
-            shutdownFlag = 1;
-            break;
-        }
-    }
-    return grabbedFirstFrame;
-}
-
 // --- Main Function ---
 int main()
 {
@@ -360,9 +363,6 @@ int main()
     // --- Pylon Initialization & Camera Loop ---
     auto pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
     CInstantCamera camera(CTlFactory::GetInstance().CreateFirstDevice());
-    cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << endl;
-    camera.Open();
-
     ConfigureCamera(camera);
 
     if (!PrimeCamera(camera, g_shutdown)) {
@@ -377,40 +377,6 @@ int main()
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
     while (!g_shutdown && camera.IsGrabbing())
     {   
-        ScopedRateLimiter rateLimiter(loopInterval);
-        auto loopStopwatch = ScopedStopwatch(loopTiming);
-        
-        try
-        {
-            auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-            camera.RetrieveResult(200, ptrGrabResult, TimeoutHandling_Return);
-        }
-        catch (const TimeoutException &timeout_e)
-        {
-            cerr << "Camera Retrieve Timeout: " << timeout_e.GetDescription() << endl;
-            continue;
-        }
-
-        double offsetX = 0, offsetY = 0;
-        Mat rgbFrame, mask;
-        bool processed = false;
-        if (ptrGrabResult->GrabSucceeded())
-        {
-            cout << "Grab succeeded" << endl;
-            processed = ProcessFrame(ptrGrabResult, camera, offsetX, offsetY, rgbFrame, mask, target_found_last_frame, processingTiming);
-        }
-
-        if (processed)
-        {
-            auto motionStopwatch = ScopedStopwatch(motionTiming);
-            MoveMotorsWithLimits(offsetX, offsetY);
-            motionStopwatch.Stop();
-
-            imshow("Processed Frame", rgbFrame);
-            imshow("Red Mask", mask);
-        }
-
-        // --- WaitKey immediately after imshow ---
         int key = waitKey(1);
 
         if (key == 'q' || key == 'Q')
@@ -427,6 +393,32 @@ int main()
             cout << "ESC pressed, initiating shutdown..." << endl;
             break;                 // <<< immediately break from loop
         }
+
+        ScopedRateLimiter rateLimiter(loopInterval);
+        auto loopStopwatch = ScopedStopwatch(loopTiming);
+        
+        auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
+        if (!camera.RetrieveResult(200, ptrGrabResult, TimeoutHandling_Return))
+        {
+            cerr << "Error: Camera failed to retrieve result!" << endl;
+            continue;
+        }
+        retrieveStopwatch.Stop();
+
+        double offsetX = 0, offsetY = 0;
+        Mat rgbFrame, mask;
+        if (!ProcessFrame(ptrGrabResult, camera, offsetX, offsetY, rgbFrame, mask, target_found_last_frame, processingTiming))
+        {
+            cerr << "Error: Failed to process frame!" << endl;
+            continue;
+        }
+
+        auto motionStopwatch = ScopedStopwatch(motionTiming);
+        MoveMotorsWithLimits(offsetX, offsetY);
+        motionStopwatch.Stop();
+
+        imshow("Processed Frame", rgbFrame);
+        imshow("Red Mask", mask);
     }
 
     // Print loop statistics
@@ -436,12 +428,6 @@ int main()
     printStats("Motion", motionTiming);
 
     destroyAllWindows();
-
-    cout << "Stopping camera grabbing..." << endl;
-    camera.StopGrabbing();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Let buffers clear
-    camera.Close();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Allow graceful camera closing
     
     SampleAppsHelper::PrintFooter(SAMPLE_APP_NAME, exitCode);
 
