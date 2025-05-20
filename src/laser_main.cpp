@@ -243,10 +243,10 @@ bool PrimeCamera()
 }
 
 // --- Image Processing Function ---
-bool ProcessFrame(TimingStats &processingTiming)
+bool ProcessFrame(TimingStats &processingTiming, Mat& rgbFrame)
 {
     auto processingStopwatch = ScopedStopwatch(processingTiming);
-    Mat rgbFrame, mask;
+    Mat mask;
     static bool target_found_last_frame = false;
     bool target_currently_found = false;
     bool result = false;
@@ -254,122 +254,90 @@ bool ProcessFrame(TimingStats &processingTiming)
     int width = g_ptrGrabResult->GetWidth();
     int height = g_ptrGrabResult->GetHeight();
 
-    std::cout << "Pixel type raw value: " << g_ptrGrabResult->GetPixelType() << std::endl;
-    CEnumerationPtr pixelFormatNode(g_camera.GetNodeMap().GetNode("PixelFormat"));
-    if (IsAvailable(pixelFormatNode))
+    // OpenCV Processing
+    GaussianBlur(rgbFrame, rgbFrame, Size(5, 5), 0);
+    Mat hsvFrame;
+    cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
+
+    // Define a range for your ball color (not red)
+    Scalar lower_ball(lowH, lowS, lowV);
+    Scalar upper_ball(highH, highS, highV);
+
+    // Create mask
+    inRange(hsvFrame, lower_ball, upper_ball, mask);
+
+    // Morphological operations
+    Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
+    erode(mask, mask, kernel);
+    dilate(mask, mask, kernel);
+    // Optional extra smoothing step to close internal gaps
+    morphologyEx(mask, mask, MORPH_CLOSE, kernel);
+
+    // Continue with contours
+    vector<vector<Point>> contours;
+    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+    // Remove small contours by area
+    contours.erase(
+        std::remove_if(contours.begin(), contours.end(),
+                        [](const vector<Point> &c)
+                        {
+                            return contourArea(c) < 500.0; // adjust threshold
+                        }),
+        contours.end());
+
+    int largestContourIndex = -1;
+    double largestContourArea = 0;
+
+    if (contours.empty())
     {
-        cout << "PixelFormat (string): " << pixelFormatNode->ToString() << endl;
+        cout << "contours empty" << endl;
     }
     else
     {
-        cout << "PixelFormat node not available!" << endl;
-    }
-
-    /*if (ptrGrabResult->GetPixelType() != Pylon::PixelType_BayerBG8)
-    {
-        cerr << "Error: Unexpected pixel format received: "
-             << Pylon::CPixelTypeMapper::GetNameByPixelType(ptrGrabResult->GetPixelType())
-             << ". Expected BayerBG8." << endl;
-        processingStopwatch.Stop();
-        return false;
-    }*/
-
-    const uint8_t *pImageBuffer = (uint8_t *)g_ptrGrabResult->GetBuffer();
-    Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
-    if (bayerFrame.empty())
-    {
-        cerr << "Error: Retrieved empty bayer frame!" << endl;
-    }
-    else
-    {
-        // Convert Bayer to RGB
-        cvtColor(bayerFrame, rgbFrame, COLOR_BayerBG2RGB);
-
-        // OpenCV Processing
-        GaussianBlur(rgbFrame, rgbFrame, Size(5, 5), 0);
-        Mat hsvFrame;
-        cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
-
-        // Define a range for your ball color (not red)
-        Scalar lower_ball(lowH, lowS, lowV);
-        Scalar upper_ball(highH, highS, highV);
-
-        // Create mask
-        inRange(hsvFrame, lower_ball, upper_ball, mask);
-
-        // Morphological operations
-        Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
-        erode(mask, mask, kernel);
-        dilate(mask, mask, kernel);
-        // Optional extra smoothing step to close internal gaps
-        morphologyEx(mask, mask, MORPH_CLOSE, kernel);
-
-        // Continue with contours
-        vector<vector<Point>> contours;
-        findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-        // Remove small contours by area
-        contours.erase(
-            std::remove_if(contours.begin(), contours.end(),
-                           [](const vector<Point> &c)
-                           {
-                               return contourArea(c) < 500.0; // adjust threshold
-                           }),
-            contours.end());
-
-        int largestContourIndex = -1;
-        double largestContourArea = 0;
-
-        if (contours.empty())
+        for (int i = 0; i < contours.size(); i++)
         {
-            cout << "contours empty" << endl;
-        }
-        else
-        {
-            for (int i = 0; i < contours.size(); i++)
+            double area = contourArea(contours[i]);
+            std::cout << "[DEBUG] Contour #" << i << " — Area: " << area << std::endl;
+
+            if (area > largestContourArea)
             {
-                double area = contourArea(contours[i]);
-                std::cout << "[DEBUG] Contour #" << i << " — Area: " << area << std::endl;
-
-                if (area > largestContourArea)
-                {
-                    largestContourArea = area;
-                    largestContourIndex = i;
-                }
+                largestContourArea = area;
+                largestContourIndex = i;
             }
         }
-
-        if (largestContourIndex != -1)
-        {
-            Point2f center;
-            float radius;
-            minEnclosingCircle(contours[largestContourIndex], center, radius);
-            std::cout << "Detected radius: " << radius << std::endl;
-            if (radius > MIN_CIRCLE_RADIUS)
-            {
-                target_currently_found = true;
-                target_found_last_frame = true;
-                circle(rgbFrame, center, (int)radius, Scalar(0, 255, 0), 2);
-                circle(rgbFrame, center, 5, Scalar(0, 255, 0), -1);
-                circle(rgbFrame, Point(CENTER_X, CENTER_Y), DEAD_ZONE, Scalar(0, 0, 255), 1);
-
-                g_offsetX = center.x - CENTER_X;
-                g_offsetY = center.y - CENTER_Y;
-            }
-        }
-
-        if (!target_currently_found && target_found_last_frame)
-        {
-            printf("Target lost, stopping motors.\n");
-            g_offsetX = 0;
-            g_offsetY = 0;
-            target_found_last_frame = false;
-        }
-        result = true;
-
-        imshow("Processed Frame", rgbFrame);
-        imshow("Red Mask", mask);
     }
+
+    if (largestContourIndex != -1)
+    {
+        Point2f center;
+        float radius;
+        minEnclosingCircle(contours[largestContourIndex], center, radius);
+        std::cout << "Detected radius: " << radius << std::endl;
+        if (radius > MIN_CIRCLE_RADIUS)
+        {
+            target_currently_found = true;
+            target_found_last_frame = true;
+            circle(rgbFrame, center, (int)radius, Scalar(0, 255, 0), 2);
+            circle(rgbFrame, center, 5, Scalar(0, 255, 0), -1);
+            circle(rgbFrame, Point(CENTER_X, CENTER_Y), DEAD_ZONE, Scalar(0, 0, 255), 1);
+
+            g_offsetX = center.x - CENTER_X;
+            g_offsetY = center.y - CENTER_Y;
+        }
+    }
+
+    if (!target_currently_found && target_found_last_frame)
+    {
+        printf("Target lost, stopping motors.\n");
+        g_offsetX = 0;
+        g_offsetY = 0;
+        target_found_last_frame = false;
+    }
+    result = true;
+
+    imshow("Processed Frame", rgbFrame);
+    imshow("Red Mask", mask);
     return result;
 }
 
@@ -472,13 +440,13 @@ int main()
         }
 
 
-        // if (!ProcessFrame(processingTiming))
-        // {
-        //     // how many times are we failign to process**
-        //     cerr << "Error: Failed to process frame!" << endl;
-        //     ++processFailures;
-        //     continue;
-        // }
+        if (!ProcessFrame(processingTiming, rgbFrame))
+        {
+            // how many times are we failign to process**
+            cerr << "Error: Failed to process frame!" << endl;
+            ++processFailures;
+            continue;
+        }
 
         // // Only stop/resume if the flag changed
         // bool paused = g_paused; // Avoid reading the flag multiple times since its volatile
