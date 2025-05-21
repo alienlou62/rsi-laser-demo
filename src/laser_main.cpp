@@ -76,12 +76,11 @@ shared_ptr<MotionController> CreateController()
     strncpy(createParams.NicPrimary, "enp3s0", createParams.PathLengthMaximum); // *** VERIFY ***
 
     shared_ptr<MotionController> controller(MotionController::Create(&createParams),
-        [](MotionController *controller)
-        {
-            controller->Delete();
-            controller = nullptr;
-        }
-    );
+                                            [](MotionController *controller)
+                                            {
+                                                controller->Delete();
+                                                controller = nullptr;
+                                            });
 
     SampleAppsHelper::CheckErrors(controller.get());
     printf("RSI Controller Created!\n");
@@ -97,13 +96,12 @@ shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
     // Add a motion supervisor for the multiaxis
     controller->AxisCountSet(NUM_AXES + 1);
     shared_ptr<MultiAxis> multiAxis(controller->MultiAxisGet(NUM_AXES),
-        [](MultiAxis *multiAxis)
-        {
-            multiAxis->Abort();
-            multiAxis->ClearFaults();
-            multiAxis = nullptr;
-        }
-    );
+                                    [](MultiAxis *multiAxis)
+                                    {
+                                        multiAxis->Abort();
+                                        multiAxis->ClearFaults();
+                                        multiAxis = nullptr;
+                                    });
     SampleAppsHelper::CheckErrors(multiAxis.get());
 
     for (int i = 0; i < NUM_AXES; i++)
@@ -196,25 +194,32 @@ void ConfigureCamera()
     cout << "Using device: " << g_camera.GetDeviceInfo().GetModelName() << endl;
     g_camera.Open();
 
-    CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap()); 
+    CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap());
     INodeMap &nodemap = g_camera.GetNodeMap();
 }
 
-
-bool TryGrabFrame(int timeoutMs = 0, std::ostream& errOut = std::cerr) {
-    try {
+bool TryGrabFrame(int timeoutMs = TIMEOUT_MS, std::ostream &errOut = std::cerr)
+{
+    try
+    {
         g_camera.RetrieveResult(timeoutMs, g_ptrGrabResult, TimeoutHandling_ThrowException);
-    } catch (const GenericException& e) {
+    }
+    catch (const GenericException &e)
+    {
         errOut << "Exception during frame grab: " << e.GetDescription() << std::endl;
         return false;
     }
 
     // Check if the grab result is valid
-    if (!g_ptrGrabResult || !g_ptrGrabResult->GrabSucceeded()) {
+    if (!g_ptrGrabResult || !g_ptrGrabResult->GrabSucceeded())
+    {
         errOut << "Camera grab failed: ";
-        if (!g_ptrGrabResult) {
+        if (!g_ptrGrabResult)
+        {
             errOut << "Result pointer is null." << std::endl;
-        } else {
+        }
+        else
+        {
             errOut << "Code " << g_ptrGrabResult->GetErrorCode()
                    << ", Desc: " << g_ptrGrabResult->GetErrorDescription() << std::endl;
         }
@@ -223,7 +228,7 @@ bool TryGrabFrame(int timeoutMs = 0, std::ostream& errOut = std::cerr) {
     return true;
 }
 
-bool PrimeCamera(std::ostream& errOut = std::cerr)
+bool PrimeCamera(std::ostream &errOut = std::cerr)
 {
     g_camera.StartGrabbing(GrabStrategy_LatestImageOnly);
     int retries = 0;
@@ -231,7 +236,8 @@ bool PrimeCamera(std::ostream& errOut = std::cerr)
 
     while (retries < MAX_RETRIES)
     {
-        if (TryGrabFrame(TIMEOUT_MS, errorStream)) {
+        if (TryGrabFrame(TIMEOUT_MS, errorStream))
+        {
             std::cout << "Priming: First frame grabbed successfully." << std::endl;
             return true;
         }
@@ -244,9 +250,10 @@ bool PrimeCamera(std::ostream& errOut = std::cerr)
 }
 
 // --- Image Processing Function ---
-bool ConvertToRGB(Mat& rgbFrame, std::ostream& errOut = std::cerr)
+bool ConvertToRGB(Mat &outRgbFrame, std::ostream &errOut = std::cerr)
 {
-    if (!g_ptrGrabResult) {
+    if (!g_ptrGrabResult)
+    {
         errOut << "Error: Grab result is null!" << endl;
         return false;
     }
@@ -255,50 +262,62 @@ bool ConvertToRGB(Mat& rgbFrame, std::ostream& errOut = std::cerr)
     int height = g_ptrGrabResult->GetHeight();
     const uint8_t *pImageBuffer = static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer());
 
-    if (!pImageBuffer) {
+    if (!pImageBuffer)
+    {
         errOut << "Error: Image buffer is null!" << endl;
         return false;
     }
-    if (width <= 0 || height <= 0) {
+    if (width <= 0 || height <= 0)
+    {
         errOut << "Error: Invalid image dimensions! Width: " << width << ", Height: " << height << endl;
         return false;
     }
 
     Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
-    if (bayerFrame.empty()) {
+    if (bayerFrame.empty())
+    {
         errOut << "Error: Retrieved empty bayer frame!" << endl;
         return false;
     }
 
-    try {
+    try
+    {
         // Convert Bayer to RGB
-        Mat rgbFrame(height, width, CV_8UC3);
-        cvtColor(bayerFrame, rgbFrame, COLOR_BayerBG2RGB);
+        cvtColor(bayerFrame, outRgbFrame, COLOR_BayerBG2RGB);
 
-        if (rgbFrame.empty()) {
+        if (outRgbFrame.empty())
+        {
             errOut << "Error: Bayer-to-RGB conversion produced empty frame!" << endl;
             return false;
         }
+
         return true; // Successfully converted
-    } catch (const cv::Exception &e) {
+    }
+    catch (const cv::Exception &e)
+    {
         errOut << "OpenCV exception during Bayer-to-RGB conversion: " << e.what() << endl;
         return false;
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception &e)
+    {
         errOut << "Standard exception during Bayer-to-RGB conversion: " << e.what() << endl;
         return false;
-    } catch (...) {
+    }
+    catch (...)
+    {
         errOut << "Unknown error during Bayer-to-RGB conversion." << endl;
         return false;
     }
     return false; // Fallback in case of failure
 }
 
-bool ProcessFrame(TimingStats &processingTiming, std::ostream& errOut = std::cerr)
+bool ProcessFrame(TimingStats &processingTiming, std::ostream &errOut = std::cerr)
 {
     auto processingStopwatch = ScopedStopwatch(processingTiming);
 
     Mat rgbFrame;
-    if (!ConvertToRGB(rgbFrame, errOut)) {
+    if (!ConvertToRGB(rgbFrame, errOut))
+    {
         errOut << "Error: Failed to convert frame to RGB!" << endl;
         return false;
     }
@@ -308,7 +327,7 @@ bool ProcessFrame(TimingStats &processingTiming, std::ostream& errOut = std::cer
     bool result = false;
 
     // OpenCV Processing
-    GaussianBlur(rgbFrame, rgbFrame, Size(5, 5), 0);
+    // GaussianBlur(rgbFrame, rgbFrame, Size(5, 5), 0);
     Mat hsvFrame;
     cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
 
@@ -321,10 +340,10 @@ bool ProcessFrame(TimingStats &processingTiming, std::ostream& errOut = std::cer
     inRange(hsvFrame, lower_ball, upper_ball, mask);
 
     // Morphological operations
-    Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
-    erode(mask, mask, kernel);
-    dilate(mask, mask, kernel);
-    // Optional extra smoothing step to close internal gaps
+    Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+    // erode(mask, mask, kernel);
+    // dilate(mask, mask, kernel);
+    //  Optional extra smoothing step to close internal gaps
     morphologyEx(mask, mask, MORPH_CLOSE, kernel);
 
     // Continue with contours
@@ -334,10 +353,10 @@ bool ProcessFrame(TimingStats &processingTiming, std::ostream& errOut = std::cer
     // Remove small contours by area
     contours.erase(
         std::remove_if(contours.begin(), contours.end(),
-                        [](const vector<Point> &c)
-                        {
-                            return contourArea(c) < 500.0; // adjust threshold
-                        }),
+                       [](const vector<Point> &c)
+                       {
+                           return contourArea(c) < 700.0; // adjust threshold
+                       }),
         contours.end());
 
     int largestContourIndex = -1;
@@ -424,12 +443,20 @@ int main()
         ScopedRateLimiter rateLimiter(loopInterval);
         auto loopStopwatch = ScopedStopwatch(loopTiming);
 
-        { 
+        {
             auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-            if (!TryGrabFrame()) { ++grabFailures; continue; }
+            if (!TryGrabFrame())
+            {
+                ++grabFailures;
+                continue;
+            }
         }
 
-        if (!ProcessFrame(processingTiming)) { ++processFailures; continue; }
+        if (!ProcessFrame(processingTiming))
+        {
+            ++processFailures;
+            continue;
+        }
 
         // Only stop/resume if the flag changed
         bool paused = g_paused; // Avoid reading the flag multiple times since its volatile
@@ -439,7 +466,7 @@ int main()
             g_multiAxis->Resume();
         lastPaused = paused;
 
-        { 
+        {
             auto motionStopwatch = ScopedStopwatch(motionTiming);
             MoveMotorsWithLimits();
         }
