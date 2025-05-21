@@ -313,12 +313,11 @@ bool ConvertToRGB(Mat &outRgbFrame, TimingStats &convertTiming, std::ostream &er
     return false; // Fallback in case of failure
 }
 
-bool ProcessFrame(TimingStats &processingTiming, std::ostream &errOut = std::cerr)
+bool ProcessFrame(TimingStats &processingTiming, TimingStats &convertTiming, std::ostream &errOut = std::cerr)
 {
     auto processingStopwatch = ScopedStopwatch(processingTiming);
 
     Mat rgbFrame;
-    static TimingStats convertTiming;
     if (!ConvertToRGB(rgbFrame, convertTiming, errOut))
     {
 
@@ -456,7 +455,7 @@ int main()
             }
         }
 
-        if (!ProcessFrame(processingTiming))
+        if (!ProcessFrame(processingTiming, convertTiming))
         {
             ++processFailures;
             continue;
