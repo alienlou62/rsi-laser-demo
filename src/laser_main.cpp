@@ -54,6 +54,7 @@ int grabFailures = 0;
 int processFailures = 0;
 
 // --- Global Variables ---
+PylonAutoInitTerm g_pylonAutoInitTerm = PylonAutoInitTerm();
 CInstantCamera g_camera;
 CGrabResultPtr g_ptrGrabResult;
 
@@ -355,7 +356,6 @@ int main()
     InitializeRMP();
 
     // --- Pylon Initialization & Camera Loop ---
-    auto pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
     ConfigureCamera();
 
     if (!PrimeCamera())
