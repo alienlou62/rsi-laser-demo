@@ -222,7 +222,7 @@ bool TryGrabFrame(int timeoutMs = TIMEOUT_MS, std::ostream& errOut = std::cerr) 
     return true;
 }
 
-bool PrimeCamera()
+bool PrimeCamera(std::ostream& errOut = std::cerr)
 {
     g_camera.StartGrabbing(GrabStrategy_LatestImageOnly);
     int retries = 0;
@@ -237,24 +237,74 @@ bool PrimeCamera()
         retries++;
     }
 
-    std::cerr << "Failed to grab a frame during priming after " << MAX_RETRIES << " retries." << std::endl;
-    std::cerr << errorStream.str(); // Output all accumulated error messages
+    errOut << "Failed to grab a frame during priming after " << MAX_RETRIES << " retries." << std::endl;
+    errOut << errorStream.str(); // Output all accumulated error messages
     return false;
 }
 
 // --- Image Processing Function ---
-
-
-bool ProcessFrame(Mat& rgbFrame, TimingStats &processingTiming)
+bool ConvertToRGB(Mat& rgbFrame, std::ostream& errOut = std::cerr)
 {
-    auto processingStopwatch = ScopedStopwatch(processingTiming);
-    Mat mask;
-    static bool target_found_last_frame = false;
-    bool target_currently_found = false;
-    bool result = false;
+    if (!g_ptrGrabResult) {
+        errOut << "Error: Grab result is null!" << endl;
+        return false;
+    }
 
     int width = g_ptrGrabResult->GetWidth();
     int height = g_ptrGrabResult->GetHeight();
+    const uint8_t *pImageBuffer = static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer());
+
+    if (!pImageBuffer) {
+        errOut << "Error: Image buffer is null!" << endl;
+        return false;
+    }
+    if (width <= 0 || height <= 0) {
+        errOut << "Error: Invalid image dimensions! Width: " << width << ", Height: " << height << endl;
+        return false;
+    }
+
+    Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
+    if (bayerFrame.empty()) {
+        errOut << "Error: Retrieved empty bayer frame!" << endl;
+        return false;
+    }
+
+    try {
+        // Convert Bayer to RGB
+        Mat rgbFrame(height, width, CV_8UC3);
+        cvtColor(bayerFrame, rgbFrame, COLOR_BayerBG2RGB);
+
+        if (rgbFrame.empty()) {
+            errOut << "Error: Bayer-to-RGB conversion produced empty frame!" << endl;
+            return false;
+        }
+        return true; // Successfully converted
+    } catch (const cv::Exception &e) {
+        errOut << "OpenCV exception during Bayer-to-RGB conversion: " << e.what() << endl;
+        return false;
+    } catch (const std::exception &e) {
+        errOut << "Standard exception during Bayer-to-RGB conversion: " << e.what() << endl;
+        return false;
+    } catch (...) {
+        errOut << "Unknown error during Bayer-to-RGB conversion." << endl;
+        return false;
+    }
+    return false; // Fallback in case of failure
+}
+
+bool ProcessFrame(TimingStats &processingTiming, std::ostream& errOut = std::cerr)
+{
+    auto processingStopwatch = ScopedStopwatch(processingTiming);
+
+    Mat rgbFrame;
+    if (!ConvertToRGB(rgbFrame, errOut)) {
+        errOut << "Error: Failed to convert frame to RGB!" << endl;
+        return false;
+    }
+
+    static bool target_found_last_frame = false;
+    bool target_currently_found = false;
+    bool result = false;
 
     // OpenCV Processing
     GaussianBlur(rgbFrame, rgbFrame, Size(5, 5), 0);
@@ -266,6 +316,7 @@ bool ProcessFrame(Mat& rgbFrame, TimingStats &processingTiming)
     Scalar upper_ball(highH, highS, highV);
 
     // Create mask
+    Mat mask;
     inRange(hsvFrame, lower_ball, upper_ball, mask);
 
     // Morphological operations
@@ -338,8 +389,9 @@ bool ProcessFrame(Mat& rgbFrame, TimingStats &processingTiming)
     }
     result = true;
 
-    imshow("Processed Frame", rgbFrame);
+    imshow("RGB Frame", rgbFrame);
     imshow("Red Mask", mask);
+    waitKey(1);
     return result;
 }
 
@@ -373,64 +425,11 @@ int main()
 
         { 
             auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-            if (!TryGrabFrame()) { continue; }
+            if (!TryGrabFrame()) { ++grabFailures; continue; }
         }
 
-        Mat rgbFrame;
-        int width = g_ptrGrabResult->GetWidth();
-        int height = g_ptrGrabResult->GetHeight();
-        const uint8_t *pImageBuffer = static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer());
-
-        if (!pImageBuffer) {
-            cerr << "Error: Image buffer is null!" << endl;
-            ++grabFailures;
-            continue;
-        }
-        if (width <= 0 || height <= 0) {
-            cerr << "Error: Invalid image dimensions! Width: " << width << ", Height: " << height << endl;
-            ++grabFailures;
-            continue;
-        }
-
-        Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
-        if (bayerFrame.empty()) {
-            cerr << "Error: Retrieved empty bayer frame!" << endl;
-            ++grabFailures;
-            continue;
-        }
-
-        // Try-catch around conversion for even more robustness
-        try {
-            // Convert Bayer to RGB
-            cvtColor(bayerFrame, rgbFrame, COLOR_BayerBG2RGB);
-
-            if (rgbFrame.empty()) {
-                cerr << "Error: Bayer-to-RGB conversion produced empty frame!" << endl;
-                ++grabFailures;
-                continue;
-            }
-
-            imshow("RGB Frame", rgbFrame);
-            waitKey(1);
-        } catch (const cv::Exception &e) {
-            cerr << "OpenCV exception during Bayer-to-RGB conversion: " << e.what() << endl;
-            ++grabFailures;
-            continue;
-        } catch (const std::exception &e) {
-            cerr << "Standard exception during Bayer-to-RGB conversion: " << e.what() << endl;
-            ++grabFailures;
-            continue;
-        } catch (...) {
-            cerr << "Unknown error during Bayer-to-RGB conversion." << endl;
-            ++grabFailures;
-            continue;
-        }
-
-
-        if (!ProcessFrame(rgbFrame, processingTiming))
+        if (!ProcessFrame(processingTiming))
         {
-            // how many times are we failign to process**
-            cerr << "Error: Failed to process frame!" << endl;
             ++processFailures;
             continue;
         }
@@ -443,9 +442,10 @@ int main()
             g_multiAxis->Resume();
         lastPaused = paused;
 
-        auto motionStopwatch = ScopedStopwatch(motionTiming);
-        MoveMotorsWithLimits();
-        motionStopwatch.Stop();
+        { 
+            auto motionStopwatch = ScopedStopwatch(motionTiming);
+            MoveMotorsWithLimits();
+        }
     }
 
     // Print loop statistics
