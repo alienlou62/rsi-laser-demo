@@ -50,7 +50,8 @@ const int highS = 255; // Upper Saturation
 const int lowV = 35;   // Lower Value
 const int highV = 190; // Upper Value
 
-const int TIMEOUT_MS = 50;
+// Priming Constants
+const int TIMEOUT_MS = 500;
 const int MAX_RETRIES = 10;
 
 int grabFailures = 0;
@@ -200,7 +201,7 @@ void ConfigureCamera()
 }
 
 
-bool TryGrabFrame(int timeoutMs = TIMEOUT_MS, std::ostream& errOut = std::cerr) {
+bool TryGrabFrame(int timeoutMs = 0, std::ostream& errOut = std::cerr) {
     try {
         g_camera.RetrieveResult(timeoutMs, g_ptrGrabResult, TimeoutHandling_ThrowException);
     } catch (const GenericException& e) {
@@ -428,11 +429,7 @@ int main()
             if (!TryGrabFrame()) { ++grabFailures; continue; }
         }
 
-        if (!ProcessFrame(processingTiming))
-        {
-            ++processFailures;
-            continue;
-        }
+        if (!ProcessFrame(processingTiming)) { ++processFailures; continue; }
 
         // Only stop/resume if the flag changed
         bool paused = g_paused; // Avoid reading the flag multiple times since its volatile
