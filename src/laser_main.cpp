@@ -50,6 +50,9 @@ const int highS = 255; // Upper Saturation
 const int lowV = 35;   // Lower Value
 const int highV = 190; // Upper Value
 
+const int TIMEOUT_MS = 50;
+const int MAX_RETRIES = 10;
+
 int grabFailures = 0;
 int processFailures = 0;
 
@@ -72,12 +75,12 @@ shared_ptr<MotionController> CreateController()
     strncpy(createParams.NicPrimary, "enp3s0", createParams.PathLengthMaximum); // *** VERIFY ***
 
     shared_ptr<MotionController> controller(MotionController::Create(&createParams),
-                                            [](MotionController *controller)
-                                            {
-                                                cout << "Deleting controller..." << endl;
-                                                controller->Delete();
-                                                controller = nullptr;
-                                            });
+        [](MotionController *controller)
+        {
+            controller->Delete();
+            controller = nullptr;
+        }
+    );
 
     SampleAppsHelper::CheckErrors(controller.get());
     printf("RSI Controller Created!\n");
@@ -93,13 +96,13 @@ shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
     // Add a motion supervisor for the multiaxis
     controller->AxisCountSet(NUM_AXES + 1);
     shared_ptr<MultiAxis> multiAxis(controller->MultiAxisGet(NUM_AXES),
-                                    [](MultiAxis *multiAxis)
-                                    {
-                                        cout << "Deleting multiAxis..." << endl;
-                                        multiAxis->Abort();
-                                        multiAxis->ClearFaults();
-                                        multiAxis = nullptr;
-                                    });
+        [](MultiAxis *multiAxis)
+        {
+            multiAxis->Abort();
+            multiAxis->ClearFaults();
+            multiAxis = nullptr;
+        }
+    );
     SampleAppsHelper::CheckErrors(multiAxis.get());
 
     for (int i = 0; i < NUM_AXES; i++)
@@ -194,57 +197,55 @@ void ConfigureCamera()
 
     CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap()); 
     INodeMap &nodemap = g_camera.GetNodeMap();
+}
 
-    // CBooleanPtr ptrFrameRateEnable(nodemap.GetNode("AcquisitionFrameRateEnable"));
-    // if (IsWritable(ptrFrameRateEnable))
-    //     ptrFrameRateEnable->SetValue(true);
 
-    // CFloatPtr ptrFrameRate(nodemap.GetNode("AcquisitionFrameRate"));
-    // if (IsWritable(ptrFrameRate))
-    // {
-    //     double desiredFps = 100.0;
-    //     ptrFrameRate->SetValue(desiredFps);
-    //     std::cout << "Frame rate set to " << ptrFrameRate->GetValue() << " FPS" << std::endl;
-    // }
+bool TryGrabFrame(int timeoutMs = TIMEOUT_MS, std::ostream& errOut = std::cerr) {
+    try {
+        g_camera.RetrieveResult(timeoutMs, g_ptrGrabResult, TimeoutHandling_ThrowException);
+    } catch (const GenericException& e) {
+        errOut << "Exception during frame grab: " << e.GetDescription() << std::endl;
+        return false;
+    }
+
+    // Check if the grab result is valid
+    if (!g_ptrGrabResult || !g_ptrGrabResult->GrabSucceeded()) {
+        errOut << "Camera grab failed: ";
+        if (!g_ptrGrabResult) {
+            errOut << "Result pointer is null." << std::endl;
+        } else {
+            errOut << "Code " << g_ptrGrabResult->GetErrorCode()
+                   << ", Desc: " << g_ptrGrabResult->GetErrorDescription() << std::endl;
+        }
+        return false;
+    }
+    return true;
 }
 
 bool PrimeCamera()
 {
     g_camera.StartGrabbing(GrabStrategy_LatestImageOnly);
+    int retries = 0;
+    std::ostringstream errorStream;
 
-    bool grabbedFirstFrame = false;
-    auto startTime = std::chrono::steady_clock::now();
-    while (!g_shutdown && g_camera.IsGrabbing())
+    while (retries < MAX_RETRIES)
     {
-        try
-        {
-            CGrabResultPtr grabResult;
-            g_camera.RetrieveResult(5000, grabResult, TimeoutHandling_Return);
-            if (grabResult && grabResult->GrabSucceeded())
-            {
-                grabbedFirstFrame = true;
-                std::cout << "Priming: First frame grabbed successfully." << std::endl;
-                break;
-            }
+        if (TryGrabFrame(TIMEOUT_MS, errorStream)) {
+            std::cout << "Priming: First frame grabbed successfully." << std::endl;
+            return true;
         }
-        catch (const GenericException &e)
-        {
-            std::cerr << "Exception during priming grab: " << e.GetDescription() << std::endl;
-        }
-
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - startTime).count() > 10)
-        {
-            std::cerr << "Timeout waiting for first frame. Exiting startup." << std::endl;
-            g_shutdown = true;
-            break;
-        }
+        retries++;
     }
-    return grabbedFirstFrame;
+
+    std::cerr << "Failed to grab a frame during priming after " << MAX_RETRIES << " retries." << std::endl;
+    std::cerr << errorStream.str(); // Output all accumulated error messages
+    return false;
 }
 
 // --- Image Processing Function ---
-bool ProcessFrame(TimingStats &processingTiming, Mat& rgbFrame)
+
+
+bool ProcessFrame(Mat& rgbFrame, TimingStats &processingTiming)
 {
     auto processingStopwatch = ScopedStopwatch(processingTiming);
     Mat mask;
@@ -357,7 +358,6 @@ int main()
 
     // --- Pylon Initialization & Camera Loop ---
     ConfigureCamera();
-
     if (!PrimeCamera())
     {
         throw std::runtime_error("Camera failed to start streaming images.");
@@ -371,23 +371,10 @@ int main()
         ScopedRateLimiter rateLimiter(loopInterval);
         auto loopStopwatch = ScopedStopwatch(loopTiming);
 
-        auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-        g_camera.RetrieveResult(200, g_ptrGrabResult, TimeoutHandling_Return);
-
-        if (!g_ptrGrabResult || !g_ptrGrabResult->GrabSucceeded()) {
-            cerr << "Error: Camera failed to retrieve result!" << endl;
-
-            if (!g_ptrGrabResult) {
-                cerr << "  Reason: Grab result pointer is null." << endl;
-            } else {
-                cerr << "  Error Code: " << g_ptrGrabResult->GetErrorCode() << endl;
-                cerr << "  Error Description: " << g_ptrGrabResult->GetErrorDescription() << endl;
-            }
-
-            ++grabFailures;
-            continue;
+        { 
+            auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
+            if (!TryGrabFrame()) { continue; }
         }
-        retrieveStopwatch.Stop();
 
         Mat rgbFrame;
         int width = g_ptrGrabResult->GetWidth();
@@ -440,7 +427,7 @@ int main()
         }
 
 
-        if (!ProcessFrame(processingTiming, rgbFrame))
+        if (!ProcessFrame(rgbFrame, processingTiming))
         {
             // how many times are we failign to process**
             cerr << "Error: Failed to process frame!" << endl;
