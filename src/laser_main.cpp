@@ -121,14 +121,14 @@ shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
     return multiAxis;
 }
 
-volatile sig_atomic_t g_shutdown = 0;
+volatile sig_atomic_t g_shutdown = false;
 void sigquit_handler(int signal)
 {
     cout << "SIGQUIT handler ran, setting shutdown flag..." << endl;
     g_shutdown = true;
 }
 
-volatile sig_atomic_t g_paused = 0;
+volatile sig_atomic_t g_paused = false;
 void sigint_handler(int signal)
 {
     cout << "SIGINT handler ran, toggling paused flag..." << endl;

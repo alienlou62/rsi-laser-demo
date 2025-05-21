@@ -35,9 +35,9 @@ set(RAPID_SOFTWARE_CMAKE_INCLUDED TRUE)
 # Version information
 set(RAPID_SOFTWARE_VERSION_MAJOR 10)
 set(RAPID_SOFTWARE_VERSION_MINOR 6)
-set(RAPID_SOFTWARE_VERSION_MICRO 7)
+set(RAPID_SOFTWARE_VERSION_MICRO 9)
 set(RAPID_SOFTWARE_VERSION_PATCH 0)
-set(RAPID_SOFTWARE_VERSION 10.6.7 CACHE STRING "Rapid Software version")
+set(RAPID_SOFTWARE_VERSION 10.6.9 CACHE STRING "Rapid Software version")
 
 # Figure out what platform we're building on.
 set(LINUX_BUILD FALSE)
@@ -71,7 +71,7 @@ endif()
 
 # Add targets for the RapidCode and RTTasks libraries
 add_library(rapidcode SHARED IMPORTED)
-# add_library(rttasks SHARED IMPORTED)
+add_library(rttasks SHARED IMPORTED)
 
 if (WINDOWS_BUILD OR INTIME_BUILD)
   # Include the CMake helper file for INtime builds
@@ -99,9 +99,9 @@ if (WINDOWS_BUILD OR INTIME_BUILD)
     )
   endif()
 
-  # list(APPEND RAPID_SOFTWARE_DLLS
-  #   ${RMP_DIR}/rttask.dll
-  # )
+  list(APPEND RAPID_SOFTWARE_DLLS
+    ${RMP_DIR}/rttask.dll
+  )
 
   # If the output directory for the DLLs is defined, then add a custom target to copy them
   if (DEFINED RAPID_SOFTWARE_DLLS_OUTPUT_DIR)
@@ -123,9 +123,9 @@ if (WINDOWS_BUILD OR INTIME_BUILD)
   )
 
   # Setup the RTTasks library target
-  # set_target_properties(rttasks PROPERTIES
-  #   IMPORTED_LOCATION ${RMP_DIR}
-  # )
+  set_target_properties(rttasks PROPERTIES
+    IMPORTED_LOCATION ${RMP_DIR}
+  )
 elseif (LINUX_BUILD)
   # Setup the RapidCode library target
   set_target_properties(rapidcode PROPERTIES
@@ -133,17 +133,16 @@ elseif (LINUX_BUILD)
   )
 
   # Setup the RTTasks library target
-  # set_target_properties(rttasks PROPERTIES
-  #   IMPORTED_LOCATION ${RMP_DIR}/librttasks.so
-  # )
+  set_target_properties(rttasks PROPERTIES
+    IMPORTED_LOCATION ${RMP_DIR}/librttasks.so
+  )
 endif()
 
 # Function to setup a target that uses RMP
 function(setup_rmp_target target)
   target_include_directories(${target} PUBLIC ${RMP_DIR}/include)
   target_link_libraries(${target} PUBLIC rapidcode)
-  # add_dependencies(${target} rapidcode rttasks)
-  add_dependencies(${target} rapidcode)
+  add_dependencies(${target} rapidcode rttasks)
   target_compile_definitions(${target} PUBLIC RMP_DEFAULT_PATH="${RMP_DIR}")
 
   # If we're on Windows, and RAPID_SOFTWARE_DLLS_OUTPUT_DIR is defined, then add
