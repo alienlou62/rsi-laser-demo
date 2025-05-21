@@ -196,12 +196,6 @@ void ConfigureCamera()
 
     CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap());
     INodeMap &nodemap = g_camera.GetNodeMap();
-
-    CEnumerationPtr pixelFormat(nodemap.GetNode("PixelFormat"));
-    if (IsAvailable(pixelFormat) && IsWritable(pixelFormat))
-    {
-        pixelFormat->FromString("YUV422");
-    }
 }
 
 bool TryGrabFrame(int timeoutMs = TIMEOUT_MS, std::ostream &errOut = std::cerr)
@@ -256,9 +250,10 @@ bool PrimeCamera(std::ostream &errOut = std::cerr)
 }
 
 // --- Image Processing Function ---
-bool ConvertToRGB(Mat &outRgbFrame, TimingStats& convertTiming, std::ostream &errOut = std::cerr)
+bool ConvertToRGB(Mat &outRgbFrame, TimingStats &convertTiming, std::ostream &errOut = std::cerr)
 {
     auto convertStopwatch = ScopedStopwatch(convertTiming);
+
     if (!g_ptrGrabResult)
     {
         errOut << "Error: Grab result is null!" << endl;
@@ -280,23 +275,21 @@ bool ConvertToRGB(Mat &outRgbFrame, TimingStats& convertTiming, std::ostream &er
         return false;
     }
 
-    // For YUYV, each pixel pair uses 4 bytes, so step = width * 2
-    Mat yuyvFrame(height, width, CV_8UC2, (void *)pImageBuffer);
-
-    if (yuyvFrame.empty())
+    Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
+    if (bayerFrame.empty())
     {
-        errOut << "Error: Retrieved empty YUYV frame!" << endl;
+        errOut << "Error: Retrieved empty bayer frame!" << endl;
         return false;
     }
 
     try
     {
-        // Convert YUYV to RGB
-        cvtColor(yuyvFrame, outRgbFrame, cv::COLOR_YUV2RGB_YUY2);
+        // Convert Bayer to RGB
+        cvtColor(bayerFrame, outRgbFrame, COLOR_BayerBG2RGB);
 
         if (outRgbFrame.empty())
         {
-            errOut << "Error: YUYV-to-RGB conversion produced empty frame!" << endl;
+            errOut << "Error: Bayer-to-RGB conversion produced empty frame!" << endl;
             return false;
         }
 
@@ -304,17 +297,17 @@ bool ConvertToRGB(Mat &outRgbFrame, TimingStats& convertTiming, std::ostream &er
     }
     catch (const cv::Exception &e)
     {
-        errOut << "OpenCV exception during YUYV-to-RGB conversion: " << e.what() << endl;
+        errOut << "OpenCV exception during Bayer-to-RGB conversion: " << e.what() << endl;
         return false;
     }
     catch (const std::exception &e)
     {
-        errOut << "Standard exception during YUYV-to-RGB conversion: " << e.what() << endl;
+        errOut << "Standard exception during Bayer-to-RGB conversion: " << e.what() << endl;
         return false;
     }
     catch (...)
     {
-        errOut << "Unknown error during YUYV-to-RGB conversion." << endl;
+        errOut << "Unknown error during Bayer-to-RGB conversion." << endl;
         return false;
     }
     return false; // Fallback in case of failure
