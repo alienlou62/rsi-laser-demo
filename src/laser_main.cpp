@@ -250,8 +250,10 @@ bool PrimeCamera(std::ostream &errOut = std::cerr)
 }
 
 // --- Image Processing Function ---
-bool ConvertToRGB(Mat &outRgbFrame, std::ostream &errOut = std::cerr)
+bool ConvertToRGB(Mat &outRgbFrame, TimingStats &convertTiming, std::ostream &errOut = std::cerr)
 {
+    auto convertStopwatch = ScopedStopwatch(convertTiming);
+
     if (!g_ptrGrabResult)
     {
         errOut << "Error: Grab result is null!" << endl;
@@ -316,8 +318,10 @@ bool ProcessFrame(TimingStats &processingTiming, std::ostream &errOut = std::cer
     auto processingStopwatch = ScopedStopwatch(processingTiming);
 
     Mat rgbFrame;
-    if (!ConvertToRGB(rgbFrame, errOut))
+    static TimingStats convertTiming;
+    if (!ConvertToRGB(rgbFrame, convertTiming, errOut))
     {
+
         errOut << "Error: Failed to convert frame to RGB!" << endl;
         return false;
     }
@@ -437,7 +441,7 @@ int main()
 
     // --- Main Loop ---
     bool lastPaused = false;
-    TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
+    TimingStats loopTiming, retrieveTiming, processingTiming, convertTiming, motionTiming;
     while (!g_shutdown && g_camera.IsGrabbing())
     {
         ScopedRateLimiter rateLimiter(loopInterval);
@@ -476,6 +480,7 @@ int main()
     printStats("Loop", loopTiming);
     printStats("Retrieve", retrieveTiming);
     printStats("Processing", processingTiming);
+    printStats("ConvertToRGB", convertTiming);
     printStats("Motion", motionTiming);
 
     cout << "--------------------------------------------" << endl;
