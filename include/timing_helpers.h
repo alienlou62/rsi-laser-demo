@@ -1,9 +1,10 @@
 #ifndef TIMING_H
 #define TIMING_H
 
-#include <chrono>
 #include <iostream>
 #include <string>
+#include <chrono>
+#include <thread>
 
 struct TimingStats
 {

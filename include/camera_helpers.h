@@ -7,6 +7,10 @@
 #include <stdexcept>
 #include <string>
 
+#ifndef CONFIG_FILE
+#define CONFIG_FILE ""
+#endif
+
 class CameraHelpers
 {
 public:

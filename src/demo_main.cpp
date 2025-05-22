@@ -1,30 +1,21 @@
-#include <opencv2/opencv.hpp>
 #include <iostream>
-#include <pylon/PylonIncludes.h>                // Pylon Core
-#include <pylon/PixelType.h>                    // Pylon Pixel Types (Defines EPixelType etc)
-#include <pylon/BaslerUniversalInstantCamera.h> // Needed for nodemap access via CInstantCamera
-#include <csignal>                              // For signal handling
-#include <cmath>                                // For std::abs, std::clamp, std::min, std::max
-#include <thread>                               // For std::this_thread::sleep_for
-#include <chrono>                               // For std::chrono::milliseconds
+#include <csignal>
+#include <cmath>
+#include <chrono>
 
-#ifndef CONFIG_FILE
-#define CONFIG_FILE ""
-#endif
+// --- Camera and Image Processing Headers ---
+#include <opencv2/opencv.hpp>
+#include <pylon/PylonIncludes.h>
 
 // --- RMP/RSI Headers ---
 #include "rsi.h"
 
-#include "rmp_helpers.h" // For RMP/RSI helpers
-#include "camera_helpers.h" // For camera configuration and grabbing
-#include "timing_helpers.h" // For Stopwatch class
+#include "rmp_helpers.h"
+#include "camera_helpers.h"
+#include "timing_helpers.h"
+#include "misc_helpers.h"
 
-// Namespaces
 using namespace RSI::RapidCode;
-using namespace Pylon;
-using namespace GenApi; // Needed for Node Map access
-using namespace std;
-using namespace cv;
 
 // --- Constants ---
 // Motor Control Constants from "older code"
@@ -54,47 +45,26 @@ int grabFailures = 0;
 int processFailures = 0;
 
 // --- Global Variables ---
-PylonAutoInitTerm g_pylonAutoInitTerm = PylonAutoInitTerm();
-CInstantCamera g_camera;
-CGrabResultPtr g_ptrGrabResult;
+Pylon::PylonAutoInitTerm g_pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
+Pylon::CInstantCamera g_camera;
+Pylon::CGrabResultPtr g_ptrGrabResult;
 
-shared_ptr<MotionController> g_controller(nullptr);
-shared_ptr<MultiAxis> g_multiAxis(nullptr);
+std::shared_ptr<MotionController> g_controller(nullptr);
+std::shared_ptr<MultiAxis> g_multiAxis(nullptr);
 double g_offsetX = 0.0;
 double g_offsetY = 0.0;
-
-static void PrintHeader(std::string name)
-{
-    std::cout << "----------------------------------------------------------------------------------------------------\n";
-    std::cout << "Running " << name << " Sample App\n";
-    std::cout << "----------------------------------------------------------------------------------------------------\n" << std::endl;
-}
-
-static void PrintFooter(std::string name, int exitCode)
-{
-    std::cout << "\n----------------------------------------------------------------------------------------------------\n";
-    if (exitCode == 0)
-    {
-        std::cout << name << " Sample App Completed Successfully\n";
-    }
-    else
-    {
-        std::cout << name << " Sample App Failed with Exit Code: " << exitCode << "\n";
-    }
-    std::cout << "----------------------------------------------------------------------------------------------------\n" << std::endl;
-}
 
 volatile sig_atomic_t g_shutdown = false;
 void sigquit_handler(int signal)
 {
-    cout << "SIGQUIT handler ran, setting shutdown flag..." << endl;
+    std::cout << "SIGQUIT handler ran, setting shutdown flag..." << std::endl;
     g_shutdown = true;
 }
 
 volatile sig_atomic_t g_paused = false;
 void sigint_handler(int signal)
 {
-    cout << "SIGINT handler ran, toggling paused flag..." << endl;
+    std::cout << "SIGINT handler ran, toggling paused flag..." << std::endl;
     g_paused = !g_paused;
 }
 
@@ -134,14 +104,14 @@ void MoveMotorsWithLimits()
     }
     catch (const std::exception &ex)
     {
-        cerr << "Error during velocity control: " << ex.what() << endl;
+        std::cerr << "Error during velocity control: " << ex.what() << std::endl;
         if (g_multiAxis)
             g_multiAxis->Abort();
     }
 }
 
 // --- Image Processing Function ---
-bool ConvertToRGB(Mat &outRgbFrame, std::string *errorMsg = nullptr)
+bool ConvertToRGB(cv::Mat &outRgbFrame, std::string *errorMsg = nullptr)
 {
     if (!g_ptrGrabResult)
     {
@@ -164,7 +134,7 @@ bool ConvertToRGB(Mat &outRgbFrame, std::string *errorMsg = nullptr)
         return false;
     }
 
-    Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
+    cv::Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
     if (bayerFrame.empty())
     {
         if (errorMsg) *errorMsg = "Error: Retrieved empty bayer frame!";
@@ -174,7 +144,7 @@ bool ConvertToRGB(Mat &outRgbFrame, std::string *errorMsg = nullptr)
     try
     {
         // Convert Bayer to RGB
-        cvtColor(bayerFrame, outRgbFrame, COLOR_BayerBG2RGB);
+        cv::cvtColor(bayerFrame, outRgbFrame, cv::COLOR_BayerBG2RGB);
 
         if (outRgbFrame.empty())
         {
@@ -204,7 +174,7 @@ bool ConvertToRGB(Mat &outRgbFrame, std::string *errorMsg = nullptr)
 
 bool ProcessFrame(std::string *errorMsg = nullptr)
 {
-    Mat rgbFrame;
+    cv::Mat rgbFrame;
     if (!ConvertToRGB(rgbFrame, errorMsg))
     {
         if (errorMsg && errorMsg->empty()) *errorMsg = "Error: Failed to convert frame to RGB!";
@@ -216,26 +186,26 @@ bool ProcessFrame(std::string *errorMsg = nullptr)
     bool result = false;
 
     // OpenCV Processing
-    Mat hsvFrame;
-    cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
+    cv::Mat hsvFrame;
+    cv::cvtColor(rgbFrame, hsvFrame, cv::COLOR_RGB2HSV);
 
-    Scalar lower_ball(lowH, lowS, lowV);
-    Scalar upper_ball(highH, highS, highV);
+    cv::Scalar lower_ball(lowH, lowS, lowV);
+    cv::Scalar upper_ball(highH, highS, highV);
 
-    Mat mask;
-    inRange(hsvFrame, lower_ball, upper_ball, mask);
+    cv::Mat mask;
+    cv::inRange(hsvFrame, lower_ball, upper_ball, mask);
 
-    Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
-    morphologyEx(mask, mask, MORPH_CLOSE, kernel);
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel);
 
-    vector<vector<Point>> contours;
-    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     contours.erase(
         std::remove_if(contours.begin(), contours.end(),
-                       [](const vector<Point> &c)
+                       [](const std::vector<cv::Point> &c)
                        {
-                           return contourArea(c) < 700.0;
+                           return cv::contourArea(c) < 700.0;
                        }),
         contours.end());
 
@@ -251,7 +221,7 @@ bool ProcessFrame(std::string *errorMsg = nullptr)
     {
         for (int i = 0; i < contours.size(); i++)
         {
-            double area = contourArea(contours[i]);
+            double area = cv::contourArea(contours[i]);
             // Optionally add debug info to errorMsg if needed
             if (area > largestContourArea)
             {
@@ -263,16 +233,16 @@ bool ProcessFrame(std::string *errorMsg = nullptr)
 
     if (largestContourIndex != -1)
     {
-        Point2f center;
+        cv::Point2f center;
         float radius;
-        minEnclosingCircle(contours[largestContourIndex], center, radius);
+        cv::minEnclosingCircle(contours[largestContourIndex], center, radius);
         if (radius > MIN_CIRCLE_RADIUS)
         {
             target_currently_found = true;
             target_found_last_frame = true;
-            circle(rgbFrame, center, (int)radius, Scalar(0, 255, 0), 2);
-            circle(rgbFrame, center, 5, Scalar(0, 255, 0), -1);
-            circle(rgbFrame, Point(CENTER_X, CENTER_Y), DEAD_ZONE, Scalar(0, 0, 255), 1);
+            cv::circle(rgbFrame, center, (int)radius, cv::Scalar(0, 255, 0), 2);
+            cv::circle(rgbFrame, center, 5, cv::Scalar(0, 255, 0), -1);
+            cv::circle(rgbFrame, cv::Point(CENTER_X, CENTER_Y), DEAD_ZONE, cv::Scalar(0, 0, 255), 1);
 
             g_offsetX = center.x - CENTER_X;
             g_offsetY = center.y - CENTER_Y;
@@ -297,9 +267,9 @@ bool ProcessFrame(std::string *errorMsg = nullptr)
     }
     result = true;
 
-    imshow("RGB Frame", rgbFrame);
-    imshow("Red Mask", mask);
-    waitKey(1);
+    cv::imshow("RGB Frame", rgbFrame);
+    cv::imshow("Red Mask", mask);
+    cv::waitKey(1);
     return result;
 }
 
@@ -374,11 +344,11 @@ int main()
     printStats("Processing", processingTiming);
     printStats("Motion", motionTiming);
 
-    cout << "--------------------------------------------" << endl;
-    cout << "Grab Failures:     " << grabFailures << endl;
-    cout << "Process Failures:  " << processFailures << endl;
+    std::cout << "--------------------------------------------" << std::endl;
+    std::cout << "Grab Failures:     " << grabFailures << std::endl;
+    std::cout << "Process Failures:  " << processFailures << std::endl;
 
-    destroyAllWindows();
+    cv::destroyAllWindows();
 
     PrintFooter(EXECUTABLE_NAME, exitCode);
 
