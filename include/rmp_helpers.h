@@ -1,7 +1,6 @@
 #ifndef RMP_HELPERS_H
 #define RMP_HELPERS_H
 
-#include <memory>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -19,52 +18,38 @@ public:
     static constexpr int USER_UNITS = 67108864;
 
     // Create and return a shared_ptr to a MotionController
-    static std::shared_ptr<RSI::RapidCode::MotionController> CreateController();
+    static RSI::RapidCode::MotionController* CreateController();
 
     // Configure axes and return a shared_ptr to MultiAxis
-    static std::shared_ptr<RSI::RapidCode::MultiAxis> ConfigureAxes(std::shared_ptr<RSI::RapidCode::MotionController> controller);
+    static RSI::RapidCode::MultiAxis* ConfigureAxes(RSI::RapidCode::MotionController* controller);
 
     // Start the network and check for errors
     static void StartTheNetwork(RSI::RapidCode::MotionController *controller);
-    inline static void StartTheNetwork(std::shared_ptr<RSI::RapidCode::MotionController> controller) 
-    { 
-        StartTheNetwork(controller.get());
-    }
+
+    // Shutdown the network and check for errors
+    static void ShutdownTheNetwork(RSI::RapidCode::MotionController *controller);
 
     // Check for errors in the RapidCodeObject and throw an exception if any non-warning errors are found
     static void CheckErrors(RSI::RapidCode::RapidCodeObject *rsiObject, const std::source_location &location = std::source_location::current());
-    inline static void CheckErrors(std::shared_ptr<RSI::RapidCode::RapidCodeObject> rsiObject, const std::source_location &location = std::source_location::current()) 
-    {
-        CheckErrors(rsiObject.get(), location);
-    }
 };
 
-std::shared_ptr<RSI::RapidCode::MotionController> RMPHelpers::CreateController()
+RSI::RapidCode::MotionController* RMPHelpers::CreateController()
 {
     using namespace RSI::RapidCode;
     MotionController::CreationParameters createParams;
     std::strncpy(createParams.RmpPath, RMP_PATH, createParams.PathLengthMaximum);
     std::strncpy(createParams.NicPrimary, NIC_PRIMARY, createParams.PathLengthMaximum);
     createParams.CpuAffinity = CPU_AFFINITY;
-    std::shared_ptr<MotionController> controller(MotionController::Create(&createParams),
-        [](MotionController *controller) {
-            if (controller) controller->Delete();
-        });
+    MotionController* controller(MotionController::Create(&createParams));
     CheckErrors(controller);
     return controller;
 }
 
-std::shared_ptr<RSI::RapidCode::MultiAxis> RMPHelpers::ConfigureAxes(std::shared_ptr<RSI::RapidCode::MotionController> controller)
+RSI::RapidCode::MultiAxis* RMPHelpers::ConfigureAxes(RSI::RapidCode::MotionController* controller)
 {
     using namespace RSI::RapidCode;
     controller->AxisCountSet(NUM_AXES + 1);
-    std::shared_ptr<MultiAxis> multiAxis(controller->MultiAxisGet(NUM_AXES),
-        [](MultiAxis *multiAxis) {
-            if (multiAxis) {
-                multiAxis->Abort();
-                multiAxis->ClearFaults();
-            }
-        });
+    MultiAxis* multiAxis(controller->MultiAxisGet(NUM_AXES));
     CheckErrors(multiAxis);
     for (int i = 0; i < NUM_AXES; i++) {
         Axis *axis = controller->AxisGet(i);
@@ -104,6 +89,37 @@ void RMPHelpers::StartTheNetwork(RSI::RapidCode::MotionController *controller)
     else // Else, of network is operational.
     {
         std::cout << "Network Started" << std::endl << std::endl;
+    }
+}
+
+void RMPHelpers::ShutdownTheNetwork(RSI::RapidCode::MotionController *controller)
+{
+    using namespace RSI::RapidCode;
+    // Check if the network is already shutdown
+    if (controller->NetworkStateGet() == RSINetworkState::RSINetworkStateUNINITIALIZED ||
+        controller->NetworkStateGet() == RSINetworkState::RSINetworkStateSHUTDOWN)
+    {
+        return;
+    }
+
+    // Shutdown the network
+    std::cout << "Shutting down the network.." << std::endl;
+    controller->NetworkShutdown();
+
+    if (controller->NetworkStateGet() != RSINetworkState::RSINetworkStateUNINITIALIZED &&
+        controller->NetworkStateGet() != RSINetworkState::RSINetworkStateSHUTDOWN) // Check if the network is shutdown.
+    {
+        int messagesToRead = controller->NetworkLogMessageCountGet(); // Some kind of error shutting down the network, read the network log messages
+
+        for (int i = 0; i < messagesToRead; i++)
+        {
+        std::cout << controller->NetworkLogMessageGet(i) << std::endl; // Print all the messages to help figure out the problem
+        }
+        throw std::runtime_error("Expected SHUTDOWN state but the network did not get there.");
+    }
+    else // Else, of network is shutdown.
+    {
+        std::cout << "Network Shutdown" << std::endl << std::endl;
     }
 }
 

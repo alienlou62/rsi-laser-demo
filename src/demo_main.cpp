@@ -49,8 +49,8 @@ Pylon::PylonAutoInitTerm g_pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
 Pylon::CInstantCamera g_camera;
 Pylon::CGrabResultPtr g_ptrGrabResult;
 
-std::shared_ptr<MotionController> g_controller(nullptr);
-std::shared_ptr<MultiAxis> g_multiAxis(nullptr);
+MotionController* g_controller(nullptr);
+MultiAxis* g_multiAxis(nullptr);
 double g_offsetX = 0.0;
 double g_offsetY = 0.0;
 
@@ -121,6 +121,44 @@ void MoveMotorsWithLimits()
         std::cerr << "Error during velocity control: " << ex.what() << std::endl;
         if (g_multiAxis)
             g_multiAxis->Abort();
+    }
+}
+
+void RMPCleanup()
+{
+    try
+    {
+        if (g_multiAxis)
+        {
+            g_multiAxis->Abort();
+            g_multiAxis->ClearFaults();
+        }
+
+        if (g_controller)
+        {
+            try
+            {
+                RMPHelpers::ShutdownTheNetwork(g_controller);
+            }
+            catch(const RSI::RapidCode::RsiError& e)
+            {
+                std::cerr << "RMP exception during network shutdown: " << e.what() << std::endl;
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+            g_controller->Shutdown();
+            g_controller->Delete();
+        }
+    }
+    catch(const RsiError& e)
+    {
+        std::cerr << "RMP exception during shutdown: " << e.what() << std::endl;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
     }
 }
 
@@ -298,53 +336,80 @@ int main()
     std::signal(SIGQUIT, sigquit_handler);
     std::signal(SIGINT, sigint_handler);
 
-    // --- RMP Initialization ---
-    g_controller = RMPHelpers::CreateController();
-    RMPHelpers::StartTheNetwork(g_controller);
-    g_multiAxis = RMPHelpers::ConfigureAxes(g_controller);
-    g_multiAxis->AmpEnableSet(true);
-
     // --- Pylon Initialization & Camera Loop ---
     CameraHelpers::ConfigureCamera(g_camera);
     CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
 
-    // --- Main Loop ---
+    // --- RMP Initialization ---
+    g_controller = RMPHelpers::CreateController();
+    g_multiAxis = RMPHelpers::ConfigureAxes(g_controller);
+
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
-    while (!g_shutdown && g_camera.IsGrabbing())
+    try
     {
-        ScopedRateLimiter rateLimiter(loopInterval);
-        auto loopStopwatch = ScopedStopwatch(loopTiming);
+        RMPHelpers::StartTheNetwork(g_controller);
+        g_multiAxis->AmpEnableSet(true);
 
+        // --- Main Loop ---
+        while (!g_shutdown && g_camera.IsGrabbing())
         {
-            auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-            std::string grabError;
-            if (!CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
+            ScopedRateLimiter rateLimiter(loopInterval);
+            auto loopStopwatch = ScopedStopwatch(loopTiming);
+
             {
-                std::cerr << grabError << std::endl;
-                ++grabFailures;
-                continue;
+                auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
+                std::string grabError;
+                if (!CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
+                {
+                    std::cerr << grabError << std::endl;
+                    ++grabFailures;
+                    continue;
+                }
             }
-        }
 
-        {
-            auto processingStopwatch = ScopedStopwatch(processingTiming);
-            std::string processError;
-            if (!ProcessFrame(&processError))
             {
-                std::cerr << processError << std::endl;
-                ++processFailures;
-                continue;
+                auto processingStopwatch = ScopedStopwatch(processingTiming);
+                std::string processError;
+                if (!ProcessFrame(&processError))
+                {
+                    std::cerr << processError << std::endl;
+                    ++processFailures;
+                    continue;
+                }
             }
-        }
 
-        // Handle paused state and continue if paused
-        if (HandlePaused()) continue;
+            // Handle paused state and continue if paused
+            if (HandlePaused()) continue;
 
-        {
-            auto motionStopwatch = ScopedStopwatch(motionTiming);
-            MoveMotorsWithLimits();
+            {
+                auto motionStopwatch = ScopedStopwatch(motionTiming);
+                MoveMotorsWithLimits();
+            }
         }
     }
+    catch(const cv::Exception& e)
+    {
+        std::cerr << "OpenCV exception: " << e.what() << std::endl;
+    }
+    catch(const Pylon::GenericException& e)
+    {
+        std::cerr << "Pylon exception: " << e.GetDescription() << std::endl;
+    }
+    catch(const RsiError& e)
+    {
+        std::cerr << "RMP exception: " << e.what() << std::endl;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+    catch(...)
+    {
+        std::cerr << "Unknown exception occurred." << std::endl;
+    }
+
+    // Cleanup
+    RMPCleanup();
 
     // Print loop statistics
     printStats("Loop", loopTiming);
