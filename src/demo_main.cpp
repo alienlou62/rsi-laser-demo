@@ -382,7 +382,15 @@ int main()
 
             {
                 auto motionStopwatch = ScopedStopwatch(motionTiming);
-                MoveMotorsWithLimits();
+                try
+                {
+                    MoveMotorsWithLimits();
+                }
+                catch (const RsiError& e)
+                {
+                    std::cerr << "RMP exception during motion control: " << e.what() << std::endl;
+                    g_shutdown = true;
+                }
             }
         }
     }
