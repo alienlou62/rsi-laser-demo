@@ -7,13 +7,16 @@
 #include <source_location>
 
 #include "rsi.h"
+#include "rttask.h"
 
 class RMPHelpers {
 public:
+    // MotionController creation parameters
     static constexpr char RMP_PATH[] = "/rsi/";
     static constexpr char NIC_PRIMARY[] = "enp3s0";
     static constexpr int CPU_AFFINITY = 3;
 
+    // MultiAxis configuration parameters
     static constexpr int NUM_AXES = 2;
     static constexpr int USER_UNITS = 67108864;
 
@@ -22,6 +25,8 @@ public:
 
     // Configure axes and return a shared_ptr to MultiAxis
     static RSI::RapidCode::MultiAxis* ConfigureAxes(RSI::RapidCode::MotionController* controller);
+
+    static RSI::RapidCode::RealTimeTasks::RTTaskManager* CreateRTTaskManager(std::string userLabel);
 
     // Start the network and check for errors
     static void StartTheNetwork(RSI::RapidCode::MotionController *controller);
@@ -59,11 +64,29 @@ RSI::RapidCode::MultiAxis* RMPHelpers::ConfigureAxes(RSI::RapidCode::MotionContr
         axis->HardwarePosLimitActionSet(RSIAction::RSIActionNONE);
         axis->HardwareNegLimitActionSet(RSIAction::RSIActionNONE);
         axis->PositionSet(0);
+        axis->Abort();
+        axis->ClearFaults();
         multiAxis->AxisAdd(axis);
     }
     multiAxis->Abort();
     multiAxis->ClearFaults();
+    CheckErrors(multiAxis);
     return multiAxis;
+}
+
+RSI::RapidCode::RealTimeTasks::RTTaskManager* RMPHelpers::CreateRTTaskManager(std::string userLabel)
+{
+    using namespace RSI::RapidCode;
+    using namespace RSI::RapidCode::RealTimeTasks;
+
+    RTTaskManagerCreationParameters params;
+    std::strncpy(params.RTTaskDirectory, RMP_PATH, sizeof(params.RTTaskDirectory));
+    std::strncpy(params.UserLabel, userLabel.c_str(), sizeof(params.UserLabel));
+    params.CpuCore = CPU_AFFINITY;
+
+    RTTaskManager* manager(RTTaskManager::Create(params));
+    CheckErrors(manager);
+    return manager;
 }
 
 void RMPHelpers::StartTheNetwork(RSI::RapidCode::MotionController *controller)
