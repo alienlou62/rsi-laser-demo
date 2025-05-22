@@ -27,12 +27,6 @@ public:
 
     // Returns false and sets errorOut on failure, does NOT throw for camera/grab errors
     static bool TryPrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries = MAX_RETRIES, std::string *errorOut = nullptr);
-
-private:
-    // Internal implementation: returns true on success, false on failure, sets errorMsg if not null
-    static bool GrabFrameCore(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs, std::string *errorMsg = nullptr);
-    // Internal implementation: returns true on success, false on failure, sets errorMsg if not null
-    static bool PrimeCameraCore(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries, std::string *errorMsg = nullptr);
 };
 
 
@@ -48,39 +42,41 @@ void CameraHelpers::ConfigureCamera(Pylon::CInstantCamera &camera)
   GenApi::INodeMap &nodemap = camera.GetNodeMap();
 }
 
-bool CameraHelpers::GrabFrameCore(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs, std::string *errorMsg)
+void CameraHelpers::GrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs)
 {
-    bool retrieveSucceeded = false;
+    std::string errorMsg;
+    if (!TryGrabFrame(camera, grabResult, timeoutMs, &errorMsg))
+        throw std::runtime_error(errorMsg);
+}
+
+bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs, std::string *errorMsg)
+{
     try
     {
-        retrieveSucceeded = camera.RetrieveResult(timeoutMs, grabResult, Pylon::TimeoutHandling_Return);
+        if (!camera.RetrieveResult(timeoutMs, grabResult, Pylon::TimeoutHandling_Return)) {
+            if (errorMsg) *errorMsg = "[CameraHelpers] Timeout: No frame received within " + std::to_string(timeoutMs) + " ms.";
+            return false;
+        }
     }
     catch (const Pylon::GenericException &e)
     {
-        if (errorMsg) *errorMsg = "Exception during frame grab: " + std::string(e.GetDescription());
-        return false;
-    }
-    
-    if (!retrieveSucceeded)
-    {
-        if (errorMsg) *errorMsg = "Failed to retrieve result within timeout.";
+        if (errorMsg) *errorMsg = std::string("[CameraHelpers] Exception during frame grab: ") + e.GetDescription();
         return false;
     }
 
-    // If retrieveSucceeded, then grabResult shouldn't be null, but let's check to be safe
-    if (!grabResult || !grabResult->GrabSucceeded())
+    if (!grabResult)
+    {
+        if (errorMsg) *errorMsg = "[CameraHelpers] Grab failed: Result pointer is null after RetrieveResult.";
+        return false;
+    }
+
+    if (!grabResult->GrabSucceeded())
     {
         if (errorMsg)
         {
             std::ostringstream oss;
-            oss << "Camera grab failed: ";
-            if (!grabResult)
-                // This should never be reached since we checked retrieveSucceeded
-                oss << "Result pointer is null.";
-            else
-                // If we have a grabResult but it failed for some other reason (not a timeout)
-                oss << "Code " << grabResult->GetErrorCode()
-                    << ", Desc: " << grabResult->GetErrorDescription();
+            oss << "[CameraHelpers] Grab failed: Code " << grabResult->GetErrorCode()
+                << ", Desc: " << grabResult->GetErrorDescription();
             *errorMsg = oss.str();
         }
         return false;
@@ -88,19 +84,14 @@ bool CameraHelpers::GrabFrameCore(Pylon::CInstantCamera &camera, Pylon::CGrabRes
     return true;
 }
 
-void CameraHelpers::GrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs)
+void CameraHelpers::PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries)
 {
     std::string errorMsg;
-    if (!GrabFrameCore(camera, grabResult, timeoutMs, &errorMsg))
+    if (!TryPrimeCamera(camera, grabResult, maxRetries, &errorMsg))
         throw std::runtime_error(errorMsg);
 }
 
-bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs, std::string *errorOut)
-{
-    return GrabFrameCore(camera, grabResult, timeoutMs, errorOut);
-}
-
-bool CameraHelpers::PrimeCameraCore(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries, std::string *errorMsg)
+bool CameraHelpers::TryPrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries, std::string *errorMsg)
 {
     camera.StartGrabbing(Pylon::GrabStrategy_LatestImageOnly);
     std::ostringstream errorStream;
@@ -108,27 +99,14 @@ bool CameraHelpers::PrimeCameraCore(Pylon::CInstantCamera &camera, Pylon::CGrabR
     uint retries = 0;
     while (retries < maxRetries)
     {
-        if (GrabFrameCore(camera, grabResult, TIMEOUT_MS, errorMsg ? &grabError : nullptr))
+        if (TryGrabFrame(camera, grabResult, TIMEOUT_MS, errorMsg ? &grabError : nullptr))
             return true;
-
-        if (errorMsg) errorStream << grabError << std::endl;
+        if (errorMsg) errorStream << "[PrimeCamera attempt " << (retries+1) << "/" << maxRetries << "] " << grabError << std::endl;
         retries++;
     }
-    if (errorMsg) *errorMsg = "Failed to grab a frame during priming after " +
-               std::to_string(maxRetries) + " retries. " + errorStream.str();
+    if (errorMsg) *errorMsg = "[CameraHelpers] Failed to grab a frame during priming after " +
+               std::to_string(maxRetries) + " retries.\n" + errorStream.str();
     return false;
-}
-
-void CameraHelpers::PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries)
-{
-    std::string errorMsg;
-    if (!PrimeCameraCore(camera, grabResult, maxRetries, &errorMsg))
-        throw std::runtime_error(errorMsg);
-}
-
-bool CameraHelpers::TryPrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries, std::string *errorOut)
-{
-    return PrimeCameraCore(camera, grabResult, maxRetries, errorOut);
 }
 
 #endif // CAMERA_HELPERS_H
