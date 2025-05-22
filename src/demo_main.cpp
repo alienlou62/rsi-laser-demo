@@ -68,6 +68,20 @@ void sigint_handler(int signal)
     g_paused = !g_paused;
 }
 
+bool HandlePaused() {
+    bool axisStopped = g_multiAxis->StateGet() == RSIState::RSIStateSTOPPED ||
+                      g_multiAxis->StateGet() == RSIState::RSIStateSTOPPING;
+    if (g_paused && !axisStopped)
+    {
+        g_multiAxis->Stop();
+    }
+    else if (!g_paused && axisStopped)
+    {
+        g_multiAxis->ClearFaults();
+    }
+    return g_paused;
+}
+
 void MoveMotorsWithLimits()
 {
     static const double POSITION_DEAD_ZONE = 0.0005;
@@ -295,7 +309,6 @@ int main()
     CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
 
     // --- Main Loop ---
-    bool lastPaused = false;
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
     while (!g_shutdown && g_camera.IsGrabbing())
     {
@@ -324,13 +337,8 @@ int main()
             }
         }
 
-        // Only stop/resume if the flag changed
-        bool paused = g_paused; // Avoid reading the flag multiple times since its volatile
-        if (paused && !lastPaused)
-            g_multiAxis->Stop();
-        else if (!paused && lastPaused)
-            g_multiAxis->Resume();
-        lastPaused = paused;
+        // Handle paused state and continue if paused
+        if (HandlePaused()) continue;
 
         {
             auto motionStopwatch = ScopedStopwatch(motionTiming);
