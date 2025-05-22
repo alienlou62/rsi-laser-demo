@@ -141,13 +141,11 @@ void MoveMotorsWithLimits()
 }
 
 // --- Image Processing Function ---
-bool ConvertToRGB(Mat &outRgbFrame, TimingStats &convertTiming, std::ostream &errOut = std::cerr)
+bool ConvertToRGB(Mat &outRgbFrame, std::string *errorMsg = nullptr)
 {
-    auto convertStopwatch = ScopedStopwatch(convertTiming);
-
     if (!g_ptrGrabResult)
     {
-        errOut << "Error: Grab result is null!" << endl;
+        if (errorMsg) *errorMsg = "Error: Grab result is null!";
         return false;
     }
 
@@ -157,19 +155,19 @@ bool ConvertToRGB(Mat &outRgbFrame, TimingStats &convertTiming, std::ostream &er
 
     if (!pImageBuffer)
     {
-        errOut << "Error: Image buffer is null!" << endl;
+        if (errorMsg) *errorMsg = "Error: Image buffer is null!";
         return false;
     }
     if (width <= 0 || height <= 0)
     {
-        errOut << "Error: Invalid image dimensions! Width: " << width << ", Height: " << height << endl;
+        if (errorMsg) *errorMsg = "Error: Invalid image dimensions! Width: " + std::to_string(width) + ", Height: " + std::to_string(height);
         return false;
     }
 
     Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
     if (bayerFrame.empty())
     {
-        errOut << "Error: Retrieved empty bayer frame!" << endl;
+        if (errorMsg) *errorMsg = "Error: Retrieved empty bayer frame!";
         return false;
     }
 
@@ -180,7 +178,7 @@ bool ConvertToRGB(Mat &outRgbFrame, TimingStats &convertTiming, std::ostream &er
 
         if (outRgbFrame.empty())
         {
-            errOut << "Error: Bayer-to-RGB conversion produced empty frame!" << endl;
+            if (errorMsg) *errorMsg = "Error: Bayer-to-RGB conversion produced empty frame!";
             return false;
         }
 
@@ -188,31 +186,28 @@ bool ConvertToRGB(Mat &outRgbFrame, TimingStats &convertTiming, std::ostream &er
     }
     catch (const cv::Exception &e)
     {
-        errOut << "OpenCV exception during Bayer-to-RGB conversion: " << e.what() << endl;
+        if (errorMsg) *errorMsg = std::string("OpenCV exception during Bayer-to-RGB conversion: ") + e.what();
         return false;
     }
     catch (const std::exception &e)
     {
-        errOut << "Standard exception during Bayer-to-RGB conversion: " << e.what() << endl;
+        if (errorMsg) *errorMsg = std::string("Standard exception during Bayer-to-RGB conversion: ") + e.what();
         return false;
     }
     catch (...)
     {
-        errOut << "Unknown error during Bayer-to-RGB conversion." << endl;
+        if (errorMsg) *errorMsg = "Unknown error during Bayer-to-RGB conversion.";
         return false;
     }
     return false; // Fallback in case of failure
 }
 
-bool ProcessFrame(TimingStats &processingTiming, TimingStats &convertTiming, std::ostream &errOut = std::cerr)
+bool ProcessFrame(std::string *errorMsg = nullptr)
 {
-    auto processingStopwatch = ScopedStopwatch(processingTiming);
-
     Mat rgbFrame;
-    if (!ConvertToRGB(rgbFrame, convertTiming, errOut))
+    if (!ConvertToRGB(rgbFrame, errorMsg))
     {
-
-        errOut << "Error: Failed to convert frame to RGB!" << endl;
+        if (errorMsg && errorMsg->empty()) *errorMsg = "Error: Failed to convert frame to RGB!";
         return false;
     }
 
@@ -221,35 +216,26 @@ bool ProcessFrame(TimingStats &processingTiming, TimingStats &convertTiming, std
     bool result = false;
 
     // OpenCV Processing
-    // GaussianBlur(rgbFrame, rgbFrame, Size(5, 5), 0);
     Mat hsvFrame;
     cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
 
-    // Define a range for your ball color (not red)
     Scalar lower_ball(lowH, lowS, lowV);
     Scalar upper_ball(highH, highS, highV);
 
-    // Create mask
     Mat mask;
     inRange(hsvFrame, lower_ball, upper_ball, mask);
 
-    // Morphological operations
     Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
-    // erode(mask, mask, kernel);
-    // dilate(mask, mask, kernel);
-    //  Optional extra smoothing step to close internal gaps
     morphologyEx(mask, mask, MORPH_CLOSE, kernel);
 
-    // Continue with contours
     vector<vector<Point>> contours;
     findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-    // Remove small contours by area
     contours.erase(
         std::remove_if(contours.begin(), contours.end(),
                        [](const vector<Point> &c)
                        {
-                           return contourArea(c) < 700.0; // adjust threshold
+                           return contourArea(c) < 700.0;
                        }),
         contours.end());
 
@@ -258,15 +244,15 @@ bool ProcessFrame(TimingStats &processingTiming, TimingStats &convertTiming, std
 
     if (contours.empty())
     {
-        cout << "contours empty" << endl;
+        if (errorMsg) *errorMsg = "Error: No contours found.";
+        return false;
     }
     else
     {
         for (int i = 0; i < contours.size(); i++)
         {
             double area = contourArea(contours[i]);
-            std::cout << "[DEBUG] Contour #" << i << " — Area: " << area << std::endl;
-
+            // Optionally add debug info to errorMsg if needed
             if (area > largestContourArea)
             {
                 largestContourArea = area;
@@ -280,7 +266,6 @@ bool ProcessFrame(TimingStats &processingTiming, TimingStats &convertTiming, std
         Point2f center;
         float radius;
         minEnclosingCircle(contours[largestContourIndex], center, radius);
-        std::cout << "Detected radius: " << radius << std::endl;
         if (radius > MIN_CIRCLE_RADIUS)
         {
             target_currently_found = true;
@@ -292,11 +277,20 @@ bool ProcessFrame(TimingStats &processingTiming, TimingStats &convertTiming, std
             g_offsetX = center.x - CENTER_X;
             g_offsetY = center.y - CENTER_Y;
         }
+        else
+        {
+            if (errorMsg) *errorMsg = "Error: Detected contour radius below minimum.";
+            return false;
+        }
+    }
+    else
+    {
+        if (errorMsg) *errorMsg = "Error: No valid contour found.";
+        return false;
     }
 
     if (!target_currently_found && target_found_last_frame)
     {
-        printf("Target lost, stopping motors.\n");
         g_offsetX = 0;
         g_offsetY = 0;
         target_found_last_frame = false;
@@ -332,7 +326,7 @@ int main()
 
     // --- Main Loop ---
     bool lastPaused = false;
-    TimingStats loopTiming, retrieveTiming, processingTiming, convertTiming, motionTiming;
+    TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
     while (!g_shutdown && g_camera.IsGrabbing())
     {
         ScopedRateLimiter rateLimiter(loopInterval);
@@ -340,23 +334,24 @@ int main()
 
         {
             auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-            try
+            std::string grabError;
+            if (!CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
             {
-                CameraHelpers::GrabFrame(g_camera, g_ptrGrabResult);
-            }
-            catch(const std::exception& e)
-            {
-                std::cerr << e.what() << '\n';
+                std::cerr << grabError << std::endl;
                 ++grabFailures;
                 continue;
             }
-            
         }
 
-        if (!ProcessFrame(processingTiming, convertTiming))
         {
-            ++processFailures;
-            continue;
+            auto processingStopwatch = ScopedStopwatch(processingTiming);
+            std::string processError;
+            if (!ProcessFrame(&processError))
+            {
+                std::cerr << processError << std::endl;
+                ++processFailures;
+                continue;
+            }
         }
 
         // Only stop/resume if the flag changed
@@ -377,7 +372,6 @@ int main()
     printStats("Loop", loopTiming);
     printStats("Retrieve", retrieveTiming);
     printStats("Processing", processingTiming);
-    printStats("ConvertToRGB", convertTiming);
     printStats("Motion", motionTiming);
 
     cout << "--------------------------------------------" << endl;
