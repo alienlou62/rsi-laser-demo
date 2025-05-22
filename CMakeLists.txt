@@ -13,16 +13,16 @@ pkg_check_modules(OpenCV REQUIRED opencv4)
 
 # Find Pylon library
 find_package(PYLON REQUIRED)
+set(PYLON_INCLUDE_DIRS /opt/pylon/include)
 
 # Setup the target that doesn't use RTTasks
-file(GLOB SRC_FILES src/*.cpp src/*.h)
-add_executable(LaserDemo ${SRC_FILES})
+add_executable(LaserDemo ${CMAKE_CURRENT_LIST_DIR}/src/DemoMain.cpp)
 setup_rmp_target(LaserDemo)
 
 target_include_directories(LaserDemo PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/src
   ${OpenCV_INCLUDE_DIRS}
-  /opt/pylon/include
+  ${PYLON_INCLUDE_DIRS}
 )
 
 target_link_libraries(LaserDemo PUBLIC
@@ -39,3 +39,20 @@ target_compile_definitions(LaserDemo PRIVATE
 
 # Setup the target that uses RTTasks
 add_subdirectory(RTTaskFunctions)
+add_executable(LaserDemoRTTasks ${CMAKE_CURRENT_LIST_DIR}/src/RTTasksDemoMain.cpp)
+setup_rmp_target(LaserDemoRTTasks)
+
+target_include_directories(LaserDemoRTTasks PUBLIC
+  ${CMAKE_CURRENT_LIST_DIR}/src
+  ${OpenCV_INCLUDE_DIRS}
+  ${PYLON_INCLUDE_DIRS}
+)
+
+target_link_libraries(LaserDemoRTTasks PUBLIC
+  ${OpenCV_LIBRARIES}
+  pylon::pylon
+)
+
+target_compile_definitions(LaserDemoRTTasks PRIVATE
+  CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs"
+)

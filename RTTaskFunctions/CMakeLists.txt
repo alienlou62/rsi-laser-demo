@@ -34,6 +34,13 @@ file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.h")
 add_library(RTTaskFunctions SHARED ${SOURCE_FILES} ${HEADER_FILES})
 target_include_directories(RTTaskFunctions PUBLIC 
   ${CMAKE_CURRENT_LIST_DIR}/src
+  ${OpenCV_INCLUDE_DIRS}
+  ${PYLON_INCLUDE_DIRS}
+)
+
+target_link_libraries(RTTaskFunctions PUBLIC
+  ${OpenCV_LIBRARIES}
+  pylon::pylon
 )
 
 # Perform all the standard setup for a target that uses RMP

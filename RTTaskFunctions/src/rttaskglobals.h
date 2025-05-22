@@ -58,28 +58,19 @@ namespace RapidCode
 namespace RealTimeTasks
 {
 
-// TODO: Does this need alignas(8), or alignas(16)? alignas(16) appears to be what is used with std::atomic.
 struct GlobalData
 {
   GlobalData() { std::memset(this, 0, sizeof(*this)); }
   GlobalData(GlobalData&& other) { std::memcpy(this, &other, sizeof(*this)); }
 
-  // Add global variables as data members of this struct using the RSI_GLOBAL macro.
-  // Please use "plain-old data" types (POD), preferably sized ones, such as:
-  //  int32_t,  uint32_t,
-  //  int64_t,  uint64_t, 
-  //  float,    double,
-  //  char,     bool,
-  // Arrays of POD types are technically possible, but it will be difficult to access them from the RapidCode API.
-
-  RSI_GLOBAL(int64_t, counter);
-  RSI_GLOBAL(double, average);
+  RSI_GLOBAL(double, targetX);
+  RSI_GLOBAL(double, targetY);
 };
 
 inline constexpr GlobalMetadataMap<RSI::RapidCode::RealTimeTasks::GlobalMaxSize> GlobalMetadata(
 {
-  REGISTER_GLOBAL(counter),
-  REGISTER_GLOBAL(average),
+  REGISTER_GLOBAL(targetX),
+  REGISTER_GLOBAL(targetY),
 });
 
 extern "C"
