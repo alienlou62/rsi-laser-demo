@@ -13,10 +13,9 @@
 #endif
 
 // --- RMP/RSI Headers ---
-// !! REMINDER: Compile using the RMP SDK's build system (CMake) to resolve RMP_DEFAULT_PATH !!
-#include "SampleAppsHelper.h"
 #include "rsi.h"
 
+#include "rmp_helpers.h" // For RMP/RSI helpers
 #include "camera_helpers.h" // For camera configuration and grabbing
 #include "timing_helpers.h" // For Stopwatch class
 
@@ -64,58 +63,25 @@ shared_ptr<MultiAxis> g_multiAxis(nullptr);
 double g_offsetX = 0.0;
 double g_offsetY = 0.0;
 
-// --- Create the motion controller ---
-shared_ptr<MotionController> CreateController()
+static void PrintHeader(std::string name)
 {
-    MotionController::CreationParameters createParams;
-    createParams.CpuAffinity = 3;
-    strncpy(createParams.RmpPath, "/rsi/", createParams.PathLengthMaximum);
-    strncpy(createParams.NicPrimary, "enp3s0", createParams.PathLengthMaximum); // *** VERIFY ***
-
-    shared_ptr<MotionController> controller(MotionController::Create(&createParams),
-                                            [](MotionController *controller)
-                                            {
-                                                controller->Delete();
-                                                controller = nullptr;
-                                            });
-
-    SampleAppsHelper::CheckErrors(controller.get());
-    printf("RSI Controller Created!\n");
-
-    return controller;
+    std::cout << "----------------------------------------------------------------------------------------------------\n";
+    std::cout << "Running " << name << " Sample App\n";
+    std::cout << "----------------------------------------------------------------------------------------------------\n" << std::endl;
 }
 
-shared_ptr<MultiAxis> ConfigureAxes(shared_ptr<MotionController> controller)
+static void PrintFooter(std::string name, int exitCode)
 {
-    constexpr int NUM_AXES = 2; // Number of axes to configure
-    constexpr int USER_UNITS = 67108864;
-
-    // Add a motion supervisor for the multiaxis
-    controller->AxisCountSet(NUM_AXES + 1);
-    shared_ptr<MultiAxis> multiAxis(controller->MultiAxisGet(NUM_AXES),
-                                    [](MultiAxis *multiAxis)
-                                    {
-                                        multiAxis->Abort();
-                                        multiAxis->ClearFaults();
-                                        multiAxis = nullptr;
-                                    });
-    SampleAppsHelper::CheckErrors(multiAxis.get());
-
-    for (int i = 0; i < NUM_AXES; i++)
+    std::cout << "\n----------------------------------------------------------------------------------------------------\n";
+    if (exitCode == 0)
     {
-        Axis *axis = controller->AxisGet(i);
-        SampleAppsHelper::CheckErrors(axis);
-        axis->UserUnitsSet(USER_UNITS);
-        axis->ErrorLimitActionSet(RSIAction::RSIActionNONE);
-        axis->HardwarePosLimitActionSet(RSIAction::RSIActionNONE);
-        axis->HardwareNegLimitActionSet(RSIAction::RSIActionNONE);
-        axis->PositionSet(0);
-        multiAxis->AxisAdd(axis);
+        std::cout << name << " Sample App Completed Successfully\n";
     }
-
-    multiAxis->Abort();
-    multiAxis->ClearFaults();
-    return multiAxis;
+    else
+    {
+        std::cout << name << " Sample App Failed with Exit Code: " << exitCode << "\n";
+    }
+    std::cout << "----------------------------------------------------------------------------------------------------\n" << std::endl;
 }
 
 volatile sig_atomic_t g_shutdown = false;
@@ -130,16 +96,6 @@ void sigint_handler(int signal)
 {
     cout << "SIGINT handler ran, toggling paused flag..." << endl;
     g_paused = !g_paused;
-}
-
-void InitializeRMP()
-{
-    g_controller = CreateController();
-    SampleAppsHelper::StartTheNetwork(g_controller.get());
-    g_multiAxis = ConfigureAxes(g_controller);
-
-    printf("Enabling Amplifiers...\n");
-    g_multiAxis->AmpEnableSet(true);
 }
 
 void MoveMotorsWithLimits()
@@ -357,14 +313,18 @@ bool ProcessFrame(TimingStats &processingTiming, TimingStats &convertTiming, std
 int main()
 {
     const std::chrono::milliseconds loopInterval(5); // 5ms loop interval
-    const std::string SAMPLE_APP_NAME = "Pylon_RSI_Tracking_BayerOnly";
-    SampleAppsHelper::PrintHeader(SAMPLE_APP_NAME);
+    const std::string EXECUTABLE_NAME = "Pylon_RSI_Tracking_BayerOnly";
+    PrintHeader(EXECUTABLE_NAME);
     int exitCode = 0;
 
     std::signal(SIGQUIT, sigquit_handler);
     std::signal(SIGINT, sigint_handler);
 
-    InitializeRMP();
+    // --- RMP Initialization ---
+    g_controller = RMPHelpers::CreateController();
+    RMPHelpers::StartTheNetwork(g_controller);
+    g_multiAxis = RMPHelpers::ConfigureAxes(g_controller);
+    g_multiAxis->AmpEnableSet(true);
 
     // --- Pylon Initialization & Camera Loop ---
     CameraHelpers::ConfigureCamera(g_camera);
@@ -426,7 +386,7 @@ int main()
 
     destroyAllWindows();
 
-    SampleAppsHelper::PrintFooter(SAMPLE_APP_NAME, exitCode);
+    PrintFooter(EXECUTABLE_NAME, exitCode);
 
     return exitCode;
 }
