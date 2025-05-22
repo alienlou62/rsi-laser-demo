@@ -342,14 +342,13 @@ int main()
 
     // --- RMP Initialization ---
     g_controller = RMPHelpers::CreateController();
+    RMPHelpers::StartTheNetwork(g_controller);
     g_multiAxis = RMPHelpers::ConfigureAxes(g_controller);
+    g_multiAxis->AmpEnableSet(true);
 
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
     try
     {
-        RMPHelpers::StartTheNetwork(g_controller);
-        g_multiAxis->AmpEnableSet(true);
-
         // --- Main Loop ---
         while (!g_shutdown && g_camera.IsGrabbing())
         {
