@@ -14,7 +14,7 @@ pkg_check_modules(OpenCV REQUIRED opencv4)
 # Find Pylon library
 find_package(PYLON REQUIRED)
 
-# Add your main source file
+# Setup the target that doesn't use RTTasks
 file(GLOB SRC_FILES src/*.cpp src/*.h)
 add_executable(LaserDemo ${SRC_FILES})
 setup_rmp_target(LaserDemo)
@@ -36,3 +36,6 @@ target_compile_options(LaserDemo PRIVATE "-Wno-deprecated-enum-enum-conversion")
 target_compile_definitions(LaserDemo PRIVATE
   CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs"
 )
+
+# Setup the target that uses RTTasks
+add_subdirectory(RTTaskFunctions)
