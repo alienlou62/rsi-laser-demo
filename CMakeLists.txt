@@ -16,11 +16,13 @@ find_package(PYLON REQUIRED)
 set(PYLON_INCLUDE_DIRS /opt/pylon/include)
 
 # Setup the target that doesn't use RTTasks
-add_executable(LaserDemo ${CMAKE_CURRENT_LIST_DIR}/src/DemoMain.cpp)
+add_executable(LaserDemo 
+  ${CMAKE_CURRENT_LIST_DIR}/src/demo_main.cpp
+)
 setup_rmp_target(LaserDemo)
 
 target_include_directories(LaserDemo PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/src
+  ${CMAKE_CURRENT_LIST_DIR}/include
   ${OpenCV_INCLUDE_DIRS}
   ${PYLON_INCLUDE_DIRS}
 )
@@ -39,11 +41,13 @@ target_compile_definitions(LaserDemo PRIVATE
 
 # Setup the target that uses RTTasks
 add_subdirectory(RTTaskFunctions)
-add_executable(LaserDemoRTTasks ${CMAKE_CURRENT_LIST_DIR}/src/RTTasksDemoMain.cpp)
+add_executable(LaserDemoRTTasks 
+  ${CMAKE_CURRENT_LIST_DIR}/src/rttasks_demo_main.cpp
+)
 setup_rmp_target(LaserDemoRTTasks)
 
 target_include_directories(LaserDemoRTTasks PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/src
+  ${CMAKE_CURRENT_LIST_DIR}/include
   ${OpenCV_INCLUDE_DIRS}
   ${PYLON_INCLUDE_DIRS}
 )

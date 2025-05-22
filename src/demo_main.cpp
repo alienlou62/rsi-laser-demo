@@ -17,7 +17,8 @@
 #include "SampleAppsHelper.h"
 #include "rsi.h"
 
-#include "Timing.h" // For Stopwatch class
+#include "camera_helpers.h" // For camera configuration and grabbing
+#include "timing_helpers.h" // For Stopwatch class
 
 // Namespaces
 using namespace RSI::RapidCode;
@@ -49,10 +50,6 @@ const int lowS = 0;    // Lower Saturation
 const int highS = 255; // Upper Saturation
 const int lowV = 35;   // Lower Value
 const int highV = 190; // Upper Value
-
-// Priming Constants
-const int TIMEOUT_MS = 500;
-const int MAX_RETRIES = 10;
 
 int grabFailures = 0;
 int processFailures = 0;
@@ -185,68 +182,6 @@ void MoveMotorsWithLimits()
         if (g_multiAxis)
             g_multiAxis->Abort();
     }
-}
-
-// --- Camera Setup and Priming Utilities ---
-void ConfigureCamera()
-{
-    g_camera.Attach(CTlFactory::GetInstance().CreateFirstDevice());
-    cout << "Using device: " << g_camera.GetDeviceInfo().GetModelName() << endl;
-    g_camera.Open();
-
-    CFeaturePersistence::Load(CONFIG_FILE, &g_camera.GetNodeMap());
-    INodeMap &nodemap = g_camera.GetNodeMap();
-}
-
-bool TryGrabFrame(int timeoutMs = TIMEOUT_MS, std::ostream &errOut = std::cerr)
-{
-    try
-    {
-        g_camera.RetrieveResult(timeoutMs, g_ptrGrabResult, TimeoutHandling_ThrowException);
-    }
-    catch (const GenericException &e)
-    {
-        errOut << "Exception during frame grab: " << e.GetDescription() << std::endl;
-        return false;
-    }
-
-    // Check if the grab result is valid
-    if (!g_ptrGrabResult || !g_ptrGrabResult->GrabSucceeded())
-    {
-        errOut << "Camera grab failed: ";
-        if (!g_ptrGrabResult)
-        {
-            errOut << "Result pointer is null." << std::endl;
-        }
-        else
-        {
-            errOut << "Code " << g_ptrGrabResult->GetErrorCode()
-                   << ", Desc: " << g_ptrGrabResult->GetErrorDescription() << std::endl;
-        }
-        return false;
-    }
-    return true;
-}
-
-bool PrimeCamera(std::ostream &errOut = std::cerr)
-{
-    g_camera.StartGrabbing(GrabStrategy_LatestImageOnly);
-    int retries = 0;
-    std::ostringstream errorStream;
-
-    while (retries < MAX_RETRIES)
-    {
-        if (TryGrabFrame(TIMEOUT_MS, errorStream))
-        {
-            std::cout << "Priming: First frame grabbed successfully." << std::endl;
-            return true;
-        }
-        retries++;
-    }
-
-    errOut << "Failed to grab a frame during priming after " << MAX_RETRIES << " retries." << std::endl;
-    errOut << errorStream.str(); // Output all accumulated error messages
-    return false;
 }
 
 // --- Image Processing Function ---
@@ -432,11 +367,8 @@ int main()
     InitializeRMP();
 
     // --- Pylon Initialization & Camera Loop ---
-    ConfigureCamera();
-    if (!PrimeCamera())
-    {
-        throw std::runtime_error("Camera failed to start streaming images.");
-    }
+    CameraHelpers::ConfigureCamera(g_camera);
+    CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
 
     // --- Main Loop ---
     bool lastPaused = false;
@@ -448,11 +380,17 @@ int main()
 
         {
             auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
-            if (!TryGrabFrame())
+            try
             {
+                CameraHelpers::GrabFrame(g_camera, g_ptrGrabResult);
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
                 ++grabFailures;
                 continue;
             }
+            
         }
 
         if (!ProcessFrame(processingTiming, convertTiming))
