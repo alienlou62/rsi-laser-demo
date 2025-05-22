@@ -34,6 +34,7 @@ file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.h")
 add_library(RTTaskFunctions SHARED ${SOURCE_FILES} ${HEADER_FILES})
 target_include_directories(RTTaskFunctions PUBLIC 
   ${CMAKE_CURRENT_LIST_DIR}/src
+  ${CMAKE_CURRENT_LIST_DIR}/../include
   ${OpenCV_INCLUDE_DIRS}
   ${PYLON_INCLUDE_DIRS}
 )
@@ -42,6 +43,8 @@ target_link_libraries(RTTaskFunctions PUBLIC
   ${OpenCV_LIBRARIES}
   pylon::pylon
 )
+
+target_compile_options(RTTaskFunctions PRIVATE "-Wno-deprecated-enum-enum-conversion")
 
 # Perform all the standard setup for a target that uses RMP
 # This includes setting the RMP include directories and linking to the RMP library

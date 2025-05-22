@@ -12,34 +12,11 @@
 
 #include "rmp_helpers.h"
 #include "camera_helpers.h"
+#include "image_processing.h"
 #include "timing_helpers.h"
 #include "misc_helpers.h"
 
 using namespace RSI::RapidCode;
-
-// --- Constants ---
-// Motor Control Constants from "older code"
-const double MAX_VELOCITY = 0.2;
-const double ACCELERATION = 2.0;
-const double DECELERATION = 2.0;
-const double CENTER_X = 320; // HARDCODED Center X for motor offset calculation
-const double CENTER_Y = 240; // HARDCODED Center Y for motor offset calculation
-const double PROPORTIONAL_GAIN = 1.0;
-const double VELOCITY_SCALING = 0.002;
-const double MIN_POSITION = -0.05;
-const double MAX_POSITION = 0.05;
-const double DEAD_ZONE = 40.0; // Dead zone in PIXELS for motor offset
-// OpenCV processing constants
-const double MIN_CONTOUR_AREA = 10.0;
-const double MIN_CIRCLE_RADIUS = 1.0;
-
-// HSV Thresholds (initial guesses)
-const int lowH = 105;  // Lower Hue
-const int highH = 126; // Upper Hue
-const int lowS = 0;    // Lower Saturation
-const int highS = 255; // Upper Saturation
-const int lowV = 35;   // Lower Value
-const int highV = 190; // Upper Value
 
 int grabFailures = 0;
 int processFailures = 0;
@@ -85,9 +62,10 @@ bool HandlePaused() {
 void MoveMotorsWithLimits()
 {
     static const double POSITION_DEAD_ZONE = 0.0005;
-    static const double PIXEL_DEAD_ZONE = DEAD_ZONE;
+    static const double PIXEL_DEAD_ZONE = 40.0;
     static const double MAX_OFFSET = 320.0; // max pixel offset
     static const double MIN_VELOCITY = 0.0001;
+    static const double MAX_VELOCITY = 0.2; // max velocity
     static const double jerkPct = 30.0; // Smoother than 50%
 
     // --- Dead zone logic ---
@@ -162,169 +140,6 @@ void RMPCleanup()
     }
 }
 
-// --- Image Processing Function ---
-bool ConvertToRGB(cv::Mat &outRgbFrame, std::string *errorMsg = nullptr)
-{
-    if (!g_ptrGrabResult)
-    {
-        if (errorMsg) *errorMsg = "Error: Grab result is null!";
-        return false;
-    }
-
-    int width = g_ptrGrabResult->GetWidth();
-    int height = g_ptrGrabResult->GetHeight();
-    const uint8_t *pImageBuffer = static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer());
-
-    if (!pImageBuffer)
-    {
-        if (errorMsg) *errorMsg = "Error: Image buffer is null!";
-        return false;
-    }
-    if (width <= 0 || height <= 0)
-    {
-        if (errorMsg) *errorMsg = "Error: Invalid image dimensions! Width: " + std::to_string(width) + ", Height: " + std::to_string(height);
-        return false;
-    }
-
-    cv::Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
-    if (bayerFrame.empty())
-    {
-        if (errorMsg) *errorMsg = "Error: Retrieved empty bayer frame!";
-        return false;
-    }
-
-    try
-    {
-        // Convert Bayer to RGB
-        cv::cvtColor(bayerFrame, outRgbFrame, cv::COLOR_BayerBG2RGB);
-
-        if (outRgbFrame.empty())
-        {
-            if (errorMsg) *errorMsg = "Error: Bayer-to-RGB conversion produced empty frame!";
-            return false;
-        }
-
-        return true; // Successfully converted
-    }
-    catch (const cv::Exception &e)
-    {
-        if (errorMsg) *errorMsg = std::string("OpenCV exception during Bayer-to-RGB conversion: ") + e.what();
-        return false;
-    }
-    catch (const std::exception &e)
-    {
-        if (errorMsg) *errorMsg = std::string("Standard exception during Bayer-to-RGB conversion: ") + e.what();
-        return false;
-    }
-    catch (...)
-    {
-        if (errorMsg) *errorMsg = "Unknown error during Bayer-to-RGB conversion.";
-        return false;
-    }
-    return false; // Fallback in case of failure
-}
-
-bool ProcessFrame(std::string *errorMsg = nullptr)
-{
-    cv::Mat rgbFrame;
-    if (!ConvertToRGB(rgbFrame, errorMsg))
-    {
-        if (errorMsg && errorMsg->empty()) *errorMsg = "Error: Failed to convert frame to RGB!";
-        return false;
-    }
-
-    static bool target_found_last_frame = false;
-    bool target_currently_found = false;
-    bool result = false;
-
-    // OpenCV Processing
-    cv::Mat hsvFrame;
-    cv::cvtColor(rgbFrame, hsvFrame, cv::COLOR_RGB2HSV);
-
-    cv::Scalar lower_ball(lowH, lowS, lowV);
-    cv::Scalar upper_ball(highH, highS, highV);
-
-    cv::Mat mask;
-    cv::inRange(hsvFrame, lower_ball, upper_ball, mask);
-
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
-    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel);
-
-    std::vector<std::vector<cv::Point>> contours;
-    cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-
-    contours.erase(
-        std::remove_if(contours.begin(), contours.end(),
-                       [](const std::vector<cv::Point> &c)
-                       {
-                           return cv::contourArea(c) < 700.0;
-                       }),
-        contours.end());
-
-    int largestContourIndex = -1;
-    double largestContourArea = 0;
-
-    if (contours.empty())
-    {
-        if (errorMsg) *errorMsg = "Error: No contours found.";
-        return false;
-    }
-    else
-    {
-        for (int i = 0; i < contours.size(); i++)
-        {
-            double area = cv::contourArea(contours[i]);
-            // Optionally add debug info to errorMsg if needed
-            if (area > largestContourArea)
-            {
-                largestContourArea = area;
-                largestContourIndex = i;
-            }
-        }
-    }
-
-    if (largestContourIndex != -1)
-    {
-        cv::Point2f center;
-        float radius;
-        cv::minEnclosingCircle(contours[largestContourIndex], center, radius);
-        if (radius > MIN_CIRCLE_RADIUS)
-        {
-            target_currently_found = true;
-            target_found_last_frame = true;
-            cv::circle(rgbFrame, center, (int)radius, cv::Scalar(0, 255, 0), 2);
-            cv::circle(rgbFrame, center, 5, cv::Scalar(0, 255, 0), -1);
-            cv::circle(rgbFrame, cv::Point(CENTER_X, CENTER_Y), DEAD_ZONE, cv::Scalar(0, 0, 255), 1);
-
-            g_offsetX = center.x - CENTER_X;
-            g_offsetY = center.y - CENTER_Y;
-        }
-        else
-        {
-            if (errorMsg) *errorMsg = "Error: Detected contour radius below minimum.";
-            return false;
-        }
-    }
-    else
-    {
-        if (errorMsg) *errorMsg = "Error: No valid contour found.";
-        return false;
-    }
-
-    if (!target_currently_found && target_found_last_frame)
-    {
-        g_offsetX = 0;
-        g_offsetY = 0;
-        target_found_last_frame = false;
-    }
-    result = true;
-
-    cv::imshow("RGB Frame", rgbFrame);
-    cv::imshow("Red Mask", mask);
-    cv::waitKey(1);
-    return result;
-}
-
 // --- Main Function ---
 int main()
 {
@@ -369,7 +184,7 @@ int main()
             {
                 auto processingStopwatch = ScopedStopwatch(processingTiming);
                 std::string processError;
-                if (!ProcessFrame(&processError))
+                if (!ImageProcessing::TryProcessImage(g_ptrGrabResult, g_offsetX, g_offsetY, &processError))
                 {
                     std::cerr << processError << std::endl;
                     ++processFailures;
