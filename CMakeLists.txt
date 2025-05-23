@@ -16,10 +16,22 @@ find_package(PYLON REQUIRED)
 set(PYLON_INCLUDE_DIRS /opt/pylon/include)
 
 set(COMMON_SRC_FILES
-  ${CMAKE_CURRENT_LIST_DIR}/src/camera_helpers.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/rmp_helpers.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/misc_helpers.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/image_processing.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/camera_helpers.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/rmp_helpers.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/misc_helpers.cpp
+)
+
+set(INCLUDE_DIRS
+  ${CMAKE_CURRENT_LIST_DIR}/include
+  ${CMAKE_CURRENT_LIST_DIR}/include/helpers
+  ${OpenCV_INCLUDE_DIRS}
+  ${PYLON_INCLUDE_DIRS}
+)
+
+set(LINK_LIBRARIES
+  ${OpenCV_LIBRARIES}
+  pylon::pylon
 )
 
 # Setup the target that doesn't use RTTasks
@@ -28,22 +40,9 @@ add_executable(LaserDemo
   ${COMMON_SRC_FILES}
 )
 setup_rmp_target(LaserDemo)
-
-target_include_directories(LaserDemo PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/include
-  ${OpenCV_INCLUDE_DIRS}
-  ${PYLON_INCLUDE_DIRS}
-)
-
-target_link_libraries(LaserDemo PUBLIC
-  ${OpenCV_LIBRARIES}
-  pylon::pylon
-)
-
-target_compile_definitions(LaserDemo PRIVATE
-  CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs"
-)
-
+target_include_directories(LaserDemo PRIVATE ${INCLUDE_DIRS})
+target_link_libraries(LaserDemo PRIVATE ${LINK_LIBRARIES})
+target_compile_definitions(LaserDemo PRIVATE CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs")
 target_compile_options(LaserDemo PRIVATE "-Wno-deprecated-enum-enum-conversion")
 
 # Setup the target that uses RTTasks
@@ -53,20 +52,7 @@ add_executable(LaserDemoRTTasks
   ${COMMON_SRC_FILES}
 )
 setup_rmp_target(LaserDemoRTTasks)
-
-target_include_directories(LaserDemoRTTasks PUBLIC
-  ${CMAKE_CURRENT_LIST_DIR}/include
-  ${OpenCV_INCLUDE_DIRS}
-  ${PYLON_INCLUDE_DIRS}
-)
-
-target_link_libraries(LaserDemoRTTasks PUBLIC
-  ${OpenCV_LIBRARIES}
-  pylon::pylon
-)
-
-target_compile_definitions(LaserDemoRTTasks PRIVATE
-  CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs"
-)
-
+target_include_directories(LaserDemoRTTasks PRIVATE ${INCLUDE_DIRS})
+target_link_libraries(LaserDemoRTTasks PRIVATE ${LINK_LIBRARIES})
+target_compile_definitions(LaserDemoRTTasks PRIVATE CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs")
 target_compile_options(LaserDemoRTTasks PRIVATE "-Wno-deprecated-enum-enum-conversion")

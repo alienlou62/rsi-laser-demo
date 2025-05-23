@@ -173,22 +173,27 @@ int main()
     catch(const cv::Exception& e)
     {
         std::cerr << "OpenCV exception: " << e.what() << std::endl;
+        exitCode = 1;
     }
     catch(const Pylon::GenericException& e)
     {
         std::cerr << "Pylon exception: " << e.GetDescription() << std::endl;
+        exitCode = 1;
     }
     catch(const RsiError& e)
     {
         std::cerr << "RMP exception: " << e.what() << std::endl;
+        exitCode = 1;
     }
     catch(const std::exception& e)
     {
         std::cerr << e.what() << std::endl;
+        exitCode = 1;
     }
     catch(...)
     {
         std::cerr << "Unknown exception occurred." << std::endl;
+        exitCode = 1;
     }
 
     // Cleanup

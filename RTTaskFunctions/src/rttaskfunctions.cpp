@@ -5,6 +5,7 @@
 #include "rttaskglobals.h"
 
 #include "camera_helpers.h"
+#include "image_processing.h"
 
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
@@ -29,11 +30,13 @@ RSI_TASK(Initialize)
 // This task retrieves the latest frame from the camera and processes it.
 RSI_TASK(ProcessFrame)
 {
-  // Grab a frame from the camera
-  if (!data->cameraPrimed) return;
-  if (!CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult)) return;
+  double x = 0.0, y = 0.0;
 
-  int width = g_ptrGrabResult->GetWidth();
-  int height = g_ptrGrabResult->GetHeight();
-  const uint8_t* pImageBuffer = static_cast<uint8_t*>(g_ptrGrabResult->GetBuffer());
+  // Image processing pipeline, if any step fails it will set the targets to 0
+  if (data->cameraPrimed)
+    if (CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult))
+      ImageProcessing::TryProcessImage(g_ptrGrabResult, x, y);
+
+  data->targetX = x;
+  data->targetY = y;
 }
