@@ -17,6 +17,7 @@ set(PYLON_INCLUDE_DIRS /opt/pylon/include)
 
 set(COMMON_SRC_FILES
   ${CMAKE_CURRENT_LIST_DIR}/src/image_processing.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/motion_control.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/helpers/camera_helpers.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/helpers/rmp_helpers.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/helpers/misc_helpers.cpp

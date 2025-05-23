@@ -1,11 +1,13 @@
 #ifndef CAMERA_HELPERS_H
 #define CAMERA_HELPERS_H
 
-#include <pylon/PylonIncludes.h>
-#include <pylon/BaslerUniversalInstantCamera.h>
-#include <sstream>
-#include <stdexcept>
 #include <string>
+
+// Forward declarations for Pylon types
+namespace Pylon {
+    class CInstantCamera;
+    class CGrabResultPtr;
+}
 
 #ifndef CONFIG_FILE
 #define CONFIG_FILE ""

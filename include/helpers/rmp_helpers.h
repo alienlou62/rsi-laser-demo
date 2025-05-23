@@ -1,13 +1,18 @@
 #ifndef RMP_HELPERS_H
 #define RMP_HELPERS_H
 
-#include <iostream>
-#include <string>
-#include <sstream>
 #include <source_location>
+#include <string>
 
-#include "rsi.h"
-#include "rttask.h"
+// Forward declarations for RSI types
+namespace RSI { namespace RapidCode {
+    class MotionController;
+    class MultiAxis;
+    class RapidCodeObject;
+    namespace RealTimeTasks {
+        class RTTaskManager;
+    }
+}}
 
 class RMPHelpers {
 public:
@@ -24,7 +29,7 @@ public:
     // Create a MultiAxis object and add axes to it
     static RSI::RapidCode::MultiAxis* CreateMultiAxis(RSI::RapidCode::MotionController* controller);
 
-    static RSI::RapidCode::RealTimeTasks::RTTaskManager* CreateRTTaskManager(std::string userLabel);
+    static RSI::RapidCode::RealTimeTasks::RTTaskManager* CreateRTTaskManager(const std::string& userLabel);
 
     // Check for errors in the RapidCodeObject and throw an exception if any non-warning errors are found
     static void CheckErrors(RSI::RapidCode::RapidCodeObject *rsiObject, const std::source_location &location = std::source_location::current());

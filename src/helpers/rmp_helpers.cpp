@@ -2,6 +2,10 @@
 #include <cstring>
 #include <stdexcept>
 #include <sstream>
+#include <iostream>
+#include <string>
+#include "rsi.h"
+#include "rttask.h"
 
 RSI::RapidCode::MotionController* RMPHelpers::GetController()
 {
@@ -30,7 +34,7 @@ RSI::RapidCode::MultiAxis* RMPHelpers::CreateMultiAxis(RSI::RapidCode::MotionCon
     return multiAxis;
 }
 
-RSI::RapidCode::RealTimeTasks::RTTaskManager* RMPHelpers::CreateRTTaskManager(std::string userLabel)
+RSI::RapidCode::RealTimeTasks::RTTaskManager* RMPHelpers::CreateRTTaskManager(const std::string& userLabel)
 {
     using namespace RSI::RapidCode;
     using namespace RSI::RapidCode::RealTimeTasks;

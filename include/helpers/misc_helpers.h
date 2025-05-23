@@ -1,7 +1,6 @@
 #ifndef MISC_HELPERS_H
 #define MISC_HELPERS_H
 
-#include <iostream>
 #include <string>
 
 void PrintHeader(std::string name);

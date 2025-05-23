@@ -1,8 +1,11 @@
 #ifndef IMAGE_PROCESSING_H
 #define IMAGE_PROCESSING_H
 
-#include <opencv2/opencv.hpp>
-#include <pylon/PylonIncludes.h>
+#include <string>
+
+// Forward declarations for cv::Mat and Pylon::CGrabResultPtr
+namespace cv { class Mat; }
+namespace Pylon { class CGrabResultPtr; }
 
 class ImageProcessing
 {
