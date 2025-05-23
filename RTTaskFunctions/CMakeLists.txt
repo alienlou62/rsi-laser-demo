@@ -31,7 +31,7 @@ file(GLOB_RECURSE SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.h")
 
 # Create a library target for the RTTask functions
-add_library(RTTaskFunctions SHARED ${SOURCE_FILES} ${HEADER_FILES})
+add_library(RTTaskFunctions SHARED ${SOURCE_FILES} ${HEADER_FILES} ${COMMON_SOURCE_FILES})
 target_include_directories(RTTaskFunctions PRIVATE src ${INCLUDE_DIRS})
 target_link_libraries(RTTaskFunctions PRIVATE ${LINK_LIBRARIES})
 target_compile_options(RTTaskFunctions PRIVATE "-Wno-deprecated-enum-enum-conversion")

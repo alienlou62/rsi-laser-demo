@@ -43,6 +43,9 @@ int main()
   PrintHeader(EXECUTABLE_NAME);
   int exitCode = 0;
 
+  std::signal(SIGQUIT, sigquit_handler);
+  std::signal(SIGINT, sigint_handler);
+
   SetupCamera();
 
   MotionController* controller = RMPHelpers::GetController();
