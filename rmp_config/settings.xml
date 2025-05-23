@@ -8,7 +8,7 @@
   <NetworkStartTimeoutMilliseconds>30000</NetworkStartTimeoutMilliseconds>
   <SampleRate>1000</SampleRate>
   <AxisCount>2</AxisCount>
-  <MotionCount>2</MotionCount>
+  <MotionCount>3</MotionCount>
   <UserLimitCount>0</UserLimitCount>
   <RecorderCount>0</RecorderCount>
   <RecorderBufferSize />

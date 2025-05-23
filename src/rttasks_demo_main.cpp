@@ -24,9 +24,8 @@ int main()
 {
   SetupCamera();
 
-  MotionController* controller = RMPHelpers::CreateController();
-  RMPHelpers::StartTheNetwork(controller);
-  MultiAxis* multiAxis = RMPHelpers::ConfigureAxes(controller);
+  MotionController* controller = RMPHelpers::GetController();
+  MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
   multiAxis->AmpEnableSet(true);
   std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
 
@@ -50,7 +49,6 @@ int main()
     std::cerr << "Unknown exception occurred." << '\n';
   }
 
-  manager->Shutdown();
   multiAxis->Abort();
   multiAxis->ClearFaults();
 }

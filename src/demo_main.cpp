@@ -102,44 +102,6 @@ void MoveMotorsWithLimits()
     }
 }
 
-void RMPCleanup()
-{
-    try
-    {
-        if (g_multiAxis)
-        {
-            g_multiAxis->Abort();
-            g_multiAxis->ClearFaults();
-        }
-
-        if (g_controller)
-        {
-            try
-            {
-                RMPHelpers::ShutdownTheNetwork(g_controller);
-            }
-            catch(const RSI::RapidCode::RsiError& e)
-            {
-                std::cerr << "RMP exception during network shutdown: " << e.what() << std::endl;
-            }
-            catch(const std::exception& e)
-            {
-                std::cerr << e.what() << '\n';
-            }
-            g_controller->Shutdown();
-            g_controller->Delete();
-        }
-    }
-    catch(const RsiError& e)
-    {
-        std::cerr << "RMP exception during shutdown: " << e.what() << std::endl;
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-    }
-}
-
 // --- Main Function ---
 int main()
 {
@@ -156,9 +118,8 @@ int main()
     CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
 
     // --- RMP Initialization ---
-    g_controller = RMPHelpers::CreateController();
-    RMPHelpers::StartTheNetwork(g_controller);
-    g_multiAxis = RMPHelpers::ConfigureAxes(g_controller);
+    g_controller = RMPHelpers::GetController();
+    g_multiAxis = RMPHelpers::CreateMultiAxis(g_controller);
     g_multiAxis->AmpEnableSet(true);
 
     TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
@@ -231,7 +192,8 @@ int main()
     }
 
     // Cleanup
-    RMPCleanup();
+    g_multiAxis->Abort();
+    g_multiAxis->ClearFaults();
 
     // Print loop statistics
     printStats("Loop", loopTiming);
