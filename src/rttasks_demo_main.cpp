@@ -1,4 +1,6 @@
 #include <iostream>
+#include <csignal>
+#include <cmath>
 
 #include <pylon/PylonIncludes.h>
 
@@ -7,10 +9,25 @@
 
 #include "rmp_helpers.h"
 #include "camera_helpers.h"
+#include "timing_helpers.h"
 #include "misc_helpers.h"
 
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
+
+volatile sig_atomic_t g_shutdown = false;
+void sigquit_handler(int signal)
+{
+    std::cout << "SIGQUIT handler ran, setting shutdown flag..." << std::endl;
+    g_shutdown = true;
+}
+
+volatile sig_atomic_t g_paused = false;
+void sigint_handler(int signal)
+{
+    std::cout << "SIGINT handler ran, toggling paused flag..." << std::endl;
+    g_paused = !g_paused;
+}
 
 void SetupCamera()
 {
@@ -21,6 +38,7 @@ void SetupCamera()
 
 int main()
 {
+  const std::chrono::milliseconds loopInterval(100);
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
   PrintHeader(EXECUTABLE_NAME);
   int exitCode = 0;
@@ -46,6 +64,22 @@ int main()
     processFrameParams.EnableTiming = true;
     std::shared_ptr<RTTask> processFrameTask(manager->TaskSubmit(processFrameParams));
     processFrameTask->ExecutionCountAbsoluteWait(1);
+
+    RTTaskCreationParameters moveMotorsParams("MoveMotors");
+    moveMotorsParams.Repeats = RTTaskCreationParameters::RepeatForever;
+    moveMotorsParams.Period = 50; // 50ms
+    moveMotorsParams.EnableTiming = true;
+    std::shared_ptr<RTTask> moveMotorsTask(manager->TaskSubmit(moveMotorsParams));
+
+    while (!g_shutdown)
+    {
+      ScopedRateLimiter rateLimiter(loopInterval);
+
+      FirmwareValue targetX = manager->GlobalValueGet("targetX");
+      FirmwareValue targetY = manager->GlobalValueGet("targetY");
+
+      std::cout << "Target X: " << targetX.Double << ", Target Y: " << targetY.Double << std::endl;
+    }
   }
   catch(const RSI::RapidCode::RsiError& e)
   {
@@ -63,6 +97,7 @@ int main()
     exitCode = 1;
   }
 
+  manager->Shutdown();
   multiAxis->Abort();
   multiAxis->ClearFaults();
 

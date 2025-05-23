@@ -6,6 +6,7 @@
 
 #include "camera_helpers.h"
 #include "image_processing.h"
+#include "motion_control.h"
 
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
@@ -39,4 +40,10 @@ RSI_TASK(ProcessFrame)
 
   data->targetX = x;
   data->targetY = y;
+}
+
+// This task moves the motors based on the target positions.
+RSI_TASK(MoveMotors)
+{
+  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(2), data->targetX, data->targetY);
 }
