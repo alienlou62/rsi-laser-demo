@@ -9,6 +9,9 @@
 #include "image_processing.h"
 #include "motion_control.h"
 
+#include <iostream>
+#include <string>
+
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
@@ -26,19 +29,25 @@ RSI_TASK(Initialize)
   // Initialize the camera and prime it
   g_camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
   g_camera.Open();
-  data->cameraPrimed = CameraHelpers::TryPrimeCamera(g_camera, g_ptrGrabResult);
+  std::string errorMsg;
+  data->cameraPrimed = CameraHelpers::TryPrimeCamera(g_camera, g_ptrGrabResult, CameraHelpers::MAX_RETRIES, &errorMsg);
+  std::cout << "Camera primed: " << (data->cameraPrimed ? "Yes" : "No") << std::endl;
+  std::cerr << errorMsg << std::endl;
 }
 
 // This task retrieves the latest frame from the camera and processes it.
 RSI_TASK(ProcessFrame)
 {
   double x = 0.0, y = 0.0;
+  std::string errorMsg;
 
   // Image processing pipeline, if any step fails it will set the targets to 0
   if (data->cameraPrimed)
-    if (CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult))
+    if (CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, CameraHelpers::TIMEOUT_MS, &errorMsg))
       ImageProcessing::TryProcessImage(g_ptrGrabResult, x, y);
-
+    else
+      std::cerr << errorMsg << std::endl;
+  
   data->targetX = x;
   data->targetY = y;
 }

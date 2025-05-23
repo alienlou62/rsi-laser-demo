@@ -47,7 +47,7 @@ int main()
 
   MotionController* controller = RMPHelpers::GetController();
   MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
-  multiAxis->AmpEnableSet(true);
+  // multiAxis->AmpEnableSet(true);
   std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
 
   try
@@ -60,24 +60,26 @@ int main()
 
     RTTaskCreationParameters processFrameParams("ProcessFrame");
     processFrameParams.Repeats = RTTaskCreationParameters::RepeatForever;
-    processFrameParams.Period = 50; // 50ms
+    processFrameParams.Period = 100;
     processFrameParams.EnableTiming = true;
     std::shared_ptr<RTTask> processFrameTask(manager->TaskSubmit(processFrameParams));
     processFrameTask->ExecutionCountAbsoluteWait(1);
 
-    RTTaskCreationParameters moveMotorsParams("MoveMotors");
-    moveMotorsParams.Repeats = RTTaskCreationParameters::RepeatForever;
-    moveMotorsParams.Period = 50; // 50ms
-    moveMotorsParams.EnableTiming = true;
-    std::shared_ptr<RTTask> moveMotorsTask(manager->TaskSubmit(moveMotorsParams));
+    // RTTaskCreationParameters moveMotorsParams("MoveMotors");
+    // moveMotorsParams.Repeats = RTTaskCreationParameters::RepeatForever;
+    // moveMotorsParams.Period = 50;
+    // moveMotorsParams.EnableTiming = true;
+    // std::shared_ptr<RTTask> moveMotorsTask(manager->TaskSubmit(moveMotorsParams));
 
     while (!g_shutdown)
     {
       ScopedRateLimiter rateLimiter(loopInterval);
 
+      FirmwareValue cameraPrimed = manager->GlobalValueGet("cameraPrimed");
       FirmwareValue targetX = manager->GlobalValueGet("targetX");
       FirmwareValue targetY = manager->GlobalValueGet("targetY");
 
+      std::cout << "Camera Primed: " << (cameraPrimed.Bool ? "Yes" : "No") << std::endl;
       std::cout << "Target X: " << targetX.Double << ", Target Y: " << targetY.Double << std::endl;
     }
   }
