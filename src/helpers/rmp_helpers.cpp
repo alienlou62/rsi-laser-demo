@@ -19,6 +19,7 @@ RSI::RapidCode::MultiAxis* RMPHelpers::CreateMultiAxis(RSI::RapidCode::MotionCon
 {
     using namespace RSI::RapidCode;
     MultiAxis* multiAxis(controller->MultiAxisGet(NUM_AXES));
+    multiAxis->AxisRemoveAll();
     CheckErrors(multiAxis);
     for (int i = 0; i < NUM_AXES; i++) {
         Axis *axis = controller->AxisGet(i);

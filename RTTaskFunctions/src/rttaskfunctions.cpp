@@ -4,6 +4,7 @@
 
 #include "rttaskglobals.h"
 
+#include "rmp_helpers.h"
 #include "camera_helpers.h"
 #include "image_processing.h"
 #include "motion_control.h"
@@ -45,5 +46,5 @@ RSI_TASK(ProcessFrame)
 // This task moves the motors based on the target positions.
 RSI_TASK(MoveMotors)
 {
-  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(2), data->targetX, data->targetY);
+  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(RMPHelpers::NUM_AXES), data->targetX, data->targetY);
 }
