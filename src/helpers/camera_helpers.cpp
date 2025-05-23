@@ -9,12 +9,30 @@
 
 void CameraHelpers::ConfigureCamera(Pylon::CInstantCamera &camera)
 {
-  camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
-  std::cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << std::endl;
-  camera.Open();
+    try
+    {
+        camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
+        std::cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << std::endl;
+        camera.Open();
 
-  Pylon::CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
-  GenApi::INodeMap &nodemap = camera.GetNodeMap();
+        Pylon::CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
+        GenApi::INodeMap &nodemap = camera.GetNodeMap();
+    }
+    catch (const Pylon::GenericException &e)
+    {
+        std::cerr << "[CameraHelpers] Exception during camera configuration: " << e.GetDescription() << '\n';
+        throw;
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << "[CameraHelpers] Standard exception during camera configuration: " << e.what() << '\n';
+        throw;
+    }
+    catch (...)
+    {
+        std::cerr << "[CameraHelpers] Unknown exception during camera configuration.\n";
+        throw;
+    }
 }
 
 void CameraHelpers::GrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs)
