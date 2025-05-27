@@ -63,14 +63,12 @@ struct GlobalData
   GlobalData() { std::memset(this, 0, sizeof(*this)); }
   GlobalData(GlobalData&& other) { std::memcpy(this, &other, sizeof(*this)); }
 
-  RSI_GLOBAL(bool, cameraPrimed);
   RSI_GLOBAL(double, targetX);
   RSI_GLOBAL(double, targetY);
 };
 
 inline constexpr GlobalMetadataMap<RSI::RapidCode::RealTimeTasks::GlobalMaxSize> GlobalMetadata(
 {
-  REGISTER_GLOBAL(cameraPrimed),
   REGISTER_GLOBAL(targetX),
   REGISTER_GLOBAL(targetY),
 });

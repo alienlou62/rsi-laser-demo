@@ -26,8 +26,8 @@ Pylon::CGrabResultPtr g_ptrGrabResult;
 
 MotionController *g_controller(nullptr);
 MultiAxis *g_multiAxis(nullptr);
-double g_offsetX = 0.0;
-double g_offsetY = 0.0;
+double g_targetX = 0.0;
+double g_targetY = 0.0;
 
 volatile sig_atomic_t g_shutdown = false;
 void sigquit_handler(int signal)
@@ -87,7 +87,7 @@ int main()
       // --- Image Processing ---
       auto processingStopwatch = ScopedStopwatch(processingTiming);
       std::string processError;
-      if (!ImageProcessing::TryProcessImage(g_ptrGrabResult, g_offsetX, g_offsetY, &processError))
+      if (!ImageProcessing::TryProcessImage(g_ptrGrabResult, g_targetX, g_targetY, &processError))
       {
         std::cerr << processError << std::endl;
         ++processFailures;
@@ -105,7 +105,7 @@ int main()
       {
         try
         {
-          MotionControl::MoveMotorsWithLimits(g_multiAxis, g_offsetX, g_offsetY);
+          MotionControl::MoveMotorsWithLimits(g_multiAxis, g_targetX, g_targetY);
         }
         catch (const RsiError &e)
         {
