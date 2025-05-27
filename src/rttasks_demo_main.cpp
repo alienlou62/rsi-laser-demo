@@ -1,16 +1,16 @@
-#include <iostream>
-#include <csignal>
 #include <cmath>
+#include <csignal>
+#include <iostream>
 
 #include <pylon/PylonIncludes.h>
 
 #include "rsi.h"
 #include "rttask.h"
 
-#include "rmp_helpers.h"
 #include "camera_helpers.h"
-#include "timing_helpers.h"
 #include "misc_helpers.h"
+#include "rmp_helpers.h"
+#include "timing_helpers.h"
 
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
@@ -18,15 +18,15 @@ using namespace RSI::RapidCode::RealTimeTasks;
 volatile sig_atomic_t g_shutdown = false;
 void sigquit_handler(int signal)
 {
-    std::cout << "SIGQUIT handler ran, setting shutdown flag..." << std::endl;
-    g_shutdown = true;
+  std::cout << "SIGQUIT handler ran, setting shutdown flag..." << std::endl;
+  g_shutdown = true;
 }
 
 volatile sig_atomic_t g_paused = false;
 void sigint_handler(int signal)
 {
-    std::cout << "SIGINT handler ran, toggling paused flag..." << std::endl;
-    g_paused = !g_paused;
+  std::cout << "SIGINT handler ran, toggling paused flag..." << std::endl;
+  g_paused = !g_paused;
 }
 
 void SetupCamera()
@@ -48,8 +48,8 @@ int main()
 
   SetupCamera();
 
-  MotionController* controller = RMPHelpers::GetController();
-  MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
+  MotionController *controller = RMPHelpers::GetController();
+  MultiAxis *multiAxis = RMPHelpers::CreateMultiAxis(controller);
   // multiAxis->AmpEnableSet(true);
   std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
 
@@ -86,17 +86,17 @@ int main()
       std::cout << "Target X: " << targetX.Double << ", Target Y: " << targetY.Double << std::endl;
     }
   }
-  catch(const RSI::RapidCode::RsiError& e)
+  catch (const RSI::RapidCode::RsiError &e)
   {
     std::cerr << "RMP exception: " << e.what() << std::endl;
     exitCode = 1;
   }
-  catch(const std::exception& e)
+  catch (const std::exception &e)
   {
     std::cerr << e.what() << '\n';
     exitCode = 1;
   }
-  catch(...)
+  catch (...)
   {
     std::cerr << "Unknown exception occurred." << '\n';
     exitCode = 1;
