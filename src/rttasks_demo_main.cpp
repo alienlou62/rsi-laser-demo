@@ -31,17 +31,10 @@ FirmwareValue g_targetX = {.Double = 0.0};
 FirmwareValue g_targetY = {.Double = 0.0};
 
 volatile sig_atomic_t g_shutdown = false;
-void sigquit_handler(int signal)
-{
-  std::cout << "SIGQUIT handler ran, setting shutdown flag..." << std::endl;
-  g_shutdown = true;
-}
-
-volatile sig_atomic_t g_paused = false;
 void sigint_handler(int signal)
 {
-  std::cout << "SIGINT handler ran, toggling paused flag..." << std::endl;
-  g_paused = !g_paused;
+  std::cout << "SIGINT handler ran, setting shutdown flag..." << std::endl;
+  g_shutdown = true;
 }
 
 int main()
@@ -51,7 +44,6 @@ int main()
   PrintHeader(EXECUTABLE_NAME);
   int exitCode = 0;
 
-  std::signal(SIGQUIT, sigquit_handler);
   std::signal(SIGINT, sigint_handler);
 
   // --- Pylon Initialization & Camera Loop ---
