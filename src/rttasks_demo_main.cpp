@@ -27,8 +27,8 @@ Pylon::CGrabResultPtr g_ptrGrabResult;
 
 MotionController *g_controller(nullptr);
 MultiAxis *g_multiAxis(nullptr);
-FirmwareValue g_targetX;
-FirmwareValue g_targetY;
+FirmwareValue g_targetX = {.Double = 0.0};
+FirmwareValue g_targetY = {.Double = 0.0};
 
 volatile sig_atomic_t g_shutdown = false;
 void sigquit_handler(int signal)
@@ -50,8 +50,6 @@ int main()
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
   PrintHeader(EXECUTABLE_NAME);
   int exitCode = 0;
-  g_targetX.Double = 0.0;
-  g_targetY.Double = 0.0;
 
   std::signal(SIGQUIT, sigquit_handler);
   std::signal(SIGINT, sigint_handler);
@@ -60,7 +58,7 @@ int main()
   CameraHelpers::ConfigureCamera(g_camera);
   CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
 
-    // --- RMP Initialization ---
+  // --- RMP Initialization ---
   g_controller = RMPHelpers::GetController();
   g_multiAxis = RMPHelpers::CreateMultiAxis(g_controller);
   g_multiAxis->AmpEnableSet(true);
@@ -74,7 +72,7 @@ int main()
     initializeParams.Repeats = RTTaskCreationParameters::RepeatNone;
     initializeParams.EnableTiming = true;
     std::shared_ptr<RTTask> initializeTask(manager->TaskSubmit(initializeParams));
-    initializeTask->ExecutionCountAbsoluteWait(1);
+    initializeTask->ExecutionCountAbsoluteWait(1, 1000);
 
     RTTaskCreationParameters moveMotorsParams("MoveMotors");
     moveMotorsParams.Repeats = RTTaskCreationParameters::RepeatForever;
