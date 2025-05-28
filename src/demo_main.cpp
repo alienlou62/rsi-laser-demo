@@ -19,16 +19,6 @@
 
 using namespace RSI::RapidCode;
 
-// --- Global Variables ---
-Pylon::PylonAutoInitTerm g_pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
-Pylon::CInstantCamera g_camera;
-Pylon::CGrabResultPtr g_ptrGrabResult;
-
-MotionController *g_controller(nullptr);
-MultiAxis *g_multiAxis(nullptr);
-double g_targetX = 0.0;
-double g_targetY = 0.0;
-
 volatile sig_atomic_t g_shutdown = false;
 void sigquit_handler(int signal)
 {
@@ -55,20 +45,25 @@ int main()
   std::signal(SIGINT, sigint_handler);
 
   // --- Pylon Initialization & Camera Loop ---
-  CameraHelpers::ConfigureCamera(g_camera);
-  CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
+  Pylon::PylonAutoInitTerm pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
+  Pylon::CInstantCamera camera;
+  Pylon::CGrabResultPtr ptrGrabResult;
+
+  CameraHelpers::ConfigureCamera(camera);
+  CameraHelpers::PrimeCamera(camera, ptrGrabResult);
 
   // --- RMP Initialization ---
-  g_controller = RMPHelpers::GetController();
-  g_multiAxis = RMPHelpers::CreateMultiAxis(g_controller);
-  g_multiAxis->AmpEnableSet(true);
+  MotionController* controller = RMPHelpers::GetController();
+  MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
+  multiAxis->AmpEnableSet(true);
+  double targetX = 0.0, targetY = 0.0;
 
   int grabFailures = 0, processFailures = 0;
   TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
   try
   {
     // --- Main Loop ---
-    while (!g_shutdown && g_camera.IsGrabbing())
+    while (!g_shutdown && camera.IsGrabbing())
     {
       ScopedRateLimiter rateLimiter(loopInterval);
       auto loopStopwatch = ScopedStopwatch(loopTiming);
@@ -76,7 +71,7 @@ int main()
       // --- Frame Retrieval ---
       auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
       std::string grabError;
-      if (!CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
+      if (!CameraHelpers::TryGrabFrame(camera, ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
       {
         std::cerr << grabError << std::endl;
         ++grabFailures;
@@ -87,7 +82,7 @@ int main()
       // --- Image Processing ---
       auto processingStopwatch = ScopedStopwatch(processingTiming);
       std::string processError;
-      if (!ImageProcessing::TryProcessImage(g_ptrGrabResult, g_targetX, g_targetY, &processError))
+      if (!ImageProcessing::TryProcessImage(ptrGrabResult, targetX, targetY, &processError))
       {
         std::cerr << processError << std::endl;
         ++processFailures;
@@ -99,13 +94,13 @@ int main()
       auto motionStopwatch = ScopedStopwatch(motionTiming);
       if (g_paused)
       {
-        MotionControl::MoveMotorsWithLimits(g_multiAxis, 0.0, 0.0);
+        MotionControl::MoveMotorsWithLimits(multiAxis, 0.0, 0.0);
       }
       else
       {
         try
         {
-          MotionControl::MoveMotorsWithLimits(g_multiAxis, g_targetX, g_targetY);
+          MotionControl::MoveMotorsWithLimits(multiAxis, targetX, targetY);
         }
         catch (const RsiError &e)
         {
@@ -143,8 +138,8 @@ int main()
   }
 
   // Cleanup
-  g_multiAxis->Abort();
-  g_multiAxis->ClearFaults();
+  multiAxis->Abort();
+  multiAxis->ClearFaults();
 
   // Print loop statistics
   printStats("Loop", loopTiming);
