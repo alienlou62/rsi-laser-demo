@@ -44,7 +44,7 @@ int main()
   std::signal(SIGQUIT, sigquit_handler);
   std::signal(SIGINT, sigint_handler);
 
-  // --- Pylon Initialization & Camera Loop ---
+  // --- Pylon & Camera Initialization ---
   Pylon::PylonAutoInitTerm pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
   Pylon::CInstantCamera camera;
   Pylon::CGrabResultPtr ptrGrabResult;

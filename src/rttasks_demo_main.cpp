@@ -20,16 +20,6 @@
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
-// --- Global Variables ---
-Pylon::PylonAutoInitTerm g_pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
-Pylon::CInstantCamera g_camera;
-Pylon::CGrabResultPtr g_ptrGrabResult;
-
-MotionController *g_controller(nullptr);
-MultiAxis *g_multiAxis(nullptr);
-FirmwareValue g_targetX = {.Double = 0.0};
-FirmwareValue g_targetY = {.Double = 0.0};
-
 volatile sig_atomic_t g_shutdown = false;
 void sigint_handler(int signal)
 {
@@ -46,15 +36,21 @@ int main()
 
   std::signal(SIGINT, sigint_handler);
 
-  // --- Pylon Initialization & Camera Loop ---
-  CameraHelpers::ConfigureCamera(g_camera);
-  CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
+  // --- Pylon & Camera Initialization ---
+  Pylon::PylonAutoInitTerm pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
+  Pylon::CInstantCamera camera;
+  Pylon::CGrabResultPtr ptrGrabResult;
+
+  CameraHelpers::ConfigureCamera(camera);
+  CameraHelpers::PrimeCamera(camera, ptrGrabResult);
 
   // --- RMP Initialization ---
-  g_controller = RMPHelpers::GetController();
-  g_multiAxis = RMPHelpers::CreateMultiAxis(g_controller);
-  g_multiAxis->AmpEnableSet(true);
+  MotionController* controller = RMPHelpers::GetController();
+  MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
+  multiAxis->AmpEnableSet(true);
+
   std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
+  FirmwareValue targetX = {.Double = 0.0}, targetY = {.Double = 0.0};
 
   int grabFailures = 0, processFailures = 0;
   TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
@@ -73,7 +69,7 @@ int main()
     std::shared_ptr<RTTask> moveMotorsTask(manager->TaskSubmit(moveMotorsParams));
 
     // --- Main Loop ---
-    while (!g_shutdown && g_camera.IsGrabbing())
+    while (!g_shutdown && camera.IsGrabbing())
     {
       ScopedRateLimiter rateLimiter(loopInterval);
       auto loopStopwatch = ScopedStopwatch(loopTiming);
@@ -81,7 +77,7 @@ int main()
       // --- Frame Retrieval ---
       auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
       std::string grabError;
-      if (!CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
+      if (!CameraHelpers::TryGrabFrame(camera, ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
       {
         std::cerr << grabError << std::endl;
         ++grabFailures;
@@ -92,7 +88,7 @@ int main()
       // --- Image Processing ---
       auto processingStopwatch = ScopedStopwatch(processingTiming);
       std::string processError;
-      if (!ImageProcessing::TryProcessImage(g_ptrGrabResult, g_targetX.Double, g_targetY.Double, &processError))
+      if (!ImageProcessing::TryProcessImage(ptrGrabResult, targetX.Double, targetY.Double, &processError))
       {
         std::cerr << processError << std::endl;
         ++processFailures;
@@ -102,8 +98,8 @@ int main()
 
       // --- Motion Control ---
       auto motionStopwatch = ScopedStopwatch(motionTiming);
-      manager->GlobalValueSet(g_targetX, "targetX");
-      manager->GlobalValueSet(g_targetY, "targetY");
+      manager->GlobalValueSet(targetX, "targetX");
+      manager->GlobalValueSet(targetY, "targetY");
       motionStopwatch.Stop();
     }
   }
@@ -134,8 +130,8 @@ int main()
   }
 
   manager->Shutdown();
-  g_multiAxis->Abort();
-  g_multiAxis->ClearFaults();
+  multiAxis->Abort();
+  multiAxis->ClearFaults();
 
   PrintFooter(EXECUTABLE_NAME, exitCode);
   return exitCode;
