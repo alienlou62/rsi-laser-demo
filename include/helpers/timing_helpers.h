@@ -59,12 +59,12 @@ void printStats(const std::string& name, const TimingStats& stats) {
 }
 
 template <typename StatsT>
-class ScopedStopwatch {
+class Stopwatch {
 public:
     using clock = std::chrono::steady_clock;
     using time_point = typename clock::time_point;
 
-    ScopedStopwatch(StatsT& stats)
+    Stopwatch(StatsT& stats)
         : stats_(stats), t_start_(clock::now()) {}
 
     void Stop() {
@@ -74,23 +74,23 @@ public:
         stats_(t_end - t_start_);
     }
 
-    ~ScopedStopwatch() { Stop(); }
+    ~Stopwatch() { Stop(); }
 private:
     StatsT& stats_;
     time_point t_start_;
     bool stopped_ = false;
 };
 
-class ScopedRateLimiter {
+class RateLimiter {
 public:
     using clock = std::chrono::steady_clock;
     using time_point = clock::time_point;
 
     template <typename DurationT>
-    explicit ScopedRateLimiter(DurationT interval)
+    explicit RateLimiter(DurationT interval)
         : target_time_(clock::now() + interval) {}
 
-    ~ScopedRateLimiter() {
+    ~RateLimiter() {
         auto now = clock::now();
         if (now < target_time_) {
             std::this_thread::sleep_until(target_time_);

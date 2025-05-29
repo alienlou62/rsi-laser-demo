@@ -65,11 +65,11 @@ int main()
     // --- Main Loop ---
     while (!g_shutdown && camera.IsGrabbing())
     {
-      ScopedRateLimiter rateLimiter(loopInterval);
-      auto loopStopwatch = ScopedStopwatch(loopTiming);
+      RateLimiter rateLimiter(loopInterval);
+      auto loopStopwatch = Stopwatch(loopTiming);
 
       // --- Frame Retrieval ---
-      auto retrieveStopwatch = ScopedStopwatch(retrieveTiming);
+      auto retrieveStopwatch = Stopwatch(retrieveTiming);
       std::string grabError;
       if (!CameraHelpers::TryGrabFrame(camera, ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
       {
@@ -80,7 +80,7 @@ int main()
       retrieveStopwatch.Stop();
 
       // --- Image Processing ---
-      auto processingStopwatch = ScopedStopwatch(processingTiming);
+      auto processingStopwatch = Stopwatch(processingTiming);
       std::string processError;
       if (!ImageProcessing::TryProcessImage(ptrGrabResult, targetX, targetY, &processError))
       {
@@ -91,7 +91,7 @@ int main()
       processingStopwatch.Stop();
 
       // --- Motion Control ---
-      auto motionStopwatch = ScopedStopwatch(motionTiming);
+      auto motionStopwatch = Stopwatch(motionTiming);
       if (g_paused)
       {
         MotionControl::MoveMotorsWithLimits(multiAxis, 0.0, 0.0);

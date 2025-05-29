@@ -3,8 +3,6 @@
 #include <pylon/PylonIncludes.h>
 #include <sstream>
 
-// Implementation similar to camera_helpers.h style
-
 bool ImageProcessing::TryConvertToRGB(const Pylon::CGrabResultPtr &grabResult, cv::Mat &rgbFrame, std::string *errorMsg)
 {
   if (!grabResult)
