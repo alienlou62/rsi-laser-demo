@@ -129,7 +129,25 @@ int main()
     exitCode = 1;
   }
 
-  manager->Shutdown();
+  try
+  {
+    manager->Shutdown();
+  }
+  catch (const RsiError &e)
+  {
+    std::cerr << "RMP exception: " << e.what() << std::endl;
+    exitCode = 1;
+  }
+  catch (const std::exception &e)
+  {
+    std::cerr << "Error during task manager shutdown: " << e.what() << std::endl;
+    exitCode = 1;
+  }
+  catch (...)
+  {
+    std::cerr << "Unknown error during task manager shutdown." << std::endl;
+    exitCode = 1;
+  }
   multiAxis->Abort();
   multiAxis->ClearFaults();
 

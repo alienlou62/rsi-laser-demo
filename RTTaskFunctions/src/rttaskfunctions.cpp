@@ -19,5 +19,5 @@ RSI_TASK(Initialize)
 // This task moves the motors based on the target positions.
 RSI_TASK(MoveMotors)
 {
-  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(RMPHelpers::NUM_AXES), data->targetX, data->targetY);
+  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
 }
