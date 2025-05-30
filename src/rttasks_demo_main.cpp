@@ -5,14 +5,14 @@
 #include <memory>
 
 // --- Camera and Image Processing Headers ---
-#include <opencv2/opencv.hpp>
-#include <pylon/PylonIncludes.h>
+// #include <opencv2/opencv.hpp>
+// #include <pylon/PylonIncludes.h>
 
 #include "rsi.h"
 #include "rttask.h"
 
-#include "camera_helpers.h"
-#include "image_processing.h"
+// #include "camera_helpers.h"
+// #include "image_processing.h"
 #include "misc_helpers.h"
 #include "motion_control.h"
 #include "rmp_helpers.h"
@@ -21,8 +21,10 @@
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
+constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
 constexpr int32_t TASK_WAIT_TIMEOUT = 1000;
-constexpr int32_t TASK_PERIOD = 1;
+constexpr int32_t PROCESS_TASK_PERIOD = 15;
+constexpr int32_t MOVE_TASK_PERIOD = 1;
 
 volatile sig_atomic_t g_shutdown = false;
 void sigint_handler(int signal)
@@ -64,11 +66,16 @@ void SubmitSingleShotTask(std::shared_ptr<RTTaskManager>& manager, const std::st
   singleShotTask->ExecutionCountAbsoluteWait(1, timeoutMs);
 }
 
-std::shared_ptr<RTTask> SubmitRepeatingTask(std::shared_ptr<RTTaskManager>& manager, const std::string& taskName, int32_t periodMs = TASK_PERIOD)
+std::shared_ptr<RTTask> SubmitRepeatingTask(
+  std::shared_ptr<RTTaskManager>& manager, const std::string& taskName,
+  int32_t period = RTTaskCreationParameters::PeriodDefault,
+  int32_t phase = RTTaskCreationParameters::PhaseDefault
+  )
 {
   RTTaskCreationParameters repeatingParams(taskName.c_str());
   repeatingParams.Repeats = RTTaskCreationParameters::RepeatForever;
-  repeatingParams.Period = periodMs;
+  repeatingParams.Period = period;
+  repeatingParams.Phase = phase;
   repeatingParams.EnableTiming = true;
   std::shared_ptr<RTTask> repeatingTask(manager->TaskSubmit(repeatingParams), RTTaskDeleter);
   return repeatingTask;
@@ -76,20 +83,11 @@ std::shared_ptr<RTTask> SubmitRepeatingTask(std::shared_ptr<RTTaskManager>& mana
 
 int main()
 {
-  const std::chrono::milliseconds loopInterval(5);
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
   PrintHeader(EXECUTABLE_NAME);
   int exitCode = 0;
 
   std::signal(SIGINT, sigint_handler);
-
-  // --- Pylon & Camera Initialization ---
-  Pylon::PylonAutoInitTerm pylonAutoInitTerm = Pylon::PylonAutoInitTerm();
-  Pylon::CInstantCamera camera;
-  Pylon::CGrabResultPtr ptrGrabResult;
-
-  CameraHelpers::ConfigureCamera(camera);
-  CameraHelpers::PrimeCamera(camera, ptrGrabResult);
 
   // --- RMP Initialization ---
   MotionController* controller = RMPHelpers::GetController();
@@ -97,60 +95,51 @@ int main()
   multiAxis->AmpEnableSet(true);
 
   std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
-  FirmwareValue targetX = {.Double = 0.0}, targetY = {.Double = 0.0};
-  
-  int grabFailures = 0, processFailures = 0;
-  TimingStats loopTiming, retrieveTiming, processingTiming;
   try
   {
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
     SubmitSingleShotTask(manager, "Initialize");
 
-    std::shared_ptr<RTTask> moveMotorsTask = SubmitRepeatingTask(manager, "MoveMotors");
+    std::shared_ptr<RTTask> moveMotorsTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD);
+    std::shared_ptr<RTTask> processImageTask = SubmitRepeatingTask(manager, "ProcessImage", PROCESS_TASK_PERIOD, 1);
 
     // --- Main Loop ---
-    while (!g_shutdown && camera.IsGrabbing())
+    while (!g_shutdown)
     {
-      RateLimiter rateLimiter(loopInterval);
-      auto loopStopwatch = Stopwatch(loopTiming);
+      RateLimiter rateLimiter(LOOP_INTERVAL);
 
-      // --- Frame Retrieval ---
-      auto retrieveStopwatch = Stopwatch(retrieveTiming);
-      std::string grabError;
-      if (!CameraHelpers::TryGrabFrame(camera, ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
+      // Print the value of all global variables
+      FirmwareValue cameraInitialized = manager->GlobalValueGet("cameraInitialized");
+      if (!cameraInitialized.Bool)
       {
-        std::cerr << grabError << std::endl;
-        ++grabFailures;
-        continue;
+        std::cerr << "Error: Camera is not initialized." << std::endl;
+        break;
       }
-      retrieveStopwatch.Stop();
 
-      // --- Image Processing ---
-      auto processingStopwatch = Stopwatch(processingTiming);
-      std::string processError;
-      if (!ImageProcessing::TryProcessImage(ptrGrabResult, targetX.Double, targetY.Double, &processError))
+      FirmwareValue cameraPrimed = manager->GlobalValueGet("cameraPrimed");
+      if (!cameraPrimed.Bool)
       {
-        std::cerr << processError << std::endl;
-        ++processFailures;
-        continue;
+        std::cerr << "Error: Camera is not primed." << std::endl;
+        break;
       }
-      processingStopwatch.Stop();
 
-      // --- Motion Control ---
-      manager->GlobalValueSet(targetX, "targetX");
-      manager->GlobalValueSet(targetY, "targetY");
+      FirmwareValue targetX = manager->GlobalValueGet("targetX");
+      std::cout << "Target X: " << targetX.Double << std::endl;
+
+      FirmwareValue targetY = manager->GlobalValueGet("targetY");
+      std::cout << "Target Y: " << targetY.Double << std::endl;
     }
   }
-  catch (const cv::Exception &e)
-  {
-    std::cerr << "OpenCV exception: " << e.what() << std::endl;
-    exitCode = 1;
-  }
-  catch (const Pylon::GenericException &e)
-  {
-    std::cerr << "Pylon exception: " << e.GetDescription() << std::endl;
-    exitCode = 1;
-  }
+  // catch (const cv::Exception &e)
+  // {
+  //   std::cerr << "OpenCV exception: " << e.what() << std::endl;
+  //   exitCode = 1;
+  // }
+  // catch (const Pylon::GenericException &e)
+  // {
+  //   std::cerr << "Pylon exception: " << e.GetDescription() << std::endl;
+  //   exitCode = 1;
+  // }
   catch (const RsiError &e)
   {
     std::cerr << "RMP exception: " << e.what() << std::endl;
@@ -166,10 +155,6 @@ int main()
     std::cerr << "Unknown exception occurred." << std::endl;
     exitCode = 1;
   }
-
-  printStats("Loop", loopTiming);
-  printStats("Retrieval", retrieveTiming);
-  printStats("Processing", processingTiming);
 
   // --- Cleanup ---
   multiAxis->Abort();
