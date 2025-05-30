@@ -10,7 +10,7 @@ and dynamically position a laser to center it in real time.
 - Two-axis gimbal system
 - Dynamic motor control using RSI's RMP
 
-### Current Timing Metrics
+### Timing Metrics initial Run
 
 | Category   | Min (ms) | Max (ms) | Average (ms) |
 |------------|----------|----------|--------------|
@@ -18,3 +18,13 @@ and dynamically position a laser to center it in real time.
 | Retrieve   | 0        | 96       | 0.875969     |
 | Processing | 14       | 245      | 48.2302      |
 | Motion     | 2        | 29       | 5.09524      |
+
+### Timing Metrics Second Run
+
+| Category   | Min (ms) | Max (ms) | Last (ms) | Average (ms) |
+|------------|----------|----------|-----------|---------------|
+| Loop       | 5        | 77       | 14        | 10.2427       |
+| Retrieve   | 0        | 3        | 0         | 0.0589298     |
+| Processing | 4        | 71       | 9         | 7.72252       |
+| Motion     | 0        | 12       | 4         | 2.45086       |
+
