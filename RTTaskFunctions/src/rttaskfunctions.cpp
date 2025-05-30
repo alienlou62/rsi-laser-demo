@@ -24,8 +24,6 @@ using namespace RSI::RapidCode::RealTimeTasks;
 // Initializes the global data structure.
 RSI_TASK(Initialize)
 {
-  data->cameraInitialized = false;
-  data->cameraPrimed = false;
   data->targetX = 0.0;
   data->targetY = 0.0;
 
@@ -35,6 +33,8 @@ RSI_TASK(Initialize)
   RTMultiAxisGet(0)->ClearFaults();
   RTMultiAxisGet(0)->AmpEnableSet(true);
 
+  // data->cameraInitialized = false;
+  // data->cameraPrimed = false;
   // PylonInitialize();
   // try
   // {
