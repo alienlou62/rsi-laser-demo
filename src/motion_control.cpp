@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <iostream>
+#include <stdexcept>
 
 namespace MotionControl
 {
@@ -45,15 +45,15 @@ void MoveMotorsWithLimits(RSI::RapidCode::MultiAxis *multiAxis, double x, double
   }
   catch (const RSI::RapidCode::RsiError &e)
   {
-    std::cerr << "RMP exception during velocity control: " << e.what() << std::endl;
     if (multiAxis)
       multiAxis->Abort();
+    throw std::runtime_error(std::string("RMP exception during velocity control: ") + e.what());
   }
   catch (const std::exception &ex)
   {
-    std::cerr << "Error during velocity control: " << ex.what() << std::endl;
     if (multiAxis)
       multiAxis->Abort();
+    throw std::runtime_error(std::string("Error during velocity control: ") + ex.what());
   }
 }
 } // namespace MotionControl

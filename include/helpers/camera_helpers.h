@@ -1,8 +1,6 @@
 #ifndef CAMERA_HELPERS_H
 #define CAMERA_HELPERS_H
 
-#include <string>
-
 // Forward declarations for Pylon types
 namespace Pylon {
     class CInstantCamera;
@@ -28,6 +26,5 @@ public:
     // Throws std::runtime_error if fails after maxRetries
     static void PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries = MAX_RETRIES);
 };
-
 
 #endif // CAMERA_HELPERS_H
