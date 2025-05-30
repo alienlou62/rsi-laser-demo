@@ -4,19 +4,12 @@
 #include <iostream>
 #include <memory>
 
-// --- Camera and Image Processing Headers ---
-// #include <opencv2/opencv.hpp>
-// #include <pylon/PylonIncludes.h>
-
 #include "rsi.h"
 #include "rttask.h"
 
-// #include "camera_helpers.h"
-// #include "image_processing.h"
-#include "misc_helpers.h"
-#include "motion_control.h"
-#include "rmp_helpers.h"
 #include "timing_helpers.h"
+#include "misc_helpers.h"
+#include "rmp_helpers.h"
 
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
@@ -81,6 +74,18 @@ std::shared_ptr<RTTask> SubmitRepeatingTask(
   return repeatingTask;
 }
 
+void printTaskTiming(std::shared_ptr<RTTask> task, const std::string& taskName)
+{
+  if (!task) return;
+
+  RTTaskStatus status = task->StatusGet();
+  std::cout << "Task: " << taskName << std::endl;
+  std::cout << "Execution count: " << status.ExecutionCount << std::endl;
+  std::cout << "Last execution time: " << status.ExecutionTimeLast << " ns" << std::endl;
+  std::cout << "Maximum execution time: " << status.ExecutionTimeMax << " ns" << std::endl;
+  std::cout << "Average execution time: " << status.ExecutionTimeMean << " ns" << std::endl << std::endl;
+}
+
 int main()
 {
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
@@ -129,17 +134,11 @@ int main()
       FirmwareValue targetY = manager->GlobalValueGet("targetY");
       std::cout << "Target Y: " << targetY.Double << std::endl;
     }
+
+    // Print task timing information
+    printTaskTiming(moveMotorsTask, "MoveMotors");
+    printTaskTiming(processImageTask, "ProcessImage");
   }
-  // catch (const cv::Exception &e)
-  // {
-  //   std::cerr << "OpenCV exception: " << e.what() << std::endl;
-  //   exitCode = 1;
-  // }
-  // catch (const Pylon::GenericException &e)
-  // {
-  //   std::cerr << "Pylon exception: " << e.GetDescription() << std::endl;
-  //   exitCode = 1;
-  // }
   catch (const RsiError &e)
   {
     std::cerr << "RMP exception: " << e.what() << std::endl;

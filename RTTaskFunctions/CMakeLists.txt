@@ -31,9 +31,23 @@ file(GLOB_RECURSE SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
 file(GLOB_RECURSE HEADER_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.h")
 
 # Create a library target for the RTTask functions
-add_library(RTTaskFunctions SHARED ${SOURCE_FILES} ${HEADER_FILES} ${COMMON_SRC_FILES})
-target_include_directories(RTTaskFunctions PRIVATE src ${INCLUDE_DIRS})
-target_link_libraries(RTTaskFunctions PUBLIC ${LINK_LIBRARIES})
+add_library(RTTaskFunctions SHARED ${SOURCE_FILES} ${HEADER_FILES}
+  ${CMAKE_SOURCE_DIR}/src/image_processing.cpp
+  ${CMAKE_SOURCE_DIR}/src/motion_control.cpp
+  ${CMAKE_SOURCE_DIR}/src/helpers/camera_helpers.cpp
+)
+target_include_directories(RTTaskFunctions PRIVATE 
+  ${CMAKE_CURRENT_LIST_DIR}/src 
+  ${CMAKE_SOURCE_DIR}/include
+  ${CMAKE_SOURCE_DIR}/include/helpers
+  ${OpenCV_INCLUDE_DIRS}
+  ${PYLON_INCLUDE_DIRS}
+)
+target_link_libraries(RTTaskFunctions PUBLIC 
+  ${OpenCV_LIBRARIES}
+  pylon::pylon
+)
+target_compile_definitions(RTTaskFunctions PRIVATE CONFIG_FILE="${CMAKE_SOURCE_DIR}/acA640-300gc_22441779.pfs")
 target_compile_options(RTTaskFunctions PRIVATE "-Wno-deprecated-enum-enum-conversion")
 
 # Perform all the standard setup for a target that uses RMP
