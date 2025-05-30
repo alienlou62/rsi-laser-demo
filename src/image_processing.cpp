@@ -75,23 +75,25 @@ void ImageProcessing::ConvertToRGB(const Pylon::CGrabResultPtr &grabResult, cv::
 
 bool ImageProcessing::TryProcessImage(const Pylon::CGrabResultPtr &grabResult, double &targetX, double &targetY, std::string *errorMsg)
 {
-  cv::Mat rgbFrame;
-  if (!TryConvertToRGB(grabResult, rgbFrame, errorMsg))
-  {
-    return false;
-  }
+  // Constants for image processing
   constexpr double CENTER_X = 320;
   constexpr double CENTER_Y = 240;
   constexpr double MIN_CIRCLE_RADIUS = 1.0;
   constexpr int lowH = 105, highH = 126, lowS = 0, highS = 255, lowV = 35, highV = 190;
 
-  cv::Mat hsvFrame;
+  // Static variables to avoid reallocation
+  static cv::Mat rgbFrame, hsvFrame, mask, kernel;
+
+  if (!TryConvertToRGB(grabResult, rgbFrame, errorMsg))
+  {
+    return false;
+  }
+
   cv::cvtColor(rgbFrame, hsvFrame, cv::COLOR_RGB2HSV);
   cv::Scalar lower_ball(lowH, lowS, lowV);
   cv::Scalar upper_ball(highH, highS, highV);
-  cv::Mat mask;
   cv::inRange(hsvFrame, lower_ball, upper_ball, mask);
-  cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+  kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
   cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel);
   std::vector<std::vector<cv::Point>> contours;
   cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
