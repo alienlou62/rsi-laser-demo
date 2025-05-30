@@ -22,7 +22,7 @@ using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
 constexpr int32_t TASK_WAIT_TIMEOUT = 1000;
-constexpr int32_t TASK_PERIOD = 100;
+constexpr int32_t TASK_PERIOD = 1;
 
 volatile sig_atomic_t g_shutdown = false;
 void sigint_handler(int signal)
@@ -76,7 +76,7 @@ std::shared_ptr<RTTask> SubmitRepeatingTask(std::shared_ptr<RTTaskManager>& mana
 
 int main()
 {
-  const std::chrono::milliseconds loopInterval(100);
+  const std::chrono::milliseconds loopInterval(5);
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
   PrintHeader(EXECUTABLE_NAME);
   int exitCode = 0;
@@ -100,7 +100,7 @@ int main()
   FirmwareValue targetX = {.Double = 0.0}, targetY = {.Double = 0.0};
   
   int grabFailures = 0, processFailures = 0;
-  TimingStats loopTiming, retrieveTiming, processingTiming, motionTiming;
+  TimingStats loopTiming, retrieveTiming, processingTiming;
   try
   {
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
@@ -161,7 +161,7 @@ int main()
     std::cerr << e.what() << std::endl;
     exitCode = 1;
   }
-  catch (...)
+  catch (...) 
   {
     std::cerr << "Unknown exception occurred." << std::endl;
     exitCode = 1;

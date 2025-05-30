@@ -80,7 +80,6 @@ bool ImageProcessing::TryProcessImage(const Pylon::CGrabResultPtr &grabResult, d
   {
     return false;
   }
-  // Constants (should match those in demo_main.cpp)
   constexpr double CENTER_X = 320;
   constexpr double CENTER_Y = 240;
   constexpr double MIN_CIRCLE_RADIUS = 1.0;
