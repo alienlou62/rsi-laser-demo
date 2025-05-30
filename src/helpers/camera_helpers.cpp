@@ -20,7 +20,7 @@ void CameraHelpers::ConfigureCamera(Pylon::CInstantCamera &camera)
   }
   catch (const Pylon::GenericException &e)
   {
-    std::cerr << "[CameraHelpers] Exception during camera configuration: " << e.GetDescription() << '\n';
+    std::cerr << "[CameraHelpers] Exception during camera configuration: " << e.what() << '\n';
     throw;
   }
   catch (const std::exception &e)
@@ -35,73 +35,61 @@ void CameraHelpers::ConfigureCamera(Pylon::CInstantCamera &camera)
   }
 }
 
-void CameraHelpers::GrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs)
-{
-  std::string errorMsg;
-  if (!TryGrabFrame(camera, grabResult, timeoutMs, &errorMsg))
-    throw std::runtime_error(errorMsg);
-}
-
-bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs, std::string *errorMsg)
+bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs)
 {
   try
   {
     if (!camera.RetrieveResult(timeoutMs, grabResult, Pylon::TimeoutHandling_Return))
     {
-      if (errorMsg)
-        *errorMsg = "[CameraHelpers] Timeout: No frame received within " + std::to_string(timeoutMs) + " ms.";
-      return false;
+      return false; // Timeout
     }
   }
   catch (const Pylon::GenericException &e)
   {
-    if (errorMsg)
-      *errorMsg = std::string("[CameraHelpers] Exception during frame grab: ") + e.GetDescription();
-    return false;
+    throw std::runtime_error(std::string("[CameraHelpers] Exception during frame grab: ") + e.what());
+  }
+  catch (const std::exception &e)
+  {
+    throw std::runtime_error(std::string("[CameraHelpers] std::exception during frame grab: ") + e.what());
+  }
+  catch (...)
+  {
+    throw std::runtime_error("[CameraHelpers] Unknown exception during frame grab.");
   }
 
   if (!grabResult)
   {
-    if (errorMsg)
-      *errorMsg = "[CameraHelpers] Grab failed: Result pointer is null after RetrieveResult.";
-    return false;
+    throw std::runtime_error("[CameraHelpers] Fatal: Grab failed, result pointer is null after RetrieveResult (unexpected state).");
   }
 
   if (!grabResult->GrabSucceeded())
   {
-    if (errorMsg)
+    const int64_t errorCode = grabResult->GetErrorCode();
+    if (errorCode == 0xe1000014) // Incomplete buffer (buffer underrun)
     {
-      std::ostringstream oss;
-      oss << "[CameraHelpers] Grab failed: Code " << grabResult->GetErrorCode() << ", Desc: " << grabResult->GetErrorDescription();
-      *errorMsg = oss.str();
+      return false;
     }
-    return false;
+    std::ostringstream oss;
+    oss << "[CameraHelpers] Grab failed: Code " << errorCode << ", Desc: " << grabResult->GetErrorDescription();
+    throw std::runtime_error(oss.str());
   }
   return true;
 }
 
 void CameraHelpers::PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries)
 {
-  std::string errorMsg;
-  if (!TryPrimeCamera(camera, grabResult, maxRetries, &errorMsg))
-    throw std::runtime_error(errorMsg);
-}
-
-bool CameraHelpers::TryPrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries, std::string *errorMsg)
-{
+  camera.Open();
   camera.StartGrabbing(Pylon::GrabStrategy_LatestImageOnly);
-  std::ostringstream errorStream;
-  std::string grabError;
   uint retries = 0;
   while (retries < maxRetries)
   {
-    if (TryGrabFrame(camera, grabResult, TIMEOUT_MS, errorMsg ? &grabError : nullptr))
-      return true;
-    if (errorMsg)
-      errorStream << "[PrimeCamera attempt " << (retries + 1) << "/" << maxRetries << "] " << grabError << std::endl;
+    try {
+      if (TryGrabFrame(camera, grabResult, TIMEOUT_MS))
+        return;
+    } catch (const std::exception& e) {
+      throw std::runtime_error(std::string("[CameraHelpers] Fatal error during camera priming: ") + e.what());
+    }
     retries++;
   }
-  if (errorMsg)
-    *errorMsg = "[CameraHelpers] Failed to grab a frame during priming after " + std::to_string(maxRetries) + " retries.\n" + errorStream.str();
-  return false;
+  throw std::runtime_error("[CameraHelpers] Failed to grab a frame during priming after " + std::to_string(maxRetries) + " retries.");
 }

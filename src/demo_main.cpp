@@ -70,10 +70,8 @@ int main()
 
       // --- Frame Retrieval ---
       auto retrieveStopwatch = Stopwatch(retrieveTiming);
-      std::string grabError;
-      if (!CameraHelpers::TryGrabFrame(camera, ptrGrabResult, CameraHelpers::TIMEOUT_MS, &grabError))
+      if (!CameraHelpers::TryGrabFrame(camera, ptrGrabResult, CameraHelpers::TIMEOUT_MS))
       {
-        std::cerr << grabError << std::endl;
         ++grabFailures;
         continue;
       }
@@ -118,7 +116,7 @@ int main()
   }
   catch (const Pylon::GenericException &e)
   {
-    std::cerr << "Pylon exception: " << e.GetDescription() << std::endl;
+    std::cerr << "Pylon exception: " << e.what() << std::endl;
     exitCode = 1;
   }
   catch (const RsiError &e)
