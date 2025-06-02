@@ -41,7 +41,15 @@ RSI_TASK(Initialize)
 }
 
 // Moves the motors based on the target positions.
-RSI_TASK(MoveMotors) { MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY); }
+RSI_TASK(MoveMotors)
+{
+  // Ensure we don't command the same target multiple times
+  double targetX(0.0), targetY(0.0);
+  std::exchange(targetX, data->targetX);
+  std::exchange(targetY, data->targetY);
+  if (targetX == 0.0 && targetY == 0.0) return;
+  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
+}
 
 // Processes the image captured by the camera.
 RSI_TASK(ProcessImage)
@@ -52,7 +60,7 @@ RSI_TASK(ProcessImage)
     return;
   }
 
-  double targetX = data->targetX, targetY = data->targetY;
+  double targetX = 0.0, targetY = 0.0;
   if (CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, 0))
     if (g_ptrGrabResult)
       if (ImageProcessing::TryProcessImage(

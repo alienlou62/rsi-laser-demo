@@ -4,8 +4,18 @@
 // Forward declaration for RSI::RapidCode::MultiAxis
 namespace RSI { namespace RapidCode { class MultiAxis; } }
 
-namespace MotionControl {
-    void MoveMotorsWithLimits(RSI::RapidCode::MultiAxis* multiAxis, double x, double y);
-}
+class MotionControl 
+{
+public:
+    static constexpr double NEG_X_LIMIT = -0.245;
+    static constexpr double POS_X_LIMIT = 0.120;
+    static constexpr double NEG_Y_LIMIT = -0.125;
+    static constexpr double POS_Y_LIMIT = 0.135;
+
+    // Tolerance to avoid unnecessary small movements
+    static constexpr double TOLERANCE = 0.01;
+
+    static void MoveMotorsWithLimits(RSI::RapidCode::MultiAxis* multiAxis, double x, double y);
+};
 
 #endif // MOTION_CONTROL_H

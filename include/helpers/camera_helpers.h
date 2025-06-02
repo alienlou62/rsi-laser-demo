@@ -1,7 +1,7 @@
 #ifndef CAMERA_HELPERS_H
 #define CAMERA_HELPERS_H
 
-
+#include <cmath>
 
 // Forward declarations for Pylon types
 namespace Pylon {
@@ -17,14 +17,15 @@ class CameraHelpers
 {
 public:
     // Camera constants
-    static constexpr double PIXEL_SIZE = 4.8e-3; //mm
-    
-    static constexpr double FOCAL_LENGTH = 6.0; //mm
-
     static constexpr unsigned int IMAGE_WIDTH = 640;
     static constexpr unsigned int IMAGE_HEIGHT = 480;
 
-    static constexpr double FieldOfViewPerPixel(); // radians per pixel
+    static constexpr double PIXEL_SIZE = 4.8e-3; //mm
+    static constexpr double FOCAL_LENGTH = 4.0; //mm
+    static constexpr double RadiansPerPixel() // radians per pixel
+    {
+        return 2.0 * std::atan(PIXEL_SIZE / (2.0 * FOCAL_LENGTH));
+    }
 
     // Image capture constants
     static constexpr unsigned int TIMEOUT_MS = 1000;

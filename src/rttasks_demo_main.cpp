@@ -17,7 +17,7 @@ using namespace RSI::RapidCode::RealTimeTasks;
 constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
 constexpr int32_t TASK_WAIT_TIMEOUT = 1000;
 constexpr int32_t PROCESS_TASK_PERIOD = 15;
-constexpr int32_t MOVE_TASK_PERIOD = 1;
+constexpr int32_t MOVE_TASK_PERIOD = 15;
 
 volatile sig_atomic_t g_shutdown = false;
 void sigint_handler(int signal)
@@ -105,8 +105,8 @@ int main()
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
     SubmitSingleShotTask(manager, "Initialize");
 
-    std::shared_ptr<RTTask> moveMotorsTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD);
-    std::shared_ptr<RTTask> processImageTask = SubmitRepeatingTask(manager, "ProcessImage", PROCESS_TASK_PERIOD, 1);
+    std::shared_ptr<RTTask> processImageTask = SubmitRepeatingTask(manager, "ProcessImage", PROCESS_TASK_PERIOD);
+    std::shared_ptr<RTTask> moveMotorsTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1);
 
     // --- Main Loop ---
     while (!g_shutdown)
