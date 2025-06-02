@@ -1,6 +1,8 @@
 #ifndef IMAGE_PROCESSING_H
 #define IMAGE_PROCESSING_H
 
+#include <cstdint> // For uint8_t
+
 // Forward declarations for cv::Mat and Pylon::CGrabResultPtr
 namespace cv { class Mat; }
 namespace Pylon { class CGrabResultPtr; }
@@ -15,9 +17,7 @@ public:
     static constexpr int lowH = 105, highH = 126, lowS = 0, highS = 255, lowV = 35, highV = 190;
     static constexpr double MIN_CONTOUR_AREA = 700.0;
 
-    static bool TryProcessImage(const Pylon::CGrabResultPtr& grabResult, double& targetX, double& targetY);
-
-    static void ConvertToRGB(const Pylon::CGrabResultPtr& grabResult, cv::Mat& rgbFrame);
+    static bool TryProcessImage(const uint8_t* pImageBuffer, int width, int height, double& targetX, double& targetY);
 };
 
 #endif // IMAGE_PROCESSING_H

@@ -79,7 +79,10 @@ int main()
 
       // --- Image Processing ---
       auto processingStopwatch = Stopwatch(processingTiming);
-      if (ImageProcessing::TryProcessImage(ptrGrabResult, targetX, targetY))
+      if (!ImageProcessing::TryProcessImage(
+            static_cast<uint8_t *>(ptrGrabResult->GetBuffer()),
+            ptrGrabResult->GetWidth(), ptrGrabResult->GetHeight(),
+            targetX, targetY))
       {
         ++processFailures;
         continue;

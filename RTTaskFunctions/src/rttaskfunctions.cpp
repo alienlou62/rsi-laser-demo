@@ -6,8 +6,8 @@
 
 #include "camera_helpers.h"
 #include "image_processing.h"
-#include "rmp_helpers.h"
 #include "motion_control.h"
+#include "rmp_helpers.h"
 
 #include <iostream>
 #include <string>
@@ -41,10 +41,7 @@ RSI_TASK(Initialize)
 }
 
 // Moves the motors based on the target positions.
-RSI_TASK(MoveMotors)
-{
-  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
-}
+RSI_TASK(MoveMotors) { MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY); }
 
 // Processes the image captured by the camera.
 RSI_TASK(ProcessImage)
@@ -57,10 +54,10 @@ RSI_TASK(ProcessImage)
 
   double targetX = data->targetX, targetY = data->targetY;
   if (CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, 0))
-    if (ImageProcessing::TryProcessImage(g_ptrGrabResult, targetX, targetY))
-      data->targetX = targetX, data->targetY = targetY;
-    else
-      std::cerr << "Failed to process image." << std::endl;
-  else
-    std::cerr << "Failed to grab frame from camera." << std::endl;
+    if (g_ptrGrabResult)
+      if (ImageProcessing::TryProcessImage(
+            static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()),
+            g_ptrGrabResult->GetWidth(), g_ptrGrabResult->GetHeight(),
+            targetX, targetY))
+        data->targetX = targetX, data->targetY = targetY;
 }

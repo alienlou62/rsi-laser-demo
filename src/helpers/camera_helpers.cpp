@@ -1,7 +1,6 @@
 #include "camera_helpers.h"
 #include <pylon/BaslerUniversalInstantCamera.h>
 #include <pylon/PylonIncludes.h>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 
@@ -20,18 +19,15 @@ void CameraHelpers::ConfigureCamera(Pylon::CInstantCamera &camera)
   }
   catch (const Pylon::GenericException &e)
   {
-    std::cerr << "[CameraHelpers] Exception during camera configuration: " << e.what() << '\n';
-    throw;
+    throw std::runtime_error(std::string("[CameraHelpers] Pylon exception during camera configuration: ") + e.GetDescription());
   }
   catch (const std::exception &e)
   {
-    std::cerr << "[CameraHelpers] Standard exception during camera configuration: " << e.what() << '\n';
-    throw;
+    throw std::runtime_error(std::string("[CameraHelpers] std::exception during camera configuration: ") + e.what());
   }
   catch (...)
   {
-    std::cerr << "[CameraHelpers] Unknown exception during camera configuration.\n";
-    throw;
+    throw std::runtime_error("[CameraHelpers] Unknown exception during camera configuration.");
   }
 }
 
