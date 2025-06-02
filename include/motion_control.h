@@ -17,7 +17,7 @@ public:
     static constexpr double POS_Y_LIMIT = 0.135;
 
     // Tolerance to avoid unnecessary small movements
-    static constexpr double TOLERANCE = 10.0 * CameraHelpers::RADIANS_PER_PIXEL / (2.0 * std::numbers::pi);
+    static constexpr double TOLERANCE = 50.0 * CameraHelpers::RADIANS_PER_PIXEL / (2.0 * std::numbers::pi);
 
     static void MoveMotorsWithLimits(RSI::RapidCode::MultiAxis* multiAxis, double x, double y);
 };
