@@ -114,17 +114,10 @@ int main()
       RateLimiter rateLimiter(LOOP_INTERVAL);
 
       // Print the value of all global variables
-      FirmwareValue cameraInitialized = manager->GlobalValueGet("cameraInitialized");
-      if (!cameraInitialized.Bool)
+      FirmwareValue cameraReady = manager->GlobalValueGet("cameraReady");
+      if (!cameraReady.Bool)
       {
-        std::cerr << "Error: Camera is not initialized." << std::endl;
-        break;
-      }
-
-      FirmwareValue cameraPrimed = manager->GlobalValueGet("cameraPrimed");
-      if (!cameraPrimed.Bool)
-      {
-        std::cerr << "Error: Camera is not primed." << std::endl;
+        std::cerr << "Error: Camera is not ready." << std::endl;
         break;
       }
 
