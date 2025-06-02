@@ -79,10 +79,8 @@ int main()
 
       // --- Image Processing ---
       auto processingStopwatch = Stopwatch(processingTiming);
-      std::string processError;
-      if (!ImageProcessing::TryProcessImage(ptrGrabResult, targetX, targetY, &processError))
+      if (ImageProcessing::TryProcessImage(ptrGrabResult, targetX, targetY))
       {
-        std::cerr << processError << std::endl;
         ++processFailures;
         continue;
       }

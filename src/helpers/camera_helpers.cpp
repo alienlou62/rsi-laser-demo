@@ -35,7 +35,7 @@ void CameraHelpers::ConfigureCamera(Pylon::CInstantCamera &camera)
   }
 }
 
-bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint timeoutMs)
+bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, unsigned int timeoutMs)
 {
   try
   {
@@ -76,11 +76,11 @@ bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResu
   return true;
 }
 
-void CameraHelpers::PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, uint maxRetries)
+void CameraHelpers::PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, unsigned int maxRetries)
 {
   camera.Open();
   camera.StartGrabbing(Pylon::GrabStrategy_LatestImageOnly);
-  uint retries = 0;
+  unsigned int retries = 0;
   while (retries < maxRetries)
   {
     try {
