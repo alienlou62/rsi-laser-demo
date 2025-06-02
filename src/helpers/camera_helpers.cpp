@@ -3,8 +3,14 @@
 #include <pylon/PylonIncludes.h>
 #include <stdexcept>
 #include <string>
+#include <cmath>
 
 // ----------- Implementation -----------
+
+constexpr double CameraHelpers::FieldOfViewPerPixel()
+{
+  return 2.0 * std::atan(PIXEL_SIZE / (2.0 * FOCAL_LENGTH));
+}
 
 void CameraHelpers::ConfigureCamera(Pylon::CInstantCamera &camera)
 {
