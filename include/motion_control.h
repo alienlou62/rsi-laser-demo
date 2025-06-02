@@ -1,6 +1,10 @@
 #ifndef MOTION_CONTROL_H
 #define MOTION_CONTROL_H
 
+#include <numbers>
+
+#include "camera_helpers.h"
+
 // Forward declaration for RSI::RapidCode::MultiAxis
 namespace RSI { namespace RapidCode { class MultiAxis; } }
 
@@ -13,7 +17,7 @@ public:
     static constexpr double POS_Y_LIMIT = 0.135;
 
     // Tolerance to avoid unnecessary small movements
-    static constexpr double TOLERANCE = 0.01;
+    static constexpr double TOLERANCE = 10.0 * CameraHelpers::RADIANS_PER_PIXEL / (2.0 * std::numbers::pi);
 
     static void MoveMotorsWithLimits(RSI::RapidCode::MultiAxis* multiAxis, double x, double y);
 };

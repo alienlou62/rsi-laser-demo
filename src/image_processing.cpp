@@ -50,8 +50,8 @@ bool ImageProcessing::TryProcessImage(const uint8_t *pImageBuffer, int width, in
       int pixelOffsetY = center.y - CENTER_Y;
 
       // Calculate the targets in revolutions based on the pixel offsets
-      targetX = CameraHelpers::RadiansPerPixel() * pixelOffsetX / (2.0 * std::numbers::pi);
-      targetY = CameraHelpers::RadiansPerPixel() * pixelOffsetY / (2.0 * std::numbers::pi);
+      targetX = CameraHelpers::RADIANS_PER_PIXEL * pixelOffsetX / (2.0 * std::numbers::pi);
+      targetY = CameraHelpers::RADIANS_PER_PIXEL * pixelOffsetY / (2.0 * std::numbers::pi);
       return true;
     }
   }
