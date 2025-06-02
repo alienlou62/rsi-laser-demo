@@ -62,10 +62,10 @@ RSI_TASK(ProcessImage)
 
   double targetX = 0.0, targetY = 0.0;
   if (CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, 0))
-    if (g_ptrGrabResult)
-      if (ImageProcessing::TryProcessImage(
-            static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()),
-            g_ptrGrabResult->GetWidth(), g_ptrGrabResult->GetHeight(),
-            targetX, targetY))
-        data->targetX = targetX, data->targetY = targetY;
+    if (ImageProcessing::TryProcessImage(
+          static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()),
+          g_ptrGrabResult->GetWidth(), g_ptrGrabResult->GetHeight(),
+          targetX, targetY))
+  
+  data->targetX = targetX, data->targetY = targetY;
 }
