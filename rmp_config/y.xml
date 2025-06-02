@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <SerializableAxis xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <AxisNumber>0</AxisNumber>
+  <AxisNumber>1</AxisNumber>
   <UserUnits>67108864</UserUnits>
   <MotorType>RSIMotorTypeSERVO</MotorType>
   <Properties>
@@ -14,11 +14,11 @@
     <string>TriggeredModifyDeceleration=0.00014901161193847656</string>
     <string>TriggeredModifyJerkPercent=50</string>
     <string>DefaultVelocity=1</string>
-    <string>DefaultAcceleration=1</string>
-    <string>DefaultDeceleration=1</string>
+    <string>DefaultAcceleration=10</string>
+    <string>DefaultDeceleration=10</string>
     <string>DefaultJerkPercent=50</string>
     <string>DefaultPosition1=0</string>
-    <string>DefaultPosition2=500</string>
+    <string>DefaultPosition2=0.1</string>
     <string>DefaultRelativeIncrement=100</string>
     <string>AmpFaultAction=RSIActionABORT</string>
     <string>AmpFaultTriggerState=True</string>
@@ -35,12 +35,12 @@
     <string>HardwarePosLimitAction=RSIActionNONE</string>
     <string>HardwarePosLimitTriggerState=True</string>
     <string>HardwarePosLimitDuration=0</string>
-    <string>SoftwareNegLimitAction=RSIActionE_STOP</string>
-    <string>SoftwareNegLimitTriggerValue=-16777215.75</string>
-    <string>SoftwarePosLimitAction=RSIActionE_STOP</string>
-    <string>SoftwarePosLimitTriggerValue=16777216</string>
+    <string>SoftwareNegLimitAction=RSIActionABORT</string>
+    <string>SoftwareNegLimitTriggerValue=-0.15</string>
+    <string>SoftwarePosLimitAction=RSIActionABORT</string>
+    <string>SoftwarePosLimitTriggerValue=0.17</string>
     <string>EncoderFaultAction=RSIActionNONE</string>
-    <string>EncoderFaultTrigger=3584389056</string>
+    <string>EncoderFaultTrigger=2352006608</string>
     <string>EncoderFaultDuration=0</string>
     <string>NodeFailureAction=RSIActionNONE</string>
     <string>PositionToleranceFine=2.9802322387695312E-06</string>
@@ -73,10 +73,10 @@
     <string>FeedRate=1</string>
     <string>StopTime=0.5</string>
     <string>EStopTime=0.05</string>
-    <string>MotionHoldGateNumber=0</string>
-    <string>MotionHoldAxisLogic=28</string>
-    <string>MotionHoldUserMask=1660815936</string>
-    <string>MotionHoldUserPattern=577</string>
+    <string>MotionHoldGateNumber=1</string>
+    <string>MotionHoldAxisLogic=4294967295</string>
+    <string>MotionHoldUserMask=-1</string>
+    <string>MotionHoldUserPattern=-1</string>
   </Properties>
   <SDOConfig />
   <HomeStage1>

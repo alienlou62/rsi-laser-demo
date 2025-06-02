@@ -22,11 +22,11 @@
   <XMLFiles>
     <AxisXML>
       <AxisNumber>0</AxisNumber>
-      <XMLFile>y.xml</XMLFile>
+      <XMLFile>x.xml</XMLFile>
     </AxisXML>
     <AxisXML>
       <AxisNumber>1</AxisNumber>
-      <XMLFile>x.xml</XMLFile>
+      <XMLFile>y.xml</XMLFile>
     </AxisXML>
   </XMLFiles>
 </XMLSettings>

@@ -1,0 +1,33 @@
+[2025-05-29 16:15:35.224850] [Thread 22239] [info] Initializing RTTaskComm.
+[2025-05-29 16:15:35.227502] [Thread 22239] [info] Coordinator for TaskManager 1 initialized
+[2025-05-29 16:15:35.227521] [Thread 22239] [info] TaskManager started with given ID 1
+[2025-05-29 16:15:35.231621] [Thread 22268] [info] Client 1 starting reception
+[2025-05-29 16:15:35.251173] [Thread 22266] [info] Coordinator 1 received task submission request for task named 'Initialize' in library 'RTTaskFunctions' from client 2
+[2025-05-29 16:15:35.408898] [Thread 22266] [info] Successfully loaded function 'Initialize' from library 'RTTaskFunctions' at path ''
+[2025-05-29 16:15:35.409035] [Thread 22266] [info] Successfully global offset getter 'GlobalMemberOffsetGet' from library 'RTTaskFunctions' at path ''
+[2025-05-29 16:15:35.409036] [Thread 22266] [info] About to create main task action.
+[2025-05-29 16:15:35.409038] [Thread 22266] [info] Setting config parameters for task.
+[2025-05-29 16:15:35.409039] [Thread 22266] [info] Set execute state transition.
+[2025-05-29 16:15:35.409046] [Thread 22266] [info] Enabled timing for task.
+[2025-05-29 16:15:35.409047] [Thread 22266] [info] About to submit task.
+[2025-05-29 16:15:35.431312] [Thread 22266] [info] Submitted task with id 1.
+[2025-05-29 16:15:35.432568] [Thread 22266] [info] Emplacing observer for task 1.
+[2025-05-29 16:15:35.432597] [Thread 22266] [info] Responding to task submission request with task id 1.
+[2025-05-29 16:15:35.440034] [Thread 22276] [info] TaskManager waited for task 1 to execute 1 times. Success: true. Current count: 1
+[2025-05-29 16:15:35.447583] [Thread 22266] [info] Coordinator 1 received task submission request for task named 'MoveMotors' in library 'RTTaskFunctions' from client 2
+[2025-05-29 16:15:35.447618] [Thread 22266] [info] Successfully loaded function 'MoveMotors' from library 'RTTaskFunctions' at path ''
+[2025-05-29 16:15:35.447622] [Thread 22266] [info] About to create main task action.
+[2025-05-29 16:15:35.447623] [Thread 22266] [info] Setting config parameters for task.
+[2025-05-29 16:15:35.447625] [Thread 22266] [info] Set execute state transition.
+[2025-05-29 16:15:35.447631] [Thread 22266] [info] Enabled timing for task.
+[2025-05-29 16:15:35.447632] [Thread 22266] [info] About to submit task.
+[2025-05-29 16:15:35.451476] [Thread 22266] [info] Submitted task with id 2.
+[2025-05-29 16:15:35.451484] [Thread 22266] [info] Emplacing observer for task 2.
+[2025-05-29 16:15:35.451491] [Thread 22266] [info] Responding to task submission request with task id 2.
+[2025-05-29 16:15:55.964178] [Thread 22266] [info] TaskManager 1 received stop request from client 2
+[2025-05-29 16:15:55.964200] [Thread 22266] [info] Initiating stop of task manager 1
+[2025-05-29 16:15:55.966850] [Thread 22239] [info] RTTaskManager 1 stopping.
+[2025-05-29 16:15:56.019211] [Thread 22239] [info] TaskManager 1 acknowledged stop from client 2.
+[2025-05-29 16:15:56.068467] [Thread 22268] [info] Client 1 ended reception
+[2025-05-29 16:15:56.069534] [Thread 22239] [info] RTTaskManager 1 finished successfully.
+[2025-05-29 16:15:56.069553] [Thread 22239] [info] RTTaskManager finished successfully.
