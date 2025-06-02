@@ -47,8 +47,9 @@ bool ImageProcessing::TryProcessImage(const Pylon::CGrabResultPtr &grabResult, d
   cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel);
   std::vector<std::vector<cv::Point>> contours;
   cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-  contours.erase(
-      std::remove_if(contours.begin(), contours.end(), [](const std::vector<cv::Point> &c) { return cv::contourArea(c) < 700.0; }), contours.end()
+  contours.erase( std::remove_if(contours.begin(), contours.end(), 
+    [](const std::vector<cv::Point> &c) { return cv::contourArea(c) < MIN_CONTOUR_AREA; }
+    ), contours.end()
   );
   int largestContourIndex = -1;
   double largestContourArea = 0;
