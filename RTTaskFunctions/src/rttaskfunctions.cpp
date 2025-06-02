@@ -48,8 +48,6 @@ RSI_TASK(MoveMotors)
   std::exchange(targetX, data->targetX);
   std::exchange(targetY, data->targetY);
   if (targetX == 0.0 && targetY == 0.0) return;
-
-  targetX *= 0.1; targetY *= 0.1; //Scale down for now
   MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
 }
 
