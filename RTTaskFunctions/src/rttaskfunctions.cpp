@@ -32,6 +32,8 @@ RSI_TASK(Initialize)
   // Setup the multi-axis
   RTMultiAxisGet(0)->AxisAdd(RTAxisGet(0));
   RTMultiAxisGet(0)->AxisAdd(RTAxisGet(1));
+  RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
+  RTMultiAxisGet(0)->Abort();
   RTMultiAxisGet(0)->ClearFaults();
   RTMultiAxisGet(0)->AmpEnableSet(true);
 

@@ -30,9 +30,9 @@ RSI::RapidCode::MultiAxis *RMPHelpers::CreateMultiAxis(RSI::RapidCode::MotionCon
     axis->ClearFaults();
     multiAxis->AxisAdd(axis);
   }
+  multiAxis->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
   multiAxis->Abort();
   multiAxis->ClearFaults();
-  CheckErrors(multiAxis);
   return multiAxis;
 }
 
