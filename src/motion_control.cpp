@@ -12,7 +12,7 @@ void MotionControl::MoveMotorsWithLimits(RSI::RapidCode::MultiAxis *multiAxis, d
     double clampedX(0.0), clampedY(0.0);
     if (abs(x) > TOLERANCE) clampedX = std::clamp(x, NEG_X_LIMIT, POS_X_LIMIT);
     if (abs(y) > TOLERANCE) clampedY = std::clamp(y, NEG_Y_LIMIT, POS_Y_LIMIT);
-    multiAxis->MoveRelative(std::array{x, y}.data());
+    multiAxis->MoveRelative(std::array{clampedX, clampedY}.data());
   }
   catch (const RSI::RapidCode::RsiError &e)
   {
