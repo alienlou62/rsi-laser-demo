@@ -50,3 +50,27 @@ target_include_directories(LaserDemoRTTasks PRIVATE
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/include/helpers
 )
+
+# Setup the testing (sandbox) target
+add_executable(Sandbox
+  ${CMAKE_CURRENT_LIST_DIR}/src/sandbox_main.cpp 
+  ${CMAKE_CURRENT_LIST_DIR}/src/image_processing.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/motion_control.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/camera_helpers.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/rmp_helpers.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/misc_helpers.cpp
+)
+setup_rmp_target(Sandbox)
+target_include_directories(Sandbox PRIVATE 
+  ${CMAKE_CURRENT_LIST_DIR}/include
+  ${CMAKE_CURRENT_LIST_DIR}/include/helpers
+  ${OpenCV_INCLUDE_DIRS}
+  ${PYLON_INCLUDE_DIRS}
+)
+target_link_libraries(Sandbox PRIVATE 
+  ${OpenCV_LIBRARIES}
+  pylon::pylon
+)
+target_compile_definitions(Sandbox PRIVATE SOURCE_DIR="${CMAKE_CURRENT_LIST_DIR}")
+target_compile_definitions(Sandbox PRIVATE CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs")
+target_compile_options(Sandbox PRIVATE "-Wno-deprecated-enum-enum-conversion")
