@@ -21,7 +21,7 @@ public:
     static constexpr unsigned int IMAGE_HEIGHT = 480;
 
     static constexpr double PIXEL_SIZE = 4.8e-3; //mm
-    static constexpr double FOCAL_LENGTH = 4.0; //mm
+    static constexpr double FOCAL_LENGTH = 8.11; //mm
     static constexpr double RADIANS_PER_PIXEL = 2.0 * std::atan(PIXEL_SIZE / (2.0 * FOCAL_LENGTH));
 
     // Image capture constants
