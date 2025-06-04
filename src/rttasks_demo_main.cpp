@@ -16,7 +16,7 @@ using namespace RSI::RapidCode::RealTimeTasks;
 
 constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
 constexpr int32_t TASK_WAIT_TIMEOUT = 1000;
-constexpr int32_t PROCESS_TASK_PERIOD = 15;
+constexpr int32_t DETECTION_TASK_PERIOD = 15;
 constexpr int32_t MOVE_TASK_PERIOD = 15;
 
 volatile sig_atomic_t g_shutdown = false;
@@ -105,8 +105,8 @@ int main()
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
     SubmitSingleShotTask(manager, "Initialize");
 
-    std::shared_ptr<RTTask> processImageTask = SubmitRepeatingTask(manager, "ProcessImage", PROCESS_TASK_PERIOD);
-    std::shared_ptr<RTTask> moveMotorsTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1);
+    std::shared_ptr<RTTask> ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD);
+    std::shared_ptr<RTTask> motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1);
 
     // --- Main Loop ---
     while (!g_shutdown)
@@ -129,8 +129,8 @@ int main()
     }
 
     // Print task timing information
-    printTaskTiming(moveMotorsTask, "MoveMotors");
-    printTaskTiming(processImageTask, "ProcessImage");
+    printTaskTiming(motionTask, "Motion Task");
+    printTaskTiming(ballDetectionTask, "Ball Detection Task");
   }
   catch (const RsiError &e)
   {

@@ -20,17 +20,10 @@
 using namespace RSI::RapidCode;
 
 volatile sig_atomic_t g_shutdown = false;
-void sigquit_handler(int signal)
-{
-  std::cout << "SIGQUIT handler ran, setting shutdown flag..." << std::endl;
-  g_shutdown = true;
-}
-
-volatile sig_atomic_t g_paused = false;
 void sigint_handler(int signal)
 {
-  std::cout << "SIGINT handler ran, toggling paused flag..." << std::endl;
-  g_paused = !g_paused;
+  std::cout << "SIGINT handler ran, setting shutdown flag..." << std::endl;
+  g_shutdown = true;
 }
 
 // --- Main Function ---
@@ -41,7 +34,6 @@ int main()
   PrintHeader(EXECUTABLE_NAME);
   int exitCode = 0;
 
-  std::signal(SIGQUIT, sigquit_handler);
   std::signal(SIGINT, sigint_handler);
 
   // --- Pylon & Camera Initialization ---
@@ -55,6 +47,8 @@ int main()
   // --- RMP Initialization ---
   MotionController* controller = RMPHelpers::GetController();
   MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
+  Axis* axisX = controller->AxisGet(0);
+  Axis* axisY = controller->AxisGet(1);
   multiAxis->AmpEnableSet(true);
   double targetX = 0.0, targetY = 0.0;
 
@@ -77,35 +71,37 @@ int main()
       }
       retrieveStopwatch.Stop();
 
+      // Get the axis positions at the time the frame was grabbed
+      double initialX = axisX->ActualPositionGet();
+      double initialY = axisY->ActualPositionGet();
+
       // --- Image Processing ---
       auto processingStopwatch = Stopwatch(processingTiming);
-      if (!ImageProcessing::TryProcessImage(
+      double offsetX(0.0), offsetY(0.0);
+      if (!ImageProcessing::TryDetectBall(
             static_cast<uint8_t *>(ptrGrabResult->GetBuffer()),
             ptrGrabResult->GetWidth(), ptrGrabResult->GetHeight(),
-            targetX, targetY))
+            offsetX, offsetY))
       {
         ++processFailures;
         continue;
       }
       processingStopwatch.Stop();
 
+      // Calculate the target positions based on the offsets and the position at the time of frame grab
+      targetX = initialX + offsetX;
+      targetY = initialY + offsetY;
+
       // --- Motion Control ---
       auto motionStopwatch = Stopwatch(motionTiming);
-      if (g_paused)
+      try
       {
-        MotionControl::MoveMotorsWithLimits(multiAxis, 0.0, 0.0);
+        MotionControl::MoveMotorsWithLimits(multiAxis, targetX, targetY);
       }
-      else
+      catch (const RsiError &e)
       {
-        try
-        {
-          MotionControl::MoveMotorsWithLimits(multiAxis, targetX, targetY);
-        }
-        catch (const RsiError &e)
-        {
-          std::cerr << "RMP exception during motion control: " << e.what() << std::endl;
-          g_shutdown = true;
-        }
+        std::cerr << "RMP exception during motion control: " << e.what() << std::endl;
+        g_shutdown = true;
       }
       motionStopwatch.Stop();
     }

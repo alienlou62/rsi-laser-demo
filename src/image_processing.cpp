@@ -7,7 +7,7 @@
 
 using namespace cv;
 
-bool ImageProcessing::TryProcessImage(const uint8_t *pImageBuffer, int width, int height, double &targetX, double &targetY)
+bool ImageProcessing::TryDetectBall(const uint8_t *pImageBuffer, int width, int height, double &offsetX, double &offsetY)
 {
   constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 2;
   constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 2;
@@ -50,9 +50,19 @@ bool ImageProcessing::TryProcessImage(const uint8_t *pImageBuffer, int width, in
       int pixelOffsetX = center.x - CENTER_X;
       int pixelOffsetY = center.y - CENTER_Y;
 
-      // Calculate the targets in revolutions based on the pixel offsets
-      targetX = CameraHelpers::RADIANS_PER_PIXEL * pixelOffsetX / (2.0 * std::numbers::pi);
-      targetY = CameraHelpers::RADIANS_PER_PIXEL * pixelOffsetY / (2.0 * std::numbers::pi);
+      // Convert pixel offsets to revolutions if they exceed the tolerance
+      // Offsets are inverted to match the axes coordinate system compared to the camera's coordinate system
+      offsetX = 0.0;
+      if (std::abs(pixelOffsetX) > PIXEL_TOLERANCE)
+      {
+        offsetX = -CameraHelpers::RADIANS_PER_PIXEL * pixelOffsetX / (2.0 * std::numbers::pi);
+      }
+
+      offsetY = 0.0;
+      if (std::abs(pixelOffsetY) > PIXEL_TOLERANCE)
+      {
+        offsetY = -CameraHelpers::RADIANS_PER_PIXEL * pixelOffsetY / (2.0 * std::numbers::pi);
+      }
       return true;
     }
   }
