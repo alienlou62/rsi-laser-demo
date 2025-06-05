@@ -28,19 +28,19 @@ RSI_TASK(Initialize)
   data->cameraReady = false;
 
   // Setup the multi-axis
-  data->targetX = RTAxisGet(0)->ActualPositionGet();
-  data->targetY = RTAxisGet(1)->ActualPositionGet();
-  RTMultiAxisGet(0)->AxisAdd(RTAxisGet(0));
-  RTMultiAxisGet(0)->AxisAdd(RTAxisGet(1));
-  RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
-  RTMultiAxisGet(0)->Abort();
-  RTMultiAxisGet(0)->ClearFaults();
-  RTMultiAxisGet(0)->AmpEnableSet(true);
+  // data->targetX = RTAxisGet(0)->ActualPositionGet();
+  // data->targetY = RTAxisGet(1)->ActualPositionGet();
+  // RTMultiAxisGet(0)->AxisAdd(RTAxisGet(0));
+  // RTMultiAxisGet(0)->AxisAdd(RTAxisGet(1));
+  // RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
+  // RTMultiAxisGet(0)->Abort();
+  // RTMultiAxisGet(0)->ClearFaults();
+  // RTMultiAxisGet(0)->AmpEnableSet(true);
 
   try
   {
     g_camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
-    CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult, 100);
+    CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
     data->cameraReady = true;
   }
   catch (const GenericException& e)
