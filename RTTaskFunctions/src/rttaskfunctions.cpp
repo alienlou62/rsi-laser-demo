@@ -37,9 +37,24 @@ RSI_TASK(Initialize)
   RTMultiAxisGet(0)->ClearFaults();
   RTMultiAxisGet(0)->AmpEnableSet(true);
 
-  g_camera.Attach(CTlFactory::GetInstance().CreateFirstDevice());
-  CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
+  try
+  {
+    CameraHelpers::ConfigureCamera(g_camera);
+    CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult, 100);
   data->cameraReady = true;
+  }
+  catch (const GenericException& e)
+  {
+    std::cerr << e.what() << std::endl;
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << e.what() << std::endl;
+  }
+  catch (...)
+  {
+    std::cerr << "Unknown exception during camera initialization." << std::endl;
+  }
 }
 
 // Moves the motors based on the target positions.
@@ -51,11 +66,7 @@ RSI_TASK(MoveMotors)
 // Processes the image captured by the camera.
 RSI_TASK(DetectBall)
 {
-  if (!data->cameraReady)
-  {
-    std::cerr << "Camera is not ready. Skipping image processing." << std::endl;
-    return;
-  }
+  if (!data->cameraReady) return;
 
   bool frameGrabbed = CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, 0);
   if (!frameGrabbed) return;

@@ -99,7 +99,6 @@ int main()
   MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
   multiAxis->AmpEnableSet(true);
 
-  std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
   try
   {
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
