@@ -109,8 +109,8 @@ int main()
   SetupCamera();
 
   // --- RMP Initialization ---
-  // MotionController* controller = RMPHelpers::GetController();
-  // MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
+  MotionController* controller = RMPHelpers::GetController();
+  MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
   // multiAxis->AmpEnableSet(true);
 
   try
@@ -173,8 +173,8 @@ int main()
   }
 
   // --- Cleanup ---
-  // multiAxis->Abort();
-  // multiAxis->ClearFaults();
+  multiAxis->Abort();
+  multiAxis->ClearFaults();
 
   PrintFooter(EXECUTABLE_NAME, exitCode);
   return exitCode;
