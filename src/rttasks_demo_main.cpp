@@ -4,12 +4,17 @@
 #include <iostream>
 #include <memory>
 
+#include <pylon/PylonIncludes.h>
+
 #include "rsi.h"
 #include "rttask.h"
 
 #include "timing_helpers.h"
 #include "misc_helpers.h"
 #include "rmp_helpers.h"
+#include "camera_helpers.h"
+
+using namespace Pylon;
 
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
@@ -86,6 +91,13 @@ void printTaskTiming(std::shared_ptr<RTTask> task, const std::string& taskName)
   std::cout << "Average execution time: " << status.ExecutionTimeMean << " ns" << std::endl << std::endl;
 }
 
+void SetupCamera()
+{
+  PylonAutoInitTerm pylonAutoInitTerm;
+  CInstantCamera camera;
+  CameraHelpers::ConfigureCamera(camera);
+}
+
 int main()
 {
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
@@ -93,6 +105,8 @@ int main()
   int exitCode = 0;
 
   std::signal(SIGINT, sigint_handler);
+
+  SetupCamera();
 
   // --- RMP Initialization ---
   MotionController* controller = RMPHelpers::GetController();

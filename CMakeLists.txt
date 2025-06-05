@@ -44,11 +44,19 @@ add_executable(LaserDemoRTTasks
   ${CMAKE_CURRENT_LIST_DIR}/src/rttasks_demo_main.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/helpers/rmp_helpers.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/helpers/misc_helpers.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/camera_helpers.cpp
 )
 setup_rmp_target(LaserDemoRTTasks)
 target_include_directories(LaserDemoRTTasks PRIVATE 
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/include/helpers
+  ${PYLON_INCLUDE_DIRS}
+)
+target_link_libraries(LaserDemoRTTasks PRIVATE 
+  pylon::pylon
+)
+target_compile_definitions(LaserDemoRTTasks PRIVATE 
+  CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs"
 )
 
 # Setup the testing (sandbox) target

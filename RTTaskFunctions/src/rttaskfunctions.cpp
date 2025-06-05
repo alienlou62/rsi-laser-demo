@@ -39,9 +39,9 @@ RSI_TASK(Initialize)
 
   try
   {
-    CameraHelpers::ConfigureCamera(g_camera);
+    g_camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
     CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult, 100);
-  data->cameraReady = true;
+    data->cameraReady = true;
   }
   catch (const GenericException& e)
   {
