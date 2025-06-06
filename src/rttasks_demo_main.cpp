@@ -102,6 +102,9 @@ void SetupCamera()
   camera.DestroyDevice();
 }
 
+#include <thread>
+#include <chrono>
+
 int main()
 {
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
@@ -120,12 +123,13 @@ int main()
   try
   {
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
-    SubmitSingleShotTask(manager, "Initialize");
+    SubmitSingleShotTask(manager, "Initialize", 100000);
 
     FirmwareValue cameraReady = manager->GlobalValueGet("cameraReady");
     if (cameraReady.Bool)
     {
       std::cout << "Camera is ready." << std::endl;
+      return 0;
     }
     else
     {

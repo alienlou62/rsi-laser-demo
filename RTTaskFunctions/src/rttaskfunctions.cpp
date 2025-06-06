@@ -30,12 +30,6 @@ RSI_TASK(Initialize)
   try
   {
     g_camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
-    g_camera.Open();
-    if (!g_camera.IsOpen())
-    {
-      std::cerr << "Failed to open camera." << std::endl;
-      return;
-    }
     CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
     data->cameraReady = true;
   }

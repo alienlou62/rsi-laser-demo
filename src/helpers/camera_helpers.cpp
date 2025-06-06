@@ -61,11 +61,10 @@ bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResu
   if (!grabResult->GrabSucceeded())
   {
     const int64_t errorCode = grabResult->GetErrorCode();
-    // if (errorCode == 0xe1000014) // Incomplete buffer (buffer underrun)
-    // {
-    //   std::cerr << "[CameraHelpers] Grab failed: Code " << errorCode << ", Desc: " << grabResult->GetErrorDescription() << std::endl;
-    //   return false;
-    // }
+    if (errorCode == 0xe1000014) // Incomplete buffer (buffer underrun)
+    {
+      return false;
+    }
     std::ostringstream oss;
     oss << "[CameraHelpers] Grab failed: Code " << errorCode << ", Desc: " << grabResult->GetErrorDescription();
     throw std::runtime_error(oss.str());
@@ -75,14 +74,17 @@ bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResu
 
 void CameraHelpers::PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, unsigned int maxRetries)
 {
-  camera.Open();
-  camera.StartGrabbing(Pylon::GrabStrategy_LatestImageOnly);
+
   unsigned int retries = 0;
   while (retries < maxRetries)
   {
     try {
+      camera.Open();
+      camera.StartGrabbing(Pylon::GrabStrategy_LatestImageOnly);
       if (TryGrabFrame(camera, grabResult, TIMEOUT_MS))
         return;
+
+      camera.Close();
     } catch (const std::exception& e) {
       throw std::runtime_error(std::string("[CameraHelpers] Fatal error during camera priming: ") + e.what());
     }
