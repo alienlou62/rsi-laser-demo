@@ -35,15 +35,15 @@ RSI_TASK(Initialize)
   }
   catch (const GenericException& e)
   {
-    std::cerr << e.what() << std::endl;
+    throw std::runtime_error(e.what());
   }
   catch (const std::exception& e)
   {
-    std::cerr << e.what() << std::endl;
+    throw std::runtime_error(e.what());
   }
   catch (...)
   {
-    std::cerr << "Unknown exception during camera initialization." << std::endl;
+    throw std::runtime_error("Unknown exception during camera initialization.");
   }
 
   // Setup the multi-axis

@@ -61,7 +61,7 @@ bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResu
   if (!grabResult->GrabSucceeded())
   {
     const int64_t errorCode = grabResult->GetErrorCode();
-    if (errorCode == 0xe1000014) // Incomplete buffer (buffer underrun)
+    if (errorCode == 0xe1000014) // Incomplete buffer (buffer underrun). Not considered a fatal error.
     {
       return false;
     }

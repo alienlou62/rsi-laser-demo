@@ -20,7 +20,7 @@ using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
 constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
-constexpr int32_t TASK_WAIT_TIMEOUT = 1000;
+constexpr int32_t INIT_TIMEOUT = 15000; // 15 seconds, initialization can take a while
 constexpr int32_t DETECTION_TASK_PERIOD = 15;
 constexpr int32_t MOVE_TASK_PERIOD = 15;
 
@@ -55,7 +55,7 @@ void RTTaskManagerDeleter(RTTaskManager* ptr) {
   SafeDeleter(ptr, [](RTTaskManager* m){ m->Shutdown(); }, "RTTaskManagerDeleter");
 }
 
-void SubmitSingleShotTask(std::shared_ptr<RTTaskManager>& manager, const std::string& taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
+void SubmitSingleShotTask(std::shared_ptr<RTTaskManager>& manager, const std::string& taskName, int32_t timeoutMs = INIT_TIMEOUT)
 {
   RTTaskCreationParameters singleShotParams(taskName.c_str());
   singleShotParams.Repeats = RTTaskCreationParameters::RepeatNone;
@@ -84,11 +84,13 @@ void printTaskTiming(std::shared_ptr<RTTask> task, const std::string& taskName)
   if (!task) return;
 
   RTTaskStatus status = task->StatusGet();
+  // Lambda to convert nanoseconds to milliseconds
+  auto nsToMs = [](uint64_t ns) { return static_cast<double>(ns) / 1e6; };
   std::cout << "Task: " << taskName << std::endl;
   std::cout << "Execution count: " << status.ExecutionCount << std::endl;
-  std::cout << "Last execution time: " << status.ExecutionTimeLast << " ns" << std::endl;
-  std::cout << "Maximum execution time: " << status.ExecutionTimeMax << " ns" << std::endl;
-  std::cout << "Average execution time: " << status.ExecutionTimeMean << " ns" << std::endl << std::endl;
+  std::cout << "Last execution time: " << nsToMs(status.ExecutionTimeLast) << " ms" << std::endl;
+  std::cout << "Maximum execution time: " << nsToMs(status.ExecutionTimeMax) << " ms" << std::endl;
+  std::cout << "Average execution time: " << nsToMs(status.ExecutionTimeMean) << " ms" << std::endl << std::endl;
 }
 
 void SetupCamera()
@@ -123,15 +125,10 @@ int main()
   try
   {
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
-    SubmitSingleShotTask(manager, "Initialize", 100000);
+    SubmitSingleShotTask(manager, "Initialize");
 
     FirmwareValue cameraReady = manager->GlobalValueGet("cameraReady");
-    if (cameraReady.Bool)
-    {
-      std::cout << "Camera is ready." << std::endl;
-      return 0;
-    }
-    else
+    if (!cameraReady.Bool)
     {
       std::cerr << "Error: Camera is not ready." << std::endl;
       return -1;
