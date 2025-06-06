@@ -54,7 +54,7 @@ RSI_TASK(Initialize)
   RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
   RTMultiAxisGet(0)->Abort();
   RTMultiAxisGet(0)->ClearFaults();
-  // RTMultiAxisGet(0)->AmpEnableSet(true);
+  RTMultiAxisGet(0)->AmpEnableSet(true);
 }
 
 // Moves the motors based on the target positions.

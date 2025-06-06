@@ -20,6 +20,7 @@ using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
 constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
+constexpr int32_t TASK_WAIT_TIMEOUT = 1000; // 1 seconds, for task execution wait
 constexpr int32_t INIT_TIMEOUT = 15000; // 15 seconds, initialization can take a while
 constexpr int32_t DETECTION_TASK_PERIOD = 15;
 constexpr int32_t MOVE_TASK_PERIOD = 15;
@@ -55,7 +56,7 @@ void RTTaskManagerDeleter(RTTaskManager* ptr) {
   SafeDeleter(ptr, [](RTTaskManager* m){ m->Shutdown(); }, "RTTaskManagerDeleter");
 }
 
-void SubmitSingleShotTask(std::shared_ptr<RTTaskManager>& manager, const std::string& taskName, int32_t timeoutMs = INIT_TIMEOUT)
+void SubmitSingleShotTask(std::shared_ptr<RTTaskManager>& manager, const std::string& taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
 {
   RTTaskCreationParameters singleShotParams(taskName.c_str());
   singleShotParams.Repeats = RTTaskCreationParameters::RepeatNone;
@@ -67,7 +68,8 @@ void SubmitSingleShotTask(std::shared_ptr<RTTaskManager>& manager, const std::st
 std::shared_ptr<RTTask> SubmitRepeatingTask(
   std::shared_ptr<RTTaskManager>& manager, const std::string& taskName,
   int32_t period = RTTaskCreationParameters::PeriodDefault,
-  int32_t phase = RTTaskCreationParameters::PhaseDefault
+  int32_t phase = RTTaskCreationParameters::PhaseDefault,
+  int32_t timeoutMs = TASK_WAIT_TIMEOUT
   )
 {
   RTTaskCreationParameters repeatingParams(taskName.c_str());
@@ -76,6 +78,8 @@ std::shared_ptr<RTTask> SubmitRepeatingTask(
   repeatingParams.Phase = phase;
   repeatingParams.EnableTiming = true;
   std::shared_ptr<RTTask> repeatingTask(manager->TaskSubmit(repeatingParams), RTTaskDeleter);
+  repeatingTask->ExecutionCountAbsoluteWait(1, timeoutMs);
+  repeatingTask->TimingReset(); // Reset timing stats for the task after the first run
   return repeatingTask;
 }
 
@@ -117,12 +121,11 @@ int main()
   // --- RMP Initialization ---
   MotionController* controller = RMPHelpers::GetController();
   MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
-  // multiAxis->AmpEnableSet(true);
 
   try
   {
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
-    SubmitSingleShotTask(manager, "Initialize");
+    SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
     FirmwareValue cameraReady = manager->GlobalValueGet("cameraReady");
     if (!cameraReady.Bool)
