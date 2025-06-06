@@ -62,26 +62,40 @@ int main()
     // - YUV422Packed - YUV422_YUYV_Packed
     CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
     INodeMap &nodeMap = camera.GetNodeMap();
-    CEnumerationPtr pixelFormatEnum(nodeMap.GetNode("PixelFormat"));
-    if (IsAvailable(pixelFormatEnum) && IsReadable(pixelFormatEnum))
+
+    CEnumerationPtr pixelFormat(nodeMap.GetNode("PixelFormat"));
+    if (IsAvailable(pixelFormat) && IsReadable(pixelFormat))
     {
-      // Get all available entries
-      StringList_t entries;
-      pixelFormatEnum->GetSymbolics(entries);
-      std::cout << "Available Pixel Formats:" << std::endl;
-      for (const auto& entry : entries)
-      {
-        CEnumEntryPtr enumEntry(pixelFormatEnum->GetEntryByName(entry));
-        if (IsAvailable(enumEntry) && IsReadable(enumEntry))
-        {
-          std::cout << " - " << entry << std::endl;
-        }
-      }
+      pixelFormat->FromString("YUV422_YUYV_Packed", true);
     }
     else
     {
-      std::cout << "PixelFormat enumeration not available!" << std::endl;
+      std::cout << "PixelFormat not available!" << std::endl;
     }
+
+    CameraHelpers::PrimeCamera(camera, ptrGrabResult);
+
+    std::cout << "PayloadType: " << ptrGrabResult->GetPayloadType() << std::endl;
+    std::cout << "PixelType: " << ptrGrabResult->GetPixelType() << std::endl;
+    std::cout << "Height: " << ptrGrabResult->GetHeight() << std::endl;
+    std::cout << "Width: " << ptrGrabResult->GetWidth() << std::endl;
+    std::cout << "OffsetX: " << ptrGrabResult->GetOffsetX() << std::endl;
+    std::cout << "OffsetY: " << ptrGrabResult->GetOffsetY() << std::endl;
+    std::cout << "PaddingX: " << ptrGrabResult->GetPaddingX() << std::endl;
+    std::cout << "PaddingY: " << ptrGrabResult->GetPaddingY() << std::endl;
+    std::cout << "Payload size: " << ptrGrabResult->GetPayloadSize() << std::endl;
+    std::cout << "Buffer size: " << ptrGrabResult->GetBufferSize() << std::endl;
+    std::size_t stride; ptrGrabResult->GetStride(stride);
+    std::cout << "Stride: " << stride << std::endl;
+    std::cout << "Image size: " << ptrGrabResult->GetImageSize() << std::endl;
+    std::cout << "Image buffer address: " << static_cast<void*>(ptrGrabResult->GetBuffer()) << std::endl;
+    std::cout << "Frame number: " << ptrGrabResult->GetBlockID() << std::endl;
+    std::cout << "Camera context: " << ptrGrabResult->GetCameraContext() << std::endl;
+    std::cout << "Timestamp: " << ptrGrabResult->GetTimeStamp() << std::endl;
+
+    // Print error code/message just in case
+    std::cout << "  Error code: " << ptrGrabResult->GetErrorCode() << std::endl;
+    std::cout << "  Error description: " << ptrGrabResult->GetErrorDescription() << std::endl;
   }
   catch(const GenericException& e)
   {
