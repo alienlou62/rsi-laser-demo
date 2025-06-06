@@ -66,7 +66,7 @@ int main()
     CEnumerationPtr pixelFormat(nodeMap.GetNode("PixelFormat"));
     if (IsAvailable(pixelFormat) && IsReadable(pixelFormat))
     {
-      pixelFormat->FromString("YUV422_YUYV_Packed", true);
+      pixelFormat->FromString("BayerBG8", true);
     }
     else
     {
@@ -74,39 +74,6 @@ int main()
     }
 
     CameraHelpers::PrimeCamera(camera, ptrGrabResult);
-
-    // std::cout << "PayloadType: " << ptrGrabResult->GetPayloadType() << std::endl;
-    // std::cout << "PixelType: " << ptrGrabResult->GetPixelType() << std::endl;
-    // std::cout << "Height: " << ptrGrabResult->GetHeight() << std::endl;
-    // std::cout << "Width: " << ptrGrabResult->GetWidth() << std::endl;
-    // std::cout << "OffsetX: " << ptrGrabResult->GetOffsetX() << std::endl;
-    // std::cout << "OffsetY: " << ptrGrabResult->GetOffsetY() << std::endl;
-    // std::cout << "PaddingX: " << ptrGrabResult->GetPaddingX() << std::endl;
-    // std::cout << "PaddingY: " << ptrGrabResult->GetPaddingY() << std::endl;
-    // std::cout << "Payload size: " << ptrGrabResult->GetPayloadSize() << std::endl;
-    // std::cout << "Buffer size: " << ptrGrabResult->GetBufferSize() << std::endl;
-    // std::size_t stride; ptrGrabResult->GetStride(stride);
-    // std::cout << "Stride: " << stride << std::endl;
-    // std::cout << "Image size: " << ptrGrabResult->GetImageSize() << std::endl;
-
-    // // Print error code/message just in case
-    // std::cout << "Error code: " << ptrGrabResult->GetErrorCode() << std::endl;
-    // std::cout << "Error description: " << ptrGrabResult->GetErrorDescription() << std::endl;
-
-    /*
-    PayloadType: 0
-    PixelType: 34603058
-    Height: 480
-    Width: 640
-    OffsetX: 16
-    OffsetY: 16
-    PaddingX: 0
-    PaddingY: 0
-    Payload size: 614400
-    Buffer size: 614400
-    Stride: 1280
-    Image size: 614400
-    */
 
     while(!g_shutdown)
     {
@@ -136,28 +103,28 @@ int main()
       std::size_t stride; ptrGrabResult->GetStride(stride);
       uint8_t* buffer = (uint8_t*)ptrGrabResult->GetBuffer();
 
-      // Wrap the YUYV buffer in a cv::Mat
-      cv::Mat yuyvImg(height, width, CV_8UC2, buffer, stride);
+      // For BayerBG8: single channel, use CV_8UC1
+      cv::Mat bayerImg(height, width, CV_8UC1, buffer, stride);
 
-      if (yuyvImg.empty())
+      if (bayerImg.empty())
       {
-        std::cerr << "Failed to create cv::Mat from YUYV buffer." << std::endl;
+        std::cerr << "Failed to create cv::Mat from Bayer buffer." << std::endl;
         return -1;
       }
 
-      // Convert YUYV (YUV422) to BGR
+      // Convert BayerBG8 to BGR for display
       cv::Mat bgrImg;
-      cv::cvtColor(yuyvImg, bgrImg, cv::COLOR_YUV2BGR_YUY2);
+      cv::cvtColor(bayerImg, bgrImg, cv::COLOR_BayerBG2BGR);
       convertStopwatch.Stop();
 
       if (bgrImg.empty())
       {
-        std::cerr << "Failed to convert YUYV to BGR." << std::endl;
+        std::cerr << "Failed to convert Bayer to BGR." << std::endl;
         return -1;
       }
 
       // Show the result
-      cv::imshow("Basler Camera - BGR", bgrImg);
+      cv::imshow("Basler Camera - BayerBG8->BGR", bgrImg);
       cv::waitKey(1);
     }
   }
