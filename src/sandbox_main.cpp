@@ -7,7 +7,6 @@
 
 // --- Camera and Image Processing Headers ---
 #include <opencv2/opencv.hpp>
-#include <opencv2/tracking.hpp>
 #include <pylon/PylonIncludes.h>
 
 // --- RMP/RSI Headers ---
@@ -60,6 +59,7 @@ int main()
     std::cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << std::endl;
     camera.Open();
 
+    // - YUV422Packed - YUV422_YUYV_Packed
     CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
     INodeMap &nodeMap = camera.GetNodeMap();
     CEnumerationPtr pixelFormatEnum(nodeMap.GetNode("PixelFormat"));
