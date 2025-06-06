@@ -53,6 +53,7 @@ int main()
   CInstantCamera camera;
   CGrabResultPtr ptrGrabResult;
 
+  TimingStats convertTiming;
   try
   {
     camera.Attach(CTlFactory::GetInstance().CreateFirstDevice());
@@ -107,49 +108,57 @@ int main()
     Image size: 614400
     */
 
-    if (!ptrGrabResult)
+    while(!g_shutdown)
     {
-      std::cerr << "Fatal: Grab failed, result pointer is null after RetrieveResult (unexpected state)." << std::endl;
-      return -1;
-    }
-    if (!ptrGrabResult->GrabSucceeded())
-    {
-      const int64_t errorCode = ptrGrabResult->GetErrorCode();
-      std::ostringstream oss;
-      oss << "Grab failed: Code " << errorCode << ", Desc: " << ptrGrabResult->GetErrorDescription();
-      std::cerr << oss.str() << std::endl;
-      return -1;
-    }
+      bool frameGrabbed = CameraHelpers::TryGrabFrame(camera, ptrGrabResult);
+      if (!frameGrabbed)
+      {
+        std::cerr << "Failed to grab frame" << std::endl;
+        continue;
+      }
+      if (!ptrGrabResult)
+      {
+        std::cerr << "Fatal: Grab failed, result pointer is null after RetrieveResult (unexpected state)." << std::endl;
+        return -1;
+      }
+      if (!ptrGrabResult->GrabSucceeded())
+      {
+        const int64_t errorCode = ptrGrabResult->GetErrorCode();
+        std::ostringstream oss;
+        oss << "Grab failed: Code " << errorCode << ", Desc: " << ptrGrabResult->GetErrorDescription();
+        std::cerr << oss.str() << std::endl;
+        return -1;
+      }
 
-    int width = ptrGrabResult->GetWidth();
-    int height = ptrGrabResult->GetHeight();
-    std::size_t stride; ptrGrabResult->GetStride(stride);
-    uint8_t* buffer = (uint8_t*)ptrGrabResult->GetBuffer();
+      Stopwatch convertStopwatch(convertTiming);
+      int width = ptrGrabResult->GetWidth();
+      int height = ptrGrabResult->GetHeight();
+      std::size_t stride; ptrGrabResult->GetStride(stride);
+      uint8_t* buffer = (uint8_t*)ptrGrabResult->GetBuffer();
 
-    // Wrap the YUYV buffer in a cv::Mat
-    cv::Mat yuyvImg(height, width, CV_8UC2, buffer, stride);
+      // Wrap the YUYV buffer in a cv::Mat
+      cv::Mat yuyvImg(height, width, CV_8UC2, buffer, stride);
 
-    if (yuyvImg.empty())
-    {
-      std::cerr << "Failed to create cv::Mat from YUYV buffer." << std::endl;
-      return -1;
-    }
+      if (yuyvImg.empty())
+      {
+        std::cerr << "Failed to create cv::Mat from YUYV buffer." << std::endl;
+        return -1;
+      }
 
-    // Convert YUYV (YUV422) to BGR
-    cv::Mat bgrImg;
-    cv::cvtColor(yuyvImg, bgrImg, cv::COLOR_YUV2BGR_YUY2);
+      // Convert YUYV (YUV422) to BGR
+      cv::Mat bgrImg;
+      cv::cvtColor(yuyvImg, bgrImg, cv::COLOR_YUV2BGR_YUY2);
+      convertStopwatch.Stop();
 
-    if (bgrImg.empty())
-    {
-      std::cerr << "Failed to convert YUYV to BGR." << std::endl;
-      return -1;
-    }
+      if (bgrImg.empty())
+      {
+        std::cerr << "Failed to convert YUYV to BGR." << std::endl;
+        return -1;
+      }
 
-    // Show the result
-    cv::imshow("Basler Camera - BGR", bgrImg);
-    while(!g_shutdown && cv::waitKey(1) < 0)
-    {
-      // Keep the window open until shutdown is triggered
+      // Show the result
+      cv::imshow("Basler Camera - BGR", bgrImg);
+      cv::waitKey(1);
     }
   }
   catch(const GenericException& e)
@@ -173,10 +182,16 @@ int main()
     return -1;
   }
 
-  // while (!g_shutdown)
-  // {
+  printStats("Conversion Timing:", convertTiming);
 
-  // }
+  /*
+  Conversion Timing::YUYV
+  Iterations: 742
+  Last:       3 ms
+  Min:        0 ms
+  Max:        39 ms
+  Average:    2.02965 ms
+  */
 
   cv::destroyAllWindows();
 
