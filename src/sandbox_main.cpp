@@ -114,7 +114,7 @@ int main()
 
       // Convert BayerBG8 to BGR for display
       cv::Mat bgrImg;
-      cv::cvtColor(bayerImg, bgrImg, cv::COLOR_BayerBG2BGR);
+      cv::cvtColor(bayerImg, bgrImg, cv::COLOR_BayerBG2RGB);
       convertStopwatch.Stop();
 
       if (bgrImg.empty())
