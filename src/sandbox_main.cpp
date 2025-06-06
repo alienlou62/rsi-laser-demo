@@ -59,7 +59,6 @@ int main()
     std::cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << std::endl;
     camera.Open();
 
-    // - YUV422Packed - YUV422_YUYV_Packed
     CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
     INodeMap &nodeMap = camera.GetNodeMap();
 
@@ -88,14 +87,25 @@ int main()
     std::size_t stride; ptrGrabResult->GetStride(stride);
     std::cout << "Stride: " << stride << std::endl;
     std::cout << "Image size: " << ptrGrabResult->GetImageSize() << std::endl;
-    std::cout << "Image buffer address: " << static_cast<void*>(ptrGrabResult->GetBuffer()) << std::endl;
-    std::cout << "Frame number: " << ptrGrabResult->GetBlockID() << std::endl;
-    std::cout << "Camera context: " << ptrGrabResult->GetCameraContext() << std::endl;
-    std::cout << "Timestamp: " << ptrGrabResult->GetTimeStamp() << std::endl;
 
     // Print error code/message just in case
-    std::cout << "  Error code: " << ptrGrabResult->GetErrorCode() << std::endl;
-    std::cout << "  Error description: " << ptrGrabResult->GetErrorDescription() << std::endl;
+    std::cout << "Error code: " << ptrGrabResult->GetErrorCode() << std::endl;
+    std::cout << "Error description: " << ptrGrabResult->GetErrorDescription() << std::endl;
+
+    /*
+    PayloadType: 0
+    PixelType: 34603058
+    Height: 480
+    Width: 640
+    OffsetX: 16
+    OffsetY: 16
+    PaddingX: 0
+    PaddingY: 0
+    Payload size: 614400
+    Buffer size: 614400
+    Stride: 1280
+    Image size: 614400
+    */
   }
   catch(const GenericException& e)
   {
