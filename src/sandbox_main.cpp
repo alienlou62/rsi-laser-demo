@@ -7,6 +7,7 @@
 
 // --- Camera and Image Processing Headers ---
 #include <opencv2/opencv.hpp>
+#include <opencv2/tracking.hpp>
 #include <pylon/PylonIncludes.h>
 
 // --- RMP/RSI Headers ---
@@ -39,6 +40,61 @@ void sigint_handler(int signal)
   g_shutdown = true;
 }
 
+TimingStats total, rgbToHsv, masking, contourFinding, boundingBoxFinding;
+
+bool DetectBall(Mat& rgbFrame, Rect& boundingBox)
+{
+  constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 2;
+  constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 2;
+
+  static Mat hsvFrame, mask, kernel;
+  
+  {
+    Stopwatch rgbToHsvWatch(rgbToHsv);
+    cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
+  }
+
+  {
+    Stopwatch maskingWatch(masking);
+    Scalar lower_hsv(ImageProcessing::lowH, ImageProcessing::lowS, ImageProcessing::lowV);
+    Scalar upper_hsv(ImageProcessing::highH, ImageProcessing::highS, ImageProcessing::highV);
+    inRange(hsvFrame, lower_hsv, upper_hsv, mask);
+  }
+
+  std::vector<std::vector<Point>> contours;
+  int largestContourIndex = -1;
+  double largestContourArea = 0;
+  {
+    Stopwatch contourFindingWatch(contourFinding);
+    kernel = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+    morphologyEx(mask, mask, MORPH_CLOSE, kernel);
+    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+    contours.erase(
+      std::remove_if(contours.begin(), contours.end(), [](const std::vector<Point> &c) { return contourArea(c) < ImageProcessing::MIN_CONTOUR_AREA; }),
+      contours.end()
+    );
+    for (int i = 0; i < static_cast<int>(contours.size()); ++i)
+    {
+      double area = contourArea(contours[i]);
+      if (area > largestContourArea)
+      {
+        largestContourArea = area;
+        largestContourIndex = i;
+      }
+    }
+    if (largestContourIndex == -1)
+    {
+      return false; // Skip to the next frame if no contours are found
+    }
+  }
+
+  {
+    Stopwatch boundingBoxWatch(boundingBoxFinding);
+    boundingBox = boundingRect(contours[largestContourIndex]);
+  }
+  return true;
+}
+
 // --- Main Function ---
 int main()
 {
@@ -48,117 +104,45 @@ int main()
 
   std::signal(SIGINT, sigint_handler);
 
-  // --- Pylon & Camera Initialization ---
-  PylonAutoInitTerm pylonAutoInitTerm = PylonAutoInitTerm();
-  CInstantCamera camera;
-  CGrabResultPtr ptrGrabResult;
-
-  TimingStats convertTiming;
-  try
+  std::string videoFilePath = std::string(SOURCE_DIR) + "/test_video.mp4";
+  VideoCapture video(videoFilePath);
+  if (!video.isOpened())
   {
-    camera.Attach(CTlFactory::GetInstance().CreateFirstDevice());
-    std::cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << std::endl;
-    camera.Open();
+    std::cerr << "Error: Could not open video file: " << videoFilePath << std::endl;
+    PrintFooter(EXECUTABLE_NAME, -1);
+    return -1;
+  }
 
-    CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
-    INodeMap &nodeMap = camera.GetNodeMap();
+  Mat rgbFrame, hsvFrame, mask, kernel;
+  Rect ballBox;
 
-    CEnumerationPtr pixelFormat(nodeMap.GetNode("PixelFormat"));
-    if (IsAvailable(pixelFormat) && IsReadable(pixelFormat))
+  constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 2;
+  constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 2;
+
+  while (!g_shutdown)
+  {
+    bool success = video.read(rgbFrame);
+    if (!success || rgbFrame.empty())
     {
-      pixelFormat->FromString("BayerBG8", true);
-    }
-    else
-    {
-      std::cout << "PixelFormat not available!" << std::endl;
+      break;
     }
 
-    CameraHelpers::PrimeCamera(camera, ptrGrabResult);
+    Stopwatch totalWatch(total);
 
-    while(!g_shutdown)
-    {
-      bool frameGrabbed = CameraHelpers::TryGrabFrame(camera, ptrGrabResult);
-      if (!frameGrabbed)
-      {
-        std::cerr << "Failed to grab frame" << std::endl;
-        continue;
-      }
-      if (!ptrGrabResult)
-      {
-        std::cerr << "Fatal: Grab failed, result pointer is null after RetrieveResult (unexpected state)." << std::endl;
-        return -1;
-      }
-      if (!ptrGrabResult->GrabSucceeded())
-      {
-        const int64_t errorCode = ptrGrabResult->GetErrorCode();
-        std::ostringstream oss;
-        oss << "Grab failed: Code " << errorCode << ", Desc: " << ptrGrabResult->GetErrorDescription();
-        std::cerr << oss.str() << std::endl;
-        return -1;
-      }
+    if(!DetectBall(rgbFrame, ballBox)) continue;
 
-      Stopwatch convertStopwatch(convertTiming);
-      int width = ptrGrabResult->GetWidth();
-      int height = ptrGrabResult->GetHeight();
-      std::size_t stride; ptrGrabResult->GetStride(stride);
-      uint8_t* buffer = (uint8_t*)ptrGrabResult->GetBuffer();
-
-      // For BayerBG8: single channel, use CV_8UC1
-      cv::Mat bayerImg(height, width, CV_8UC1, buffer, stride);
-
-      if (bayerImg.empty())
-      {
-        std::cerr << "Failed to create cv::Mat from Bayer buffer." << std::endl;
-        return -1;
-      }
-
-      // Convert BayerBG8 to BGR for display
-      cv::Mat bgrImg;
-      cv::cvtColor(bayerImg, bgrImg, cv::COLOR_BayerBG2RGB);
-      convertStopwatch.Stop();
-
-      if (bgrImg.empty())
-      {
-        std::cerr << "Failed to convert Bayer to BGR." << std::endl;
-        return -1;
-      }
-
-      // Show the result
-      cv::imshow("Basler Camera - BayerBG8->BGR", bgrImg);
-      cv::waitKey(1);
-    }
-  }
-  catch(const GenericException& e)
-  {
-    std::cerr << "Pylon exception during camera configuration: " << e.GetDescription() << std::endl;
-    return -1;
-  }
-  catch(const Exception& e)
-  {
-    std::cerr << "OpenCV exception during camera configuration: " << e.what() << std::endl;
-    return -1;
-  }
-  catch(const std::exception& e)
-  {
-    std::cerr << "std::exception during camera configuration: " << e.what() << std::endl;
-    return -1;
-  }
-  catch(...)
-  {
-    std::cerr << "Unknown exception during camera configuration." << std::endl;
-    return -1;
+    double targetX = ballBox.x + ballBox.width / 2 - CENTER_X;
+    double targetY = ballBox.y + ballBox.height / 2 - CENTER_Y;
+    targetX = CameraHelpers::RADIANS_PER_PIXEL * targetX / (2.0 * std::numbers::pi);
+    targetY = CameraHelpers::RADIANS_PER_PIXEL * targetY / (2.0 * std::numbers::pi);
   }
 
-  printStats("Conversion Timing:", convertTiming);
-
-  /*
-  Conversion Timing::YUYV
-  Iterations: 742
-  Last:       3 ms
-  Min:        0 ms
-  Max:        39 ms
-  Average:    2.02965 ms
-  */
+  // Print timing statistics
+  printStats("Total", total);
+  printStats("RGB to HSV", rgbToHsv);
+  printStats("Masking", masking);
+  printStats("Contour Finding", contourFinding);
+  printStats("Bounding Box Finding", boundingBoxFinding);
 
   cv::destroyAllWindows();
 
