@@ -74,23 +74,23 @@ int main()
 
     CameraHelpers::PrimeCamera(camera, ptrGrabResult);
 
-    std::cout << "PayloadType: " << ptrGrabResult->GetPayloadType() << std::endl;
-    std::cout << "PixelType: " << ptrGrabResult->GetPixelType() << std::endl;
-    std::cout << "Height: " << ptrGrabResult->GetHeight() << std::endl;
-    std::cout << "Width: " << ptrGrabResult->GetWidth() << std::endl;
-    std::cout << "OffsetX: " << ptrGrabResult->GetOffsetX() << std::endl;
-    std::cout << "OffsetY: " << ptrGrabResult->GetOffsetY() << std::endl;
-    std::cout << "PaddingX: " << ptrGrabResult->GetPaddingX() << std::endl;
-    std::cout << "PaddingY: " << ptrGrabResult->GetPaddingY() << std::endl;
-    std::cout << "Payload size: " << ptrGrabResult->GetPayloadSize() << std::endl;
-    std::cout << "Buffer size: " << ptrGrabResult->GetBufferSize() << std::endl;
-    std::size_t stride; ptrGrabResult->GetStride(stride);
-    std::cout << "Stride: " << stride << std::endl;
-    std::cout << "Image size: " << ptrGrabResult->GetImageSize() << std::endl;
+    // std::cout << "PayloadType: " << ptrGrabResult->GetPayloadType() << std::endl;
+    // std::cout << "PixelType: " << ptrGrabResult->GetPixelType() << std::endl;
+    // std::cout << "Height: " << ptrGrabResult->GetHeight() << std::endl;
+    // std::cout << "Width: " << ptrGrabResult->GetWidth() << std::endl;
+    // std::cout << "OffsetX: " << ptrGrabResult->GetOffsetX() << std::endl;
+    // std::cout << "OffsetY: " << ptrGrabResult->GetOffsetY() << std::endl;
+    // std::cout << "PaddingX: " << ptrGrabResult->GetPaddingX() << std::endl;
+    // std::cout << "PaddingY: " << ptrGrabResult->GetPaddingY() << std::endl;
+    // std::cout << "Payload size: " << ptrGrabResult->GetPayloadSize() << std::endl;
+    // std::cout << "Buffer size: " << ptrGrabResult->GetBufferSize() << std::endl;
+    // std::size_t stride; ptrGrabResult->GetStride(stride);
+    // std::cout << "Stride: " << stride << std::endl;
+    // std::cout << "Image size: " << ptrGrabResult->GetImageSize() << std::endl;
 
-    // Print error code/message just in case
-    std::cout << "Error code: " << ptrGrabResult->GetErrorCode() << std::endl;
-    std::cout << "Error description: " << ptrGrabResult->GetErrorDescription() << std::endl;
+    // // Print error code/message just in case
+    // std::cout << "Error code: " << ptrGrabResult->GetErrorCode() << std::endl;
+    // std::cout << "Error description: " << ptrGrabResult->GetErrorDescription() << std::endl;
 
     /*
     PayloadType: 0
@@ -106,6 +106,22 @@ int main()
     Stride: 1280
     Image size: 614400
     */
+
+    int width = ptrGrabResult->GetWidth();
+    int height = ptrGrabResult->GetHeight();
+    std::size_t stride; ptrGrabResult->GetStride(stride);
+    uint8_t* buffer = (uint8_t*)ptrGrabResult->GetBuffer();
+
+    // Wrap the YUYV buffer in a cv::Mat
+    cv::Mat yuyvImg(height, width, CV_8UC2, buffer, stride);
+
+    // Convert YUYV (YUV422) to BGR
+    cv::Mat bgrImg;
+    cv::cvtColor(yuyvImg, bgrImg, cv::COLOR_YUV2BGR_YUY2);
+
+    // Show the result
+    cv::imshow("Basler Camera - BGR", bgrImg);
+    cv::waitKey(1); // Use a small delay for display
   }
   catch(const GenericException& e)
   {
