@@ -107,6 +107,20 @@ int main()
     Image size: 614400
     */
 
+    if (!ptrGrabResult)
+    {
+      std::cerr << "Fatal: Grab failed, result pointer is null after RetrieveResult (unexpected state)." << std::endl;
+      return -1;
+    }
+    if (!ptrGrabResult->GrabSucceeded())
+    {
+      const int64_t errorCode = ptrGrabResult->GetErrorCode();
+      std::ostringstream oss;
+      oss << "Grab failed: Code " << errorCode << ", Desc: " << ptrGrabResult->GetErrorDescription();
+      std::cerr << oss.str() << std::endl;
+      return -1;
+    }
+
     int width = ptrGrabResult->GetWidth();
     int height = ptrGrabResult->GetHeight();
     std::size_t stride; ptrGrabResult->GetStride(stride);
@@ -115,17 +129,47 @@ int main()
     // Wrap the YUYV buffer in a cv::Mat
     cv::Mat yuyvImg(height, width, CV_8UC2, buffer, stride);
 
+    if (yuyvImg.empty())
+    {
+      std::cerr << "Failed to create cv::Mat from YUYV buffer." << std::endl;
+      return -1;
+    }
+
     // Convert YUYV (YUV422) to BGR
     cv::Mat bgrImg;
     cv::cvtColor(yuyvImg, bgrImg, cv::COLOR_YUV2BGR_YUY2);
 
+    if (bgrImg.empty())
+    {
+      std::cerr << "Failed to convert YUYV to BGR." << std::endl;
+      return -1;
+    }
+
     // Show the result
     cv::imshow("Basler Camera - BGR", bgrImg);
-    cv::waitKey(1); // Use a small delay for display
+    while(!g_shutdown && cv::waitKey(1) < 0)
+    {
+      // Keep the window open until shutdown is triggered
+    }
   }
   catch(const GenericException& e)
   {
     std::cerr << "Pylon exception during camera configuration: " << e.GetDescription() << std::endl;
+    return -1;
+  }
+  catch(const Exception& e)
+  {
+    std::cerr << "OpenCV exception during camera configuration: " << e.what() << std::endl;
+    return -1;
+  }
+  catch(const std::exception& e)
+  {
+    std::cerr << "std::exception during camera configuration: " << e.what() << std::endl;
+    return -1;
+  }
+  catch(...)
+  {
+    std::cerr << "Unknown exception during camera configuration." << std::endl;
     return -1;
   }
 
