@@ -4,20 +4,23 @@
 #include <stdexcept>
 #include <string>
 
+using namespace Pylon;
+using namespace GenApi;
+
 // ----------- Implementation -----------
 
-void CameraHelpers::ConfigureCamera(Pylon::CInstantCamera &camera)
+void CameraHelpers::ConfigureCamera(CInstantCamera &camera)
 {
   try
   {
-    camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
+    camera.Attach(CTlFactory::GetInstance().CreateFirstDevice());
     std::cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << std::endl;
     camera.Open();
 
-    Pylon::CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
-    GenApi::INodeMap &nodemap = camera.GetNodeMap();
+    CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
+    INodeMap &nodeMap = camera.GetNodeMap();
   }
-  catch (const Pylon::GenericException &e)
+  catch (const GenericException &e)
   {
     throw std::runtime_error(std::string("[CameraHelpers] Pylon exception during camera configuration: ") + e.GetDescription());
   }
@@ -31,16 +34,16 @@ void CameraHelpers::ConfigureCamera(Pylon::CInstantCamera &camera)
   }
 }
 
-bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, unsigned int timeoutMs)
+bool CameraHelpers::TryGrabFrame(CInstantCamera &camera, CGrabResultPtr &grabResult, unsigned int timeoutMs)
 {
   try
   {
-    if (!camera.RetrieveResult(timeoutMs, grabResult, Pylon::TimeoutHandling_Return))
+    if (!camera.RetrieveResult(timeoutMs, grabResult, TimeoutHandling_Return))
     {
       return false; // Timeout
     }
   }
-  catch (const Pylon::GenericException &e)
+  catch (const GenericException &e)
   {
     throw std::runtime_error(std::string("[CameraHelpers] Exception during frame grab: ") + e.what());
   }
@@ -72,7 +75,7 @@ bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResu
   return true;
 }
 
-void CameraHelpers::PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, unsigned int maxRetries)
+void CameraHelpers::PrimeCamera(CInstantCamera &camera, CGrabResultPtr &grabResult, unsigned int maxRetries)
 {
 
   unsigned int retries = 0;
@@ -80,7 +83,7 @@ void CameraHelpers::PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResul
   {
     try {
       camera.Open();
-      camera.StartGrabbing(Pylon::GrabStrategy_LatestImageOnly);
+      camera.StartGrabbing(GrabStrategy_LatestImageOnly);
       if (TryGrabFrame(camera, grabResult, TIMEOUT_MS))
         return;
 

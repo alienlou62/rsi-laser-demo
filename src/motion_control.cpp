@@ -5,7 +5,9 @@
 #include <array>
 #include <stdexcept>
 
-void MotionControl::MoveMotorsWithLimits(RSI::RapidCode::MultiAxis *multiAxis, double x, double y)
+using namespace RSI::RapidCode;
+
+void MotionControl::MoveMotorsWithLimits(MultiAxis *multiAxis, double x, double y)
 {
   try
   {
@@ -13,7 +15,7 @@ void MotionControl::MoveMotorsWithLimits(RSI::RapidCode::MultiAxis *multiAxis, d
     double clampedY = std::clamp(y, NEG_Y_LIMIT, POS_Y_LIMIT);
     multiAxis->MoveSCurve(std::array{clampedX, clampedY}.data());
   }
-  catch (const RSI::RapidCode::RsiError &e)
+  catch (const RsiError &e)
   {
     if (multiAxis)
       multiAxis->Abort();

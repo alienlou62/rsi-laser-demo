@@ -7,9 +7,11 @@
 #include <stdexcept>
 #include <string>
 
+using namespace RSI::RapidCode;
+using namespace RSI::RapidCode::RealTimeTasks;
+
 RSI::RapidCode::MotionController *RMPHelpers::GetController()
 {
-  using namespace RSI::RapidCode;
   MotionController *controller(MotionController::Get());
   CheckErrors(controller);
   return controller;
@@ -17,7 +19,6 @@ RSI::RapidCode::MotionController *RMPHelpers::GetController()
 
 RSI::RapidCode::MultiAxis *RMPHelpers::CreateMultiAxis(RSI::RapidCode::MotionController *controller)
 {
-  using namespace RSI::RapidCode;
   MultiAxis *multiAxis(controller->MultiAxisGet(NUM_AXES));
   multiAxis->AxisRemoveAll();
   CheckErrors(multiAxis);
@@ -38,9 +39,6 @@ RSI::RapidCode::MultiAxis *RMPHelpers::CreateMultiAxis(RSI::RapidCode::MotionCon
 
 RSI::RapidCode::RealTimeTasks::RTTaskManager *RMPHelpers::CreateRTTaskManager(const std::string &userLabel)
 {
-  using namespace RSI::RapidCode;
-  using namespace RSI::RapidCode::RealTimeTasks;
-
   RTTaskManagerCreationParameters params;
   std::strncpy(params.RTTaskDirectory, RMP_PATH, sizeof(params.RTTaskDirectory));
   std::strncpy(params.UserLabel, userLabel.c_str(), sizeof(params.UserLabel));
@@ -53,7 +51,6 @@ RSI::RapidCode::RealTimeTasks::RTTaskManager *RMPHelpers::CreateRTTaskManager(co
 
 void RMPHelpers::CheckErrors(RSI::RapidCode::RapidCodeObject *rsiObject, const std::source_location &location)
 {
-  using namespace RSI::RapidCode;
   bool hasErrors = false;
   std::string errorStrings("");
   while (rsiObject->ErrorLogCountGet() > 0)
