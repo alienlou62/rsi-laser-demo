@@ -25,18 +25,8 @@ CGrabResultPtr g_ptrGrabResult;
 // Initializes the global data structure.
 RSI_TASK(Initialize)
 {
+  // Setup the camera
   data->cameraReady = false;
-
-  // Setup the multi-axis
-  data->targetX = RTAxisGet(0)->ActualPositionGet();
-  data->targetY = RTAxisGet(1)->ActualPositionGet();
-  RTMultiAxisGet(0)->AxisAdd(RTAxisGet(0));
-  RTMultiAxisGet(0)->AxisAdd(RTAxisGet(1));
-  RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
-  RTMultiAxisGet(0)->Abort();
-  RTMultiAxisGet(0)->ClearFaults();
-  RTMultiAxisGet(0)->AmpEnableSet(true);
-
   try
   {
     g_camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
@@ -55,11 +45,22 @@ RSI_TASK(Initialize)
   {
     std::cerr << "Unknown exception during camera initialization." << std::endl;
   }
+
+  // Setup the multi-axis
+  data->targetX = RTAxisGet(0)->ActualPositionGet();
+  data->targetY = RTAxisGet(1)->ActualPositionGet();
+  RTMultiAxisGet(0)->AxisAdd(RTAxisGet(0));
+  RTMultiAxisGet(0)->AxisAdd(RTAxisGet(1));
+  RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
+  RTMultiAxisGet(0)->Abort();
+  RTMultiAxisGet(0)->ClearFaults();
+  // RTMultiAxisGet(0)->AmpEnableSet(true);
 }
 
 // Moves the motors based on the target positions.
 RSI_TASK(MoveMotors)
 {
+  if (!RTMultiAxisGet(0)->AmpEnableGet()) return;
   MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
 }
 

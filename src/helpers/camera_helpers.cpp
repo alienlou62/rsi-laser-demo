@@ -63,6 +63,7 @@ bool CameraHelpers::TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResu
     const int64_t errorCode = grabResult->GetErrorCode();
     // if (errorCode == 0xe1000014) // Incomplete buffer (buffer underrun)
     // {
+    //   std::cerr << "[CameraHelpers] Grab failed: Code " << errorCode << ", Desc: " << grabResult->GetErrorDescription() << std::endl;
     //   return false;
     // }
     std::ostringstream oss;

@@ -96,6 +96,10 @@ void SetupCamera()
   PylonAutoInitTerm pylonAutoInitTerm;
   CInstantCamera camera;
   CameraHelpers::ConfigureCamera(camera);
+  CGrabResultPtr ptr;
+  CameraHelpers::PrimeCamera(camera, ptr);
+  camera.Close();
+  camera.DestroyDevice();
 }
 
 int main()
@@ -106,7 +110,7 @@ int main()
 
   std::signal(SIGINT, sigint_handler);
 
-  SetupCamera();
+  // SetupCamera();
 
   // --- RMP Initialization ---
   MotionController* controller = RMPHelpers::GetController();
@@ -118,10 +122,6 @@ int main()
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
     SubmitSingleShotTask(manager, "Initialize");
 
-    // std::shared_ptr<RTTask> ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD);
-    // std::shared_ptr<RTTask> motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1);
-
-        // Print the value of all global variables
     FirmwareValue cameraReady = manager->GlobalValueGet("cameraReady");
     if (cameraReady.Bool)
     {
@@ -130,31 +130,27 @@ int main()
     else
     {
       std::cerr << "Error: Camera is not ready." << std::endl;
+      return -1;
     }
 
+    std::shared_ptr<RTTask> ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD);
+    std::shared_ptr<RTTask> motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1);
+
     // --- Main Loop ---
-    // while (!g_shutdown)
-    // {
-    //   RateLimiter rateLimiter(LOOP_INTERVAL);
+    while (!g_shutdown)
+    {
+      RateLimiter rateLimiter(LOOP_INTERVAL);
 
-    //   // Print the value of all global variables
-    //   FirmwareValue cameraReady = manager->GlobalValueGet("cameraReady");
-    //   if (!cameraReady.Bool)
-    //   {
-    //     std::cerr << "Error: Camera is not ready." << std::endl;
-    //     break;
-    //   }
+      FirmwareValue targetX = manager->GlobalValueGet("targetX");
+      std::cout << "Target X: " << targetX.Double << std::endl;
 
-    //   FirmwareValue targetX = manager->GlobalValueGet("targetX");
-    //   std::cout << "Target X: " << targetX.Double << std::endl;
-
-    //   FirmwareValue targetY = manager->GlobalValueGet("targetY");
-    //   std::cout << "Target Y: " << targetY.Double << std::endl;
-    // }
+      FirmwareValue targetY = manager->GlobalValueGet("targetY");
+      std::cout << "Target Y: " << targetY.Double << std::endl;
+    }
 
     // Print task timing information
-    // printTaskTiming(motionTask, "Motion Task");
-    // printTaskTiming(ballDetectionTask, "Ball Detection Task");
+    printTaskTiming(motionTask, "Motion Task");
+    printTaskTiming(ballDetectionTask, "Ball Detection Task");
   }
   catch (const RsiError &e)
   {
