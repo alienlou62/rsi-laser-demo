@@ -104,9 +104,6 @@ void SetupCamera()
   camera.DestroyDevice();
 }
 
-#include <thread>
-#include <chrono>
-
 int main()
 {
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
