@@ -40,59 +40,84 @@ void sigint_handler(int signal)
   g_shutdown = true;
 }
 
-TimingStats total, rgbToHsv, masking, contourFinding, boundingBoxFinding;
-
-bool DetectBall(Mat& rgbFrame, Rect& boundingBox)
-{
-  constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 2;
-  constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 2;
-
-  static Mat hsvFrame, mask, kernel;
-  
+// Helper class for automatic VideoWriter management
+class VideoWriterHelper {
+public:
+  VideoWriter writer;
+  std::string filename;
+  VideoWriterHelper(const std::string& title, int width, int height, double fps)
   {
-    Stopwatch rgbToHsvWatch(rgbToHsv);
-    cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
-  }
-
-  {
-    Stopwatch maskingWatch(masking);
-    Scalar lower_hsv(ImageProcessing::lowH, ImageProcessing::lowS, ImageProcessing::lowV);
-    Scalar upper_hsv(ImageProcessing::highH, ImageProcessing::highS, ImageProcessing::highV);
-    inRange(hsvFrame, lower_hsv, upper_hsv, mask);
-  }
-
-  std::vector<std::vector<Point>> contours;
-  int largestContourIndex = -1;
-  double largestContourArea = 0;
-  {
-    Stopwatch contourFindingWatch(contourFinding);
-    kernel = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
-    morphologyEx(mask, mask, MORPH_CLOSE, kernel);
-    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-    contours.erase(
-      std::remove_if(contours.begin(), contours.end(), [](const std::vector<Point> &c) { return contourArea(c) < ImageProcessing::MIN_CONTOUR_AREA; }),
-      contours.end()
+    filename = title + ".mp4";
+    // Hardcoded: avc1 codec, 30 fps fallback, .mp4 extension
+    writer.open(
+      filename,
+      VideoWriter::fourcc('a', 'v', 'c', '1'),
+      (fps > 0) ? fps : 30,
+      Size(width, height)
     );
-    for (int i = 0; i < static_cast<int>(contours.size()); ++i)
-    {
-      double area = contourArea(contours[i]);
-      if (area > largestContourArea)
-      {
-        largestContourArea = area;
-        largestContourIndex = i;
+    if (!writer.isOpened()) {
+      throw std::runtime_error("Failed to open video writer: " + filename);
+    }
+  }
+  ~VideoWriterHelper() {
+    writer.release();
+  }
+  void write(const Mat& frame) { writer.write(frame); }
+};
+
+std::vector<Vec3b> CollectRedBallPixels(VideoCapture& video)
+{
+  // --- Collect red ball pixels from first 30 frames ---
+  std::vector<Vec3b> ballPixels;
+  Mat frame;
+  for (int i = 0; i < 30; ++i) {
+    if (!video.read(frame) || frame.empty()) break;
+
+    Mat hsv;
+    cvtColor(frame, hsv, COLOR_BGR2HSV);
+
+    // Looser bounds!
+    Mat mask1, mask2, mask;
+    inRange(hsv, Scalar(0, 30, 30), Scalar(15, 255, 255), mask1);
+    inRange(hsv, Scalar(165, 30, 30), Scalar(180, 255, 255), mask2);
+    mask = mask1 | mask2;
+
+    morphologyEx(mask, mask, MORPH_OPEN, getStructuringElement(MORPH_ELLIPSE, Size(5,5)));
+
+    // Find largest contour (presume it's the ball)
+    std::vector<std::vector<Point>> contours;
+    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+    if (!contours.empty()) {
+    size_t largest = 0;
+      double maxArea = 0;
+      for (size_t c = 0; c < contours.size(); ++c) {
+        double area = contourArea(contours[c]);
+        if (area > maxArea) { maxArea = area; largest = c; }
+      }
+      
+      // Fit a circle to the largest contour and draw it
+      Point2f center;
+      float radius;
+      minEnclosingCircle(contours[largest], center, radius);
+      circle(frame, center, static_cast<int>(radius), Scalar(255, 0, 0), 2); // blue circle
+
+      // Collect pixels inside the circle
+      int x0 = std::max(0, static_cast<int>(center.x - radius));
+      int x1 = std::min(frame.cols - 1, static_cast<int>(center.x + radius));
+      int y0 = std::max(0, static_cast<int>(center.y - radius));
+      int y1 = std::min(frame.rows - 1, static_cast<int>(center.y + radius));
+      float r2 = radius * radius;
+      for (int y = y0; y <= y1; ++y) {
+        for (int x = x0; x <= x1; ++x) {
+          float dx = x - center.x;
+          float dy = y - center.y;
+          if ((dx*dx + dy*dy) <= r2)
+            ballPixels.push_back(hsv.at<Vec3b>(y, x));
+        }
       }
     }
-    if (largestContourIndex == -1)
-    {
-      return false; // Skip to the next frame if no contours are found
-    }
   }
-
-  {
-    Stopwatch boundingBoxWatch(boundingBoxFinding);
-    boundingBox = boundingRect(contours[largestContourIndex]);
-  }
-  return true;
+  return ballPixels;
 }
 
 // --- Main Function ---
@@ -106,47 +131,35 @@ int main()
 
   std::string videoFilePath = std::string(SOURCE_DIR) + "/test_video.mp4";
   VideoCapture video(videoFilePath);
-  if (!video.isOpened())
-  {
+  if (!video.isOpened()) {
     std::cerr << "Error: Could not open video file: " << videoFilePath << std::endl;
     PrintFooter(EXECUTABLE_NAME, -1);
     return -1;
   }
 
-  Mat rgbFrame, hsvFrame, mask, kernel;
-  Rect ballBox;
+  int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
+  int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
+  double fps = video.get(CAP_PROP_FPS);
 
-  constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 2;
-  constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 2;
+  VideoWriterHelper outputVideo("output_annotated", frame_width, frame_height, fps);
+  VideoWriterHelper maskVideo("output_mask", frame_width, frame_height, fps);
 
-  while (!g_shutdown)
+  std::vector<Vec3b> redBallPixels = CollectRedBallPixels(video);
+
+  Mat frame, hsv, mask, maskBGR;
+  while(video.read(frame) && !frame.empty())
   {
-    bool success = video.read(rgbFrame);
-    if (!success || rgbFrame.empty())
-    {
-      break;
-    }
+    cvtColor(frame, hsv, COLOR_BGR2HSV);
+    
+    Mat mask1, mask2, mask;
+    inRange(hsv, Scalar(0, 30, 30), Scalar(15, 255, 255), mask1);
+    inRange(hsv, Scalar(165, 30, 30), Scalar(180, 255, 255), mask2);
+    mask = mask1 | mask2;
 
-    Stopwatch totalWatch(total);
-
-    if(!DetectBall(rgbFrame, ballBox)) continue;
-
-    double targetX = ballBox.x + ballBox.width / 2 - CENTER_X;
-    double targetY = ballBox.y + ballBox.height / 2 - CENTER_Y;
-    targetX = CameraHelpers::RADIANS_PER_PIXEL * targetX / (2.0 * std::numbers::pi);
-    targetY = CameraHelpers::RADIANS_PER_PIXEL * targetY / (2.0 * std::numbers::pi);
+    cvtColor(mask, maskBGR, COLOR_GRAY2BGR);
+    maskVideo.write(maskBGR);
   }
 
-  // Print timing statistics
-  printStats("Total", total);
-  printStats("RGB to HSV", rgbToHsv);
-  printStats("Masking", masking);
-  printStats("Contour Finding", contourFinding);
-  printStats("Bounding Box Finding", boundingBoxFinding);
-
-  cv::destroyAllWindows();
-
   PrintFooter(EXECUTABLE_NAME, exitCode);
-
   return exitCode;
 }
