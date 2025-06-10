@@ -94,10 +94,10 @@ void printTaskTiming(std::shared_ptr<RTTask> task, const std::string& taskName)
   std::cout << "Execution count: " << status.ExecutionCount << std::endl;
   std::cout << "Last execution time: " << nsToMs(status.ExecutionTimeLast) << " ms" << std::endl;
   std::cout << "Maximum execution time: " << nsToMs(status.ExecutionTimeMax) << " ms" << std::endl;
-  std::cout << "Average execution time: " << nsToMs(status.ExecutionTimeMean) << " ms" << std::endl << std::endl;
+  std::cout << "Average execution time: " << nsToMs(status.ExecutionTimeMean) << " ms" << std::endl;
   std::cout << "Last start time delta: " << nsToMs(status.StartTimeDeltaLast) << " ms" << std::endl;
   std::cout << "Maximum start time delta: " << nsToMs(status.StartTimeDeltaMax) << " ms" << std::endl;
-  std::cout << "Average start time delta: " << nsToMs(status.StartTimeDeltaMean) << " ms" << std::endl;
+  std::cout << "Average start time delta: " << nsToMs(status.StartTimeDeltaMean) << " ms" << std::endl << std::endl;
 }
 
 void SetupCamera()
