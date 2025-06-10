@@ -95,6 +95,9 @@ void printTaskTiming(std::shared_ptr<RTTask> task, const std::string& taskName)
   std::cout << "Last execution time: " << nsToMs(status.ExecutionTimeLast) << " ms" << std::endl;
   std::cout << "Maximum execution time: " << nsToMs(status.ExecutionTimeMax) << " ms" << std::endl;
   std::cout << "Average execution time: " << nsToMs(status.ExecutionTimeMean) << " ms" << std::endl << std::endl;
+  std::cout << "Last start time delta: " << nsToMs(status.StartTimeDeltaLast) << " ms" << std::endl;
+  std::cout << "Maximum start time delta: " << nsToMs(status.StartTimeDeltaMax) << " ms" << std::endl;
+  std::cout << "Average start time delta: " << nsToMs(status.StartTimeDeltaMean) << " ms" << std::endl;
 }
 
 void SetupCamera()
@@ -147,6 +150,40 @@ int main()
 
       FirmwareValue targetY = manager->GlobalValueGet("targetY");
       std::cout << "Target Y: " << targetY.Double << std::endl;
+
+      RTTaskStatus ballDetectionStatus = ballDetectionTask->StatusGet();
+      if (ballDetectionStatus.State == RTTaskState::Dead)
+      {
+        std::cerr << "Ball Detection Task has died. Error: " << ballDetectionStatus.ErrorMessage << std::endl;
+        exitCode = 1;
+        g_shutdown = true;
+      }
+
+      RTTaskStatus motionStatus = motionTask->StatusGet();
+      if (motionStatus.State == RTTaskState::Dead)
+      {
+        std::cerr << "Motion Task has died. Error: " << motionStatus.ErrorMessage << std::endl;
+
+        // If the motion task has died, we need to check for errors in the MultiAxis
+        try
+        {
+          RMPHelpers::CheckErrors(multiAxis);
+        }
+        catch(const std::exception& e)
+        {
+          std::cerr << e.what() << '\n';
+        }
+
+        // Check if the MultiAxis is in an error state and print the source of the error
+        if (multiAxis->StateGet() == RSIState::RSIStateERROR)
+        {
+          RSISource source = multiAxis->SourceGet();
+          std::cerr << "MultiAxis is in ERROR state. Source: " << multiAxis->SourceNameGet(source) << std::endl;
+        }
+
+        exitCode = 1;
+        g_shutdown = true;
+      }
     }
 
     // Print task timing information
