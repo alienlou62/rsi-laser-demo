@@ -64,9 +64,7 @@ RSI_TASK(MoveMotors)
   if (!RTMultiAxisGet(0)->AmpEnableGet()) return;
 
   // Check if there is a new target, if not, return early
-  bool target = false;
-  std::exchange(data->newTarget, target);
-  if (!target) return;
+  if (!data->newTarget.exchange(false)) return;
 
   MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
 }
