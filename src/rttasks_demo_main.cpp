@@ -128,6 +128,7 @@ std::string RSIStateToString(RSIState state)
     case RSIState::RSIStateERROR:
       return "ERROR";
   }
+  return "UNKNOWN";
 }
 
 bool CheckRTTaskStatus(const std::shared_ptr<RTTask>& task, const std::string& taskName)
