@@ -194,18 +194,6 @@ int main()
       FirmwareValue targetY = manager->GlobalValueGet("targetY");
       std::cout << "Target Y: " << targetY.Double << std::endl;
 
-      if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))
-      {
-        exitCode = 1;
-        g_shutdown = true;
-      }
-
-      if (!CheckRTTaskStatus(motionTask, "Motion Task"))
-      {
-        exitCode = 1;
-        g_shutdown = true;
-      }
-
       // Check if the MultiAxis is in an error state
       try
       {

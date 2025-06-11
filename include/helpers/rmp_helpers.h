@@ -21,7 +21,7 @@ public:
 
     // RTTaskManager configuration parameters
     static constexpr char RMP_PATH[] = "/rsi";
-    static constexpr int CPU_CORE = 3;
+    static constexpr int CPU_CORE = 2;
 
     // Get a pointer to the the already created MotionController
     static RSI::RapidCode::MotionController* GetController();

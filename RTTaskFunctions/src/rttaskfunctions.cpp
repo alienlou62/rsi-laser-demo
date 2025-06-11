@@ -47,7 +47,11 @@ RSI_TASK(Initialize)
   }
 
   // Setup the multi-axis
+  RTAxisGet(0)->Abort();
+  RTAxisGet(0)->ClearFaults();
   RTMultiAxisGet(0)->AxisAdd(RTAxisGet(0));
+  RTAxisGet(1)->Abort();
+  RTAxisGet(1)->ClearFaults();
   RTMultiAxisGet(0)->AxisAdd(RTAxisGet(1));
   RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
   RTMultiAxisGet(0)->Abort();
@@ -64,8 +68,6 @@ RSI_TASK(Initialize)
 // Moves the motors based on the target positions.
 RSI_TASK(MoveMotors)
 {
-  if (!RTMultiAxisGet(0)->AmpEnableGet()) return;
-
   // Check if there is a new target, if not, return early
   if (!data->newTarget.exchange(false)) return;
 
