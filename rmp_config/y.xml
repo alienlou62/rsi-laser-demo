@@ -4,6 +4,7 @@
   <UserUnits>67108864</UserUnits>
   <MotorType>RSIMotorTypeSERVO</MotorType>
   <Properties>
+    <string>OriginPosition=-4.369606127</string>
     <string>CompensationPosition=0</string>
     <string>HomeMethod=RSIHomeMethodNONE</string>
     <string>HomeOffset=0</string>
@@ -38,7 +39,7 @@
     <string>SoftwareNegLimitAction=RSIActionABORT</string>
     <string>SoftwareNegLimitTriggerValue=-0.15</string>
     <string>SoftwarePosLimitAction=RSIActionABORT</string>
-    <string>SoftwarePosLimitTriggerValue=0.17</string>
+    <string>SoftwarePosLimitTriggerValue=0.15</string>
     <string>EncoderFaultAction=RSIActionNONE</string>
     <string>EncoderFaultTrigger=2352006608</string>
     <string>EncoderFaultDuration=0</string>

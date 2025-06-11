@@ -11,10 +11,10 @@ namespace RSI { namespace RapidCode { class MultiAxis; } }
 class MotionControl 
 {
 public:
-    static constexpr double NEG_X_LIMIT = -0.245;
-    static constexpr double POS_X_LIMIT = 0.120;
-    static constexpr double NEG_Y_LIMIT = -0.125;
-    static constexpr double POS_Y_LIMIT = 0.135;
+    static constexpr double NEG_X_LIMIT = -0.19;
+    static constexpr double POS_X_LIMIT = 0.19;
+    static constexpr double NEG_Y_LIMIT = -0.14;
+    static constexpr double POS_Y_LIMIT = 0.14;
 
     static void MoveMotorsWithLimits(RSI::RapidCode::MultiAxis* multiAxis, double x, double y);
 };
