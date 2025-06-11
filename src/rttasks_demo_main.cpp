@@ -111,6 +111,25 @@ void SetupCamera()
   camera.DestroyDevice();
 }
 
+std::string RSIStateToString(RSIState state)
+{
+  switch (state)
+  {
+    case RSIState::RSIStateIDLE:
+      return "IDLE";
+    case RSIState::RSIStateMOVING:
+      return "MOVING";
+    case RSIState::RSIStateSTOPPING:
+      return "STOPPING";
+    case RSIState::RSIStateSTOPPED:
+      return "STOPPED";
+    case RSIState::RSIStateSTOPPING_ERROR:
+      return "STOPPING_ERROR";
+    case RSIState::RSIStateERROR:
+      return "ERROR";
+  }
+}
+
 int main()
 {
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
@@ -174,11 +193,15 @@ int main()
           std::cerr << e.what() << '\n';
         }
 
+        RSIState state = multiAxis->StateGet();
+        std::cout << "MultiAxis is in state: " << RSIStateToString(state) << std::endl;
+
         // Check if the MultiAxis is in an error state and print the source of the error
-        if (multiAxis->StateGet() == RSIState::RSIStateERROR)
+        if (state == RSIState::RSIStateERROR ||
+            state == RSIState::RSIStateSTOPPING_ERROR)
         {
           RSISource source = multiAxis->SourceGet();
-          std::cerr << "MultiAxis is in ERROR state. Source: " << multiAxis->SourceNameGet(source) << std::endl;
+          std::cerr << "Error Source: " << multiAxis->SourceNameGet(source) << std::endl;
         }
 
         exitCode = 1;
