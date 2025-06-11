@@ -40,6 +40,7 @@ bool ImageProcessing::TryDetectBall(const uint8_t *pImageBuffer, int width, int 
       largestContourIndex = i;
     }
   }
+  bool foundBall = false;
   if (largestContourIndex != -1)
   {
     Point2f center;
@@ -63,8 +64,11 @@ bool ImageProcessing::TryDetectBall(const uint8_t *pImageBuffer, int width, int 
       {
         offsetY = -CameraHelpers::RADIANS_PER_PIXEL * pixelOffsetY / (2.0 * std::numbers::pi);
       }
-      return true;
+      foundBall = true;
     }
   }
-  return false;
+
+  imshow("RGB Frame", rgbFrame);
+  waitkey(1); // Display the RGB frame for 1 ms
+  return foundBall;
 }
