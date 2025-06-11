@@ -138,10 +138,17 @@ bool CheckRTTaskStatus(const std::shared_ptr<RTTask>& task, const std::string& t
   try
   {
     RTTaskStatus status = task->StatusGet();
-    if (status.State != RTTaskState::Dead)
-      return true;
-    else
-      std::cerr << "Error: " << taskName << " has died. Error: " << status.ErrorMessage << std::endl;
+    if (status.ErrorMessage[0] != '\0')
+    {
+      std::cerr << "Error in " << taskName << ": " << status.ErrorMessage << std::endl;
+      return false;
+    }
+
+    if (status.State == RTTaskState::Dead)
+    {
+      std::cerr << "Task " << taskName << " is dead." << std::endl;
+      return false;
+    }
   }
   catch (const RsiError& e)
   {
@@ -151,7 +158,8 @@ bool CheckRTTaskStatus(const std::shared_ptr<RTTask>& task, const std::string& t
   {
     std::cerr << "Unexpected error while getting " << taskName << " status: " << e.what() << std::endl;
   }
-  return false;
+  // If we failed to get the status, don't treat that as a fatal error.
+  return true;
 }
 
 int main()
@@ -193,6 +201,18 @@ int main()
 
       FirmwareValue targetY = manager->GlobalValueGet("targetY");
       std::cout << "Target Y: " << targetY.Double << std::endl;
+
+      if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))
+      {
+        g_shutdown = true;
+        exitCode = 1;
+      }
+
+      if (!CheckRTTaskStatus(motionTask, "Motion Task"))
+      {
+        g_shutdown = true;
+        exitCode = 1;
+      }
 
       // Check if the MultiAxis is in an error state
       try
