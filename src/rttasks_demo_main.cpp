@@ -130,6 +130,29 @@ std::string RSIStateToString(RSIState state)
   }
 }
 
+bool CheckRTTaskStatus(const std::shared_ptr<RTTask>& task, const std::string& taskName)
+{
+  if (!task) return false;
+
+  try
+  {
+    RTTaskStatus status = task->StatusGet();
+    if (status.State != RTTaskState::Dead)
+      return true;
+    else
+      std::cerr << "Error: " << taskName << " has died. Error: " << status.ErrorMessage << std::endl;
+  }
+  catch (const RsiError& e)
+  {
+    std::cerr << "Failed to get status of " << taskName << ": " << e.what() << std::endl;
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Unexpected error while getting " << taskName << " status: " << e.what() << std::endl;
+  }
+  return false;
+}
+
 int main()
 {
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
@@ -170,42 +193,36 @@ int main()
       FirmwareValue targetY = manager->GlobalValueGet("targetY");
       std::cout << "Target Y: " << targetY.Double << std::endl;
 
-      RTTaskStatus ballDetectionStatus = ballDetectionTask->StatusGet();
-      if (ballDetectionStatus.State == RTTaskState::Dead)
+      if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))
       {
-        std::cerr << "Ball Detection Task has died. Error: " << ballDetectionStatus.ErrorMessage << std::endl;
         exitCode = 1;
         g_shutdown = true;
       }
 
-      RTTaskStatus motionStatus = motionTask->StatusGet();
-      if (motionStatus.State == RTTaskState::Dead)
+      if (!CheckRTTaskStatus(motionTask, "Motion Task"))
       {
-        std::cerr << "Motion Task has died. Error: " << motionStatus.ErrorMessage << std::endl;
-
-        // If the motion task has died, we need to check for errors in the MultiAxis
-        try
-        {
-          RMPHelpers::CheckErrors(multiAxis);
-        }
-        catch(const std::exception& e)
-        {
-          std::cerr << e.what() << '\n';
-        }
-
-        RSIState state = multiAxis->StateGet();
-        std::cout << "MultiAxis is in state: " << RSIStateToString(state) << std::endl;
-
-        // Check if the MultiAxis is in an error state and print the source of the error
-        if (state == RSIState::RSIStateERROR ||
-            state == RSIState::RSIStateSTOPPING_ERROR)
-        {
-          RSISource source = multiAxis->SourceGet();
-          std::cerr << "Error Source: " << multiAxis->SourceNameGet(source) << std::endl;
-        }
-
         exitCode = 1;
         g_shutdown = true;
+      }
+
+      // Check if the MultiAxis is in an error state
+      try
+      {
+        RMPHelpers::CheckErrors(multiAxis);
+      }
+      catch(const std::exception& e)
+      {
+        std::cerr << e.what() << '\n';
+      }
+
+      // Check if the MultiAxis is in an error state and print the source of the error
+      RSIState state = multiAxis->StateGet();
+      if (state == RSIState::RSIStateERROR ||
+          state == RSIState::RSIStateSTOPPING_ERROR)
+      {
+        std::cout << "MultiAxis is in state: " << RSIStateToString(state) << std::endl;
+        RSISource source = multiAxis->SourceGet();
+        std::cerr << "Error Source: " << multiAxis->SourceNameGet(source) << std::endl;
       }
     }
 
