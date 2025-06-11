@@ -47,15 +47,18 @@ RSI_TASK(Initialize)
   }
 
   // Setup the multi-axis
-  data->newTarget = false;
-  data->targetX = RTAxisGet(0)->ActualPositionGet();
-  data->targetY = RTAxisGet(1)->ActualPositionGet();
   RTMultiAxisGet(0)->AxisAdd(RTAxisGet(0));
   RTMultiAxisGet(0)->AxisAdd(RTAxisGet(1));
   RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
   RTMultiAxisGet(0)->Abort();
   RTMultiAxisGet(0)->ClearFaults();
   RTMultiAxisGet(0)->AmpEnableSet(true);
+
+  // Move the motors to the initial position
+  data->newTarget = false;
+  data->targetX = 0.0;
+  data->targetY = 0.0;
+  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
 }
 
 // Moves the motors based on the target positions.
