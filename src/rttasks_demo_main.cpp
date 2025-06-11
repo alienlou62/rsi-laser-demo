@@ -69,6 +69,7 @@ std::shared_ptr<RTTask> SubmitRepeatingTask(
   std::shared_ptr<RTTaskManager>& manager, const std::string& taskName,
   int32_t period = RTTaskCreationParameters::PeriodDefault,
   int32_t phase = RTTaskCreationParameters::PhaseDefault,
+  TaskPriority priority = RTTaskCreationParameters::PriorityDefault,
   int32_t timeoutMs = TASK_WAIT_TIMEOUT
   )
 {
@@ -76,6 +77,7 @@ std::shared_ptr<RTTask> SubmitRepeatingTask(
   repeatingParams.Repeats = RTTaskCreationParameters::RepeatForever;
   repeatingParams.Period = period;
   repeatingParams.Phase = phase;
+  repeatingParams.Priority = priority;
   repeatingParams.EnableTiming = true;
   std::shared_ptr<RTTask> repeatingTask(manager->TaskSubmit(repeatingParams), RTTaskDeleter);
   repeatingTask->ExecutionCountAbsoluteWait(1, timeoutMs);
@@ -188,8 +190,8 @@ int main()
       return -1;
     }
 
-    std::shared_ptr<RTTask> ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD);
-    std::shared_ptr<RTTask> motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1);
+    std::shared_ptr<RTTask> ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0, TaskPriority::Low);
+    std::shared_ptr<RTTask> motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1, TaskPriority::High);
 
     // --- Main Loop ---
     while (!g_shutdown)
