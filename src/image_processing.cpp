@@ -68,7 +68,7 @@ bool ImageProcessing::TryDetectBall(const uint8_t *pImageBuffer, int width, int 
     }
   }
 
-  imshow("RGB Frame", rgbFrame);
-  waitkey(1); // Display the RGB frame for 1 ms
+  //imshow("RGB Frame", rgbFrame);
+  //waitKey(1); // Display the RGB frame for 1 ms
   return foundBall;
 }
