@@ -47,6 +47,7 @@ RSI_TASK(Initialize)
   }
 
   // Setup the multi-axis
+  data->newTarget = false;
   data->targetX = RTAxisGet(0)->ActualPositionGet();
   data->targetY = RTAxisGet(1)->ActualPositionGet();
   RTMultiAxisGet(0)->AxisAdd(RTAxisGet(0));
@@ -61,6 +62,12 @@ RSI_TASK(Initialize)
 RSI_TASK(MoveMotors)
 {
   if (!RTMultiAxisGet(0)->AmpEnableGet()) return;
+
+  // Check if there is a new target, if not, return early
+  bool target = false;
+  std::exchange(data->newTarget, target);
+  if (!target) return;
+
   MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
 }
 
@@ -86,4 +93,5 @@ RSI_TASK(DetectBall)
   // Calculate the target positions based on the offsets and the position at the time of frame grab
   data->targetX = initialX + offsetX;
   data->targetY = initialY + offsetY;
+  data->newTarget = true;
 }
