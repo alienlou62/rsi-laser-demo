@@ -32,36 +32,12 @@ void sigint_handler(int signal)
   g_shutdown = true;
 }
 
-template <typename T, typename F>
-void SafeDeleter(T* ptr, F&& shutdown, const char* context) {
-  if (ptr) {
-    try {
-      shutdown(ptr);
-    } catch (const RsiError& e) {
-      std::cerr << "Exception in " << context << " (RsiError): " << e.what() << std::endl;
-    } catch (const std::exception& e) {
-      std::cerr << "Exception in " << context << " (std::exception): " << e.what() << std::endl;
-    } catch (...) {
-      std::cerr << "Unknown exception in " << context << std::endl;
-    }
-    delete ptr;
-  }
-}
-
-void RTTaskDeleter(RTTask* ptr) {
-  SafeDeleter(ptr, [](RTTask* t){ t->Stop(); }, "RTTaskDeleter");
-}
-
-void RTTaskManagerDeleter(RTTaskManager* ptr) {
-  SafeDeleter(ptr, [](RTTaskManager* m){ m->Shutdown(); }, "RTTaskManagerDeleter");
-}
-
 void SubmitSingleShotTask(std::shared_ptr<RTTaskManager>& manager, const std::string& taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
 {
   RTTaskCreationParameters singleShotParams(taskName.c_str());
   singleShotParams.Repeats = RTTaskCreationParameters::RepeatNone;
   singleShotParams.EnableTiming = true;
-  std::shared_ptr<RTTask> singleShotTask(manager->TaskSubmit(singleShotParams), RTTaskDeleter);
+  std::shared_ptr<RTTask> singleShotTask(RMPHelpers::SubmitRTTask(manager, singleShotParams));
   singleShotTask->ExecutionCountAbsoluteWait(1, timeoutMs);
 }
 
@@ -79,13 +55,13 @@ std::shared_ptr<RTTask> SubmitRepeatingTask(
   repeatingParams.Phase = phase;
   repeatingParams.Priority = priority;
   repeatingParams.EnableTiming = true;
-  std::shared_ptr<RTTask> repeatingTask(manager->TaskSubmit(repeatingParams), RTTaskDeleter);
+  std::shared_ptr<RTTask> repeatingTask(RMPHelpers::SubmitRTTask(manager, repeatingParams));
   repeatingTask->ExecutionCountAbsoluteWait(1, timeoutMs);
   repeatingTask->TimingReset(); // Reset timing stats for the task after the first run
   return repeatingTask;
 }
 
-void printTaskTiming(std::shared_ptr<RTTask> task, const std::string& taskName)
+void PrintTaskTiming(std::shared_ptr<RTTask> task, const std::string& taskName)
 {
   if (!task) return;
 
@@ -111,26 +87,6 @@ void SetupCamera()
   CameraHelpers::PrimeCamera(camera, ptr);
   camera.Close();
   camera.DestroyDevice();
-}
-
-std::string RSIStateToString(RSIState state)
-{
-  switch (state)
-  {
-    case RSIState::RSIStateIDLE:
-      return "IDLE";
-    case RSIState::RSIStateMOVING:
-      return "MOVING";
-    case RSIState::RSIStateSTOPPING:
-      return "STOPPING";
-    case RSIState::RSIStateSTOPPED:
-      return "STOPPED";
-    case RSIState::RSIStateSTOPPING_ERROR:
-      return "STOPPING_ERROR";
-    case RSIState::RSIStateERROR:
-      return "ERROR";
-  }
-  return "UNKNOWN";
 }
 
 bool CheckRTTaskStatus(const std::shared_ptr<RTTask>& task, const std::string& taskName)
@@ -180,7 +136,7 @@ int main()
 
   try
   {
-    std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"), RTTaskManagerDeleter);
+    std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
     SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
     FirmwareValue cameraReady = manager->GlobalValueGet("cameraReady");
@@ -231,15 +187,15 @@ int main()
       if (state == RSIState::RSIStateERROR ||
           state == RSIState::RSIStateSTOPPING_ERROR)
       {
-        std::cout << "MultiAxis is in state: " << RSIStateToString(state) << std::endl;
+        std::cout << "MultiAxis is in state: " << RMPHelpers::RSIStateToString(state) << std::endl;
         RSISource source = multiAxis->SourceGet();
         std::cerr << "Error Source: " << multiAxis->SourceNameGet(source) << std::endl;
       }
     }
 
     // Print task timing information
-    printTaskTiming(motionTask, "Motion Task");
-    printTaskTiming(ballDetectionTask, "Ball Detection Task");
+    PrintTaskTiming(motionTask, "Motion Task");
+    PrintTaskTiming(ballDetectionTask, "Ball Detection Task");
   }
   catch (const RsiError &e)
   {
