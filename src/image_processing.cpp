@@ -7,15 +7,14 @@
 
 using namespace cv;
 
-bool ImageProcessing::TryDetectBall(const uint8_t *pImageBuffer, int width, int height, double &offsetX, double &offsetY)
+bool ImageProcessing::TryDetectBall(const Mat& bayerFrame, double &offsetX, double &offsetY)
 {
   constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 2;
   constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 2;
 
   // Static variables to avoid reallocation
   static Mat rgbFrame, hsvFrame, mask, kernel;
-
-  Mat bayerFrame(height, width, CV_8UC1, (void *)pImageBuffer);
+  
   cvtColor(bayerFrame, rgbFrame, COLOR_BayerBG2RGB);
   cvtColor(rgbFrame, hsvFrame, COLOR_RGB2HSV);
   Scalar lower_ball(lowH, lowS, lowV);

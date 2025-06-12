@@ -64,7 +64,8 @@ int main()
 
       // --- Frame Retrieval ---
       auto retrieveStopwatch = Stopwatch(retrieveTiming);
-      if (!CameraHelpers::TryGrabFrame(camera, ptrGrabResult, CameraHelpers::TIMEOUT_MS))
+      bool frameGrabbed = CameraHelpers::TryGrabFrame(camera, ptrGrabResult, CameraHelpers::TIMEOUT_MS);
+      if (!frameGrabbed)
       {
         ++grabFailures;
         continue;
@@ -77,11 +78,12 @@ int main()
 
       // --- Image Processing ---
       auto processingStopwatch = Stopwatch(processingTiming);
-      double offsetX(0.0), offsetY(0.0);
-      if (!ImageProcessing::TryDetectBall(
+      cv::Mat bayerFrame = ImageProcessing::WrapBayerBuffer(
             static_cast<uint8_t *>(ptrGrabResult->GetBuffer()),
-            ptrGrabResult->GetWidth(), ptrGrabResult->GetHeight(),
-            offsetX, offsetY))
+            CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
+      double offsetX(0.0), offsetY(0.0);
+      bool ballDetected = ImageProcessing::TryDetectBall(bayerFrame, offsetX, offsetY);
+      if (!ballDetected)
       {
         ++processFailures;
         continue;
