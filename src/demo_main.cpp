@@ -31,7 +31,7 @@ int main()
 {
   const std::chrono::milliseconds loopInterval(5); // 5ms loop interval
   const std::string EXECUTABLE_NAME = "Pylon_RSI_Tracking_BayerOnly";
-  PrintHeader(EXECUTABLE_NAME);
+  MiscHelpers::PrintHeader(EXECUTABLE_NAME);
   int exitCode = 0;
 
   std::signal(SIGINT, sigint_handler);
@@ -150,7 +150,7 @@ int main()
 
   cv::destroyAllWindows();
 
-  PrintFooter(EXECUTABLE_NAME, exitCode);
+  MiscHelpers::PrintFooter(EXECUTABLE_NAME, exitCode);
 
   return exitCode;
 }

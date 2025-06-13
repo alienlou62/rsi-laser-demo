@@ -67,6 +67,7 @@ add_executable(Sandbox
   ${CMAKE_CURRENT_LIST_DIR}/src/helpers/camera_helpers.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/helpers/rmp_helpers.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/helpers/misc_helpers.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/image_helpers.cpp
 )
 setup_rmp_target(Sandbox)
 target_include_directories(Sandbox PRIVATE 

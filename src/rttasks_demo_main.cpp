@@ -123,7 +123,7 @@ bool CheckRTTaskStatus(const std::shared_ptr<RTTask>& task, const std::string& t
 int main()
 {
   const std::string EXECUTABLE_NAME = "Real-Time Tasks: Laser Tracking";
-  PrintHeader(EXECUTABLE_NAME);
+  MiscHelpers::PrintHeader(EXECUTABLE_NAME);
   int exitCode = 0;
 
   std::signal(SIGINT, sigint_handler);
@@ -217,6 +217,6 @@ int main()
   multiAxis->Abort();
   multiAxis->ClearFaults();
 
-  PrintFooter(EXECUTABLE_NAME, exitCode);
+  MiscHelpers::PrintFooter(EXECUTABLE_NAME, exitCode);
   return exitCode;
 }

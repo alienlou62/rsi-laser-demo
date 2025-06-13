@@ -13,29 +13,27 @@ namespace Pylon {
 #define CONFIG_FILE ""
 #endif
 
-class CameraHelpers
-{
-public:
+namespace CameraHelpers {
   // Camera constants
-  static constexpr unsigned int IMAGE_WIDTH = 640;
-  static constexpr unsigned int IMAGE_HEIGHT = 480;
+  inline constexpr unsigned int IMAGE_WIDTH = 640;
+  inline constexpr unsigned int IMAGE_HEIGHT = 480;
 
-  static constexpr double PIXEL_SIZE = 4.8e-3; //mm
-  static constexpr double FOCAL_LENGTH = 8.11; //mm
-  static constexpr double RADIANS_PER_PIXEL = 2.0 * std::atan(PIXEL_SIZE / (2.0 * FOCAL_LENGTH));
+  inline constexpr double PIXEL_SIZE = 4.8e-3; //mm
+  inline constexpr double FOCAL_LENGTH = 8.11; //mm
+  inline constexpr double RADIANS_PER_PIXEL = 2.0 * std::atan(PIXEL_SIZE / (2.0 * FOCAL_LENGTH));
 
   // Image capture constants
-  static constexpr unsigned int TIMEOUT_MS = 1000;
-  static constexpr unsigned int MAX_RETRIES = 10;
+  inline constexpr unsigned int TIMEOUT_MS = 1000;
+  inline constexpr unsigned int MAX_RETRIES = 10;
 
   // Configure the camera with predefined settings
-  static void ConfigureCamera(Pylon::CInstantCamera &camera);
+  void ConfigureCamera(Pylon::CInstantCamera &camera);
 
   // Try to grab a frame. Returns true on success, false on timeout or incomplete grab. Throws only for fatal/unrecoverable errors.
-  static bool TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, unsigned int timeoutMs = TIMEOUT_MS);
+  bool TryGrabFrame(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, unsigned int timeoutMs = TIMEOUT_MS);
 
   // Throws std::runtime_error if fails after maxRetries
-  static void PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, unsigned int maxRetries = MAX_RETRIES);
-};
+  void PrimeCamera(Pylon::CInstantCamera &camera, Pylon::CGrabResultPtr &grabResult, unsigned int maxRetries = MAX_RETRIES);
+}
 
 #endif // CAMERA_HELPERS_H

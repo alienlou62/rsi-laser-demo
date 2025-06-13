@@ -3,7 +3,9 @@
 
 #include <string>
 
-void PrintHeader(std::string name);
-void PrintFooter(std::string name, int exitCode);
+namespace MiscHelpers {
+  void PrintHeader(std::string name);
+  void PrintFooter(std::string name, int exitCode);
+}
 
 #endif // MISC_HELPERS_H
