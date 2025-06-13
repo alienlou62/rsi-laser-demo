@@ -38,112 +38,204 @@ using namespace cv;
 using namespace Pylon;
 using namespace GenApi;
 
-constexpr const char* const BAYER_FOLDER = SOURCE_DIR "test_images/bayer/";
-constexpr const unsigned int NUM_BAYER_IMAGES = 20;
-
-constexpr const char* const YUYV_FOLDER = SOURCE_DIR "test_images/yuyv/";
-constexpr const unsigned int NUM_YUYV_IMAGES = 18;
-
 enum class ImageType
 {
   BAYER,
   YUYV
 };
 
-std::string ImageFileName(unsigned int index, ImageType type)
+constexpr const char* const BAYER_FOLDER = SOURCE_DIR "test_images/bayer/";
+constexpr const char* const BAYER_OUTPUT_FOLDER = SOURCE_DIR "test_images/output/bayer/";
+constexpr const unsigned int NUM_BAYER_IMAGES = 21;
+
+constexpr const char* const YUYV_FOLDER = SOURCE_DIR "test_images/yuyv/";
+constexpr const char* const YUYV_OUTPUT_FOLDER = SOURCE_DIR "test_images/output/yuyv/";
+constexpr const unsigned int NUM_YUYV_IMAGES = 18;
+
+std::string ImageFileName(unsigned int index)
 {
-  std::string folder;
-  switch (type)
-  {
-    case ImageType::BAYER:
-      folder = BAYER_FOLDER;
-      if (index >= NUM_BAYER_IMAGES)
-      {
-        throw std::out_of_range("Index out of range for Bayer images");
-      }
-      break;
-    case ImageType::YUYV:
-      folder = YUYV_FOLDER;
-      if (index >= NUM_YUYV_IMAGES)
-      {
-        throw std::out_of_range("Index out of range for YUYV images");
-      }
-      break;
-    default:
-      throw std::invalid_argument("Invalid image type");
-  }
-  return folder + std::string("Image") + std::to_string(index) + std::string(".raw");
+  return std::string("Image") + std::to_string(index) + std::string(".raw");
 }
 
-bool ReadImage(Mat& img, unsigned int index, ImageType type)
+class ImageReaderWriter
 {
-  if (type != ImageType::BAYER && type != ImageType::YUYV)
-  {
-    std::cerr << "Unsupported image type." << std::endl;
-    return false;
-  }
-  if (index >= (type == ImageType::BAYER ? NUM_BAYER_IMAGES : NUM_YUYV_IMAGES))
-  {
-    std::cerr << "Index out of range for the specified image type." << std::endl;
-    return false;
-  }
-  
-  std::string fileName = ImageFileName(index, type);
-  std::ifstream file(fileName, std::ios::binary);
-  if (!file.is_open())
-  {
-    std::cerr << "Failed to open image file: " << fileName << std::endl;
-    return false;
-  }
+  using NameGenerator = std::function<std::string(unsigned int)>;
 
-  // Read the raw image data
-  if (type == ImageType::BAYER)
-  {
-    img.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC1);
-  }
-  else if (type == ImageType::YUYV)
-  {
-    img.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2);
-  }
-  else
-  {
-    std::cerr << "Unsupported image type" << std::endl;
-    file.close();
-    return false;
-  }
+  const NameGenerator inputNameGenerator;
+  const std::string inputFolder;
+  Mat& inFrame;
 
-  file.read(reinterpret_cast<char*>(img.data), img.total() * img.elemSize());
-  if (!file)
-  {
-    std::cerr << "Failed to read image data from file: " << fileName << std::endl;
-    file.close();
-    return false;
-  }
+  const NameGenerator outputNameGenerator;
+  const std::string outputFolder;
+  Mat& outFrame;
 
-  file.close();
-  return true;
-}
+  const ImageType type;
+  const unsigned int numImages;
+  int loadedIndex = -1; // Track the index of the currently loaded image
+public:
+  ImageReaderWriter(const ImageType type, Mat& inFrame, Mat& outFrame)
+    : inputNameGenerator(ImageFileName),
+      inputFolder((type == ImageType::BAYER) ? BAYER_FOLDER : YUYV_FOLDER),
+      inFrame(inFrame),
+      outputNameGenerator(ImageFileName),
+      outputFolder((type == ImageType::BAYER) ? BAYER_OUTPUT_FOLDER : YUYV_OUTPUT_FOLDER),
+      outFrame(outFrame),
+      type(type),
+      numImages((type == ImageType::BAYER) ? NUM_BAYER_IMAGES : NUM_YUYV_IMAGES)
+  {}
 
-void ProcessFrame(const Mat& inFrame, Mat& outFrame)
-{
-  // Convert YUYV to a 3-channel YUV image
-  outFrame.create(inFrame.rows, inFrame.cols, CV_8UC3);
-  for (int i = 0; i < inFrame.rows; ++i)
+  bool ReadImage(unsigned int index)
   {
-    for (int j = 0; j < inFrame.cols; j += 2)
+    if (index >= numImages)
     {
-      // Extract Y, U, and V components
-      uchar y0 = inFrame.at<Vec2b>(i, j)[0];
-      uchar u = inFrame.at<Vec2b>(i, j)[1];
-      uchar y1 = inFrame.at<Vec2b>(i, j + 1)[0];
-      uchar v = inFrame.at<Vec2b>(i, j + 1)[1];
+      std::cerr << "Index out of range for the specified image type." << std::endl;
+      return false;
+    }
 
-      // Store in the YUV image
-      outFrame.at<Vec3b>(i, j) = Vec3b(y0, u, v);
-      if (j + 1 < inFrame.cols)
+    std::string fileName = inputFolder + inputNameGenerator(index);
+    std::ifstream file(fileName, std::ios::binary);
+    if (!file.is_open())
+    {
+      std::cerr << "Failed to open image file: " << fileName << std::endl;
+      return false;
+    }
+
+    // Read the raw image data
+    if (type == ImageType::BAYER)
+    {
+      inFrame.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC1);
+    }
+    else if (type == ImageType::YUYV)
+    {
+      inFrame.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2);
+    }
+    else
+    {
+      std::cerr << "Unsupported image type" << std::endl;
+      file.close();
+      return false;
+    }
+
+    file.read(reinterpret_cast<char*>(inFrame.data), inFrame.total() * inFrame.elemSize());
+    if (!file)
+    {
+      std::cerr << "Failed to read image data from file: " << fileName << std::endl;
+      file.close();
+      return false;
+    }
+
+    file.close();
+    loadedIndex = index; // Update the loaded index
+    return true;
+  }
+
+  bool WriteImage(unsigned int index)
+  {
+    if (index >= numImages)
+    {
+      std::cerr << "Index out of range for the specified image type." << std::endl;
+      return false;
+    }
+
+    std::string fileName = outputFolder + outputNameGenerator(index);
+    if (!imwrite(fileName, outFrame))
+    {
+      std::cerr << "Failed to write image to file: " << fileName << std::endl;
+      return false;
+    }
+
+    return true;
+  }
+
+  class Iterator
+  {
+    ImageReaderWriter& readerWriter;
+    unsigned int currentIndex;
+  public:
+    using iterator_category = std::input_iterator_tag;
+    using value_type = unsigned int;
+    using difference_type = std::ptrdiff_t;
+    using pointer = unsigned int*;
+    using reference = unsigned int&;
+
+    Iterator(ImageReaderWriter& rw, unsigned int index)
+      : readerWriter(rw), currentIndex(index)
+    {
+      // Attempt to read the first image
+      if (currentIndex < readerWriter.numImages)
       {
-        outFrame.at<Vec3b>(i, j + 1) = Vec3b(y1, u, v);
+        if (!readerWriter.ReadImage(currentIndex))
+        {
+          std::cerr << "Failed to read image at index " << currentIndex << std::endl;
+          currentIndex = readerWriter.numImages; // Move to end
+        }
       }
+    }
+    Iterator& operator++()
+    { 
+      // Write the current image to the output folder
+      if (!readerWriter.WriteImage(currentIndex))
+      {
+        std::cerr << "Failed to write image at index " << (currentIndex) << std::endl;
+      }
+
+      // Move to the next index
+      ++currentIndex;
+
+      // If we have not reached the end, read the next image
+      if (currentIndex < readerWriter.numImages)
+      {
+        if (!readerWriter.ReadImage(currentIndex))
+        {
+          std::cerr << "Failed to read image at index " << currentIndex << std::endl;
+          currentIndex = readerWriter.numImages; // Move to end
+        }
+      }
+      return *this;
+    }
+    bool operator==(const Iterator& other) const { return currentIndex == other.currentIndex; }
+    bool operator!=(const Iterator& other) const { return !(*this == other); }
+    unsigned int operator*() const { return currentIndex; }
+  };
+
+  Iterator begin() { return Iterator(*this, 0); }
+  Iterator end() { return Iterator(*this, numImages); }
+};
+
+void SubsambleBayer(const Mat& inFrame, Mat& outFrame)
+{
+  // Subsample the Bayer image by taking every second 2x2 pixel block
+  outFrame.create(inFrame.rows / 2, inFrame.cols / 2, CV_8UC1);
+
+  for (int y = 0; y < inFrame.rows; y += 4) {
+    const uchar* row0 = inFrame.ptr<uchar>(y);
+    const uchar* row1 = inFrame.ptr<uchar>(y + 1);
+
+    uchar* outRow0 = outFrame.ptr<uchar>(y / 2);
+    uchar* outRow1 = outFrame.ptr<uchar>(y / 2 + 1);
+
+    for (int x = 0; x < inFrame.cols; x += 4)
+    {
+      outRow0[x / 2    ] = row0[x    ];
+      outRow0[x / 2 + 1] = row0[x + 1];
+      outRow1[x / 2    ] = row1[x    ];
+      outRow1[x / 2 + 1] = row1[x + 1];
+    }
+  }
+}
+
+void SubsampleYUYV(const Mat& inFrame, Mat& outFrame)
+{
+  for (int i = 0; i < inFrame.rows; i += 2)
+  {
+    const uchar* inRow = inFrame.ptr<uchar>(i);          // 2 channels per pixel
+    uchar* outRow = outFrame.ptr<uchar>(i / 2);          // 3 channels per pixel
+
+    for (int j = 0; j < inFrame.cols - 1; j += 2)
+    {
+      outRow[3 * (j / 2)    ] = inRow[2 * j    ];      // channel 0 of pixel j (Y)
+      outRow[3 * (j / 2) + 1] = inRow[2 * j + 1];      // channel 1 of pixel j (U)
+      outRow[3 * (j / 2) + 2] = inRow[2 * j + 3];      // channel 1 of pixel j+1 (V)
     }
   }
 }
@@ -151,38 +243,22 @@ void ProcessFrame(const Mat& inFrame, Mat& outFrame)
 int Sandbox()
 {
   int exitCode = 0;
+  
+  // Setup the image reader/writer
+  Mat inFrame(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC1); // For Bayer input
+  Mat outFrame(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC3); // Subsampled 3 channel output
+  ImageReaderWriter readerWriter(ImageType::BAYER, inFrame, outFrame);
 
   TimingStats timing;
-  Mat inFrame, bgrFrame, outFrame;
-  inFrame.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC1); // For YUYV images
-  bgrFrame.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC3); // For RGB output
-  outFrame.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC3); // For HSV output
-  for (int i = 0; i < NUM_YUYV_IMAGES; ++i)
-  {
-    if (!ReadImage(inFrame, i, ImageType::BAYER))
-    {
-      std::cerr << "Failed to read image " << i << std::endl;
-      exitCode = 1;
-      break;
-    }
 
+  // For each loop, inFrame will automatically be loaded with the next image
+  // and outFrame will automatically be written to the output folder
+  for (int index : readerWriter)
+  {
     Stopwatch stopwatch(timing);
-    // ProcessFrame(inFrame, outFrame);
-    cvtColor(inFrame, bgrFrame, COLOR_BayerBG2BGR); // Convert Bayer to BGR
-    cvtColor(bgrFrame, outFrame, COLOR_BGR2HSV); // Convert BGR to HSV
-    stopwatch.Stop();
-    
-    // Save the RGB frame to a file
-    std::string outputFileName = SOURCE_DIR "build/out_" + std::to_string(i) + ".png";
-    if (!imwrite(outputFileName, outFrame))
-    {
-      std::cerr << "Failed to save output image to file: " << outputFileName << std::endl;
-      exitCode = 1;
-      break;
-    }
   }
 
-  printStats<std::chrono::microseconds>("YUYV Frame Processing", timing);
+  printStats<std::chrono::microseconds>("Image Processing", timing);
 
   return exitCode;
 }
@@ -200,7 +276,7 @@ int main()
   const std::string EXECUTABLE_NAME = "Sandbox";
   PrintHeader(EXECUTABLE_NAME);
   std::signal(SIGINT, sigint_handler);
-  cv::setNumThreads(0); // Set OpenCV to use a single thread for consistency
+  cv::setNumThreads(0); // Turn off OpenCV threading
 
   int exitCode = Sandbox();
 
