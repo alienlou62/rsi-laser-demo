@@ -6,6 +6,10 @@
 #include <vector>
 #include <string>
 
+#ifndef SANDBOX_DIR
+#define SOURCE_DIR ""
+#endif // SANDBOX_DIR
+
 namespace ImageHelpers {
   // Enum for image type
   enum class ImageType {
@@ -13,8 +17,8 @@ namespace ImageHelpers {
     YUYV
   };
 
-  inline constexpr const char* INPUT_FOLDER = SOURCE_DIR "test_img_input/";
-  inline constexpr const char* OUTPUT_FOLDER = SOURCE_DIR "test_img_output/";
+  inline constexpr const char* INPUT_FOLDER = SANDBOX_DIR "test_img_input/";
+  inline constexpr const char* OUTPUT_FOLDER = SANDBOX_DIR "test_img_output/";
   inline constexpr const char* BAYER_FOLDER = "bayer/";
   inline constexpr const char* YUYV_FOLDER = "yuyv/";
   inline constexpr const char* INPUT_IMAGE_EXTENSION = ".raw";

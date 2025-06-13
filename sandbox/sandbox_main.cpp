@@ -26,13 +26,9 @@
 #include "timing_helpers.h"
 #include "image_helpers.h"
 
-#ifndef SOURCE_DIR
-#define SOURCE_DIR ""
-#endif // SOURCE_DIR
-
-#ifndef CONFIG_FILE
-#define CONFIG_FILE ""
-#endif // CONFIG_FILE
+#ifndef SANDBOX_DIR
+#define SANDBOX_DIR ""
+#endif // SANDBOX_DIR
 
 using namespace RSI::RapidCode;
 using namespace cv;
@@ -81,18 +77,19 @@ int Sandbox()
 {
   int exitCode = 0;
   
-  // Setup the image reader/writer
-  Mat inFrame(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC1); // For Bayer input
+  // Setup the image reader/writer which will automatically read image into inFrame and write processed image to outFrame each loop
+  Mat inFrame = ImageProcessing::CreateBayerMat(CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
   Mat outFrame(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC3); // Subsampled 3 channel output
   ImageHelpers::ImageReaderWriter readerWriter(ImageHelpers::ImageType::BAYER, inFrame, outFrame);
 
   TimingStats timing;
 
-  // For each loop, inFrame will automatically be loaded with the next image
-  // and outFrame will automatically be written to the output folder
+  Mat rgbFrame(outFrame.size(), CV_8UC3);
   for (int index : readerWriter)
   {
     Stopwatch stopwatch(timing);
+    cvtColor(inFrame, rgbFrame, COLOR_BayerBG2RGB);
+    cvtColor(rgbFrame, outFrame, COLOR_RGB2HSV);
   }
 
   printStats<std::chrono::microseconds>("Image Processing", timing);
