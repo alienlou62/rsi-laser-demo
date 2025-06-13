@@ -1,13 +1,10 @@
 #include <chrono>
 #include <cmath>
 #include <csignal>
-#include <fstream>
 #include <iostream>
 #include <numbers>
 #include <algorithm>
 #include <cstddef>
-#include <iterator>
-#include <functional>
 #include <cstdint>
 
 // --- Camera and Image Processing Headers ---
@@ -35,7 +32,7 @@ using namespace cv;
 using namespace Pylon;
 using namespace GenApi;
 
-void SubsambleBayer(const Mat& inFrame, Mat& outFrame)
+void SubsampleBayer(const Mat& inFrame, Mat& outFrame)
 {
   // Subsample the Bayer image by taking every second 2x2 pixel block
   outFrame.create(inFrame.rows / 2, inFrame.cols / 2, CV_8UC1);
@@ -73,7 +70,7 @@ void SubsampleYUYV(const Mat& inFrame, Mat& outFrame)
   }
 }
 
-int Sandbox()
+int ProcessBayerImages()
 {
   int exitCode = 0;
   
@@ -84,15 +81,39 @@ int Sandbox()
 
   TimingStats timing;
 
+  Mat subsampledFrame(outFrame.size(), CV_8UC1);
   Mat rgbFrame(outFrame.size(), CV_8UC3);
   for (int index : readerWriter)
   {
     Stopwatch stopwatch(timing);
-    cvtColor(inFrame, rgbFrame, COLOR_BayerBG2RGB);
+    SubsampleBayer(inFrame, subsampledFrame);
+    cvtColor(subsampledFrame, rgbFrame, COLOR_BayerBG2RGB);
     cvtColor(rgbFrame, outFrame, COLOR_RGB2HSV);
   }
 
-  printStats<std::chrono::microseconds>("Image Processing", timing);
+  printStats<std::chrono::microseconds>("Bayer Image Processing", timing);
+
+  return exitCode;
+}
+
+int ProcessYUYVImages()
+{
+  int exitCode = 0;
+  
+  // Setup the image reader/writer which will automatically read image into inFrame and write processed image to outFrame each loop
+  Mat inFrame = ImageProcessing::CreateYUYVMat(CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
+  Mat outFrame(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC3); // Subsampled 3 channel output
+  ImageHelpers::ImageReaderWriter readerWriter(ImageHelpers::ImageType::YUYV, inFrame, outFrame);
+
+  TimingStats timing;
+
+  for (int index : readerWriter)
+  {
+    Stopwatch stopwatch(timing);
+    SubsampleYUYV(inFrame, outFrame);
+  }
+
+  printStats<std::chrono::microseconds>("YUYV Image Processing", timing);
 
   return exitCode;
 }
@@ -112,7 +133,9 @@ int main()
   std::signal(SIGINT, sigint_handler);
   cv::setNumThreads(0); // Turn off OpenCV threading
 
-  int exitCode = Sandbox();
+  int exitCode = 0;
+  exitCode += ProcessBayerImages();
+  exitCode += ProcessYUYVImages();
 
   MiscHelpers::PrintFooter(EXECUTABLE_NAME, exitCode);
   return exitCode;
