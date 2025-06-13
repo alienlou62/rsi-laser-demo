@@ -1,4 +1,5 @@
 .vscode/
 CMakeFiles/
 build/
+test_images/
 rttaskmanager.log

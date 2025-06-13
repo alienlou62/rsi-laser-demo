@@ -79,6 +79,6 @@ target_link_libraries(Sandbox PRIVATE
   ${OpenCV_LIBRARIES}
   pylon::pylon
 )
-target_compile_definitions(Sandbox PRIVATE SOURCE_DIR="${CMAKE_CURRENT_LIST_DIR}")
+target_compile_definitions(Sandbox PRIVATE SOURCE_DIR="${CMAKE_CURRENT_LIST_DIR}/")
 target_compile_definitions(Sandbox PRIVATE CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs")
 target_compile_options(Sandbox PRIVATE "-Wno-deprecated-enum-enum-conversion")

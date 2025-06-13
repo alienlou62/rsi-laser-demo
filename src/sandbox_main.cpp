@@ -1,9 +1,14 @@
 #include <chrono>
 #include <cmath>
 #include <csignal>
+#include <fstream>
 #include <iostream>
 #include <numbers>
 #include <algorithm>
+#include <cstddef>
+#include <iterator>
+#include <functional>
+#include <cstdint>
 
 // --- Camera and Image Processing Headers ---
 #include <opencv2/opencv.hpp>
@@ -33,6 +38,155 @@ using namespace cv;
 using namespace Pylon;
 using namespace GenApi;
 
+constexpr const char* const BAYER_FOLDER = SOURCE_DIR "test_images/bayer/";
+constexpr const unsigned int NUM_BAYER_IMAGES = 20;
+
+constexpr const char* const YUYV_FOLDER = SOURCE_DIR "test_images/yuyv/";
+constexpr const unsigned int NUM_YUYV_IMAGES = 18;
+
+enum class ImageType
+{
+  BAYER,
+  YUYV
+};
+
+std::string ImageFileName(unsigned int index, ImageType type)
+{
+  std::string folder;
+  switch (type)
+  {
+    case ImageType::BAYER:
+      folder = BAYER_FOLDER;
+      if (index >= NUM_BAYER_IMAGES)
+      {
+        throw std::out_of_range("Index out of range for Bayer images");
+      }
+      break;
+    case ImageType::YUYV:
+      folder = YUYV_FOLDER;
+      if (index >= NUM_YUYV_IMAGES)
+      {
+        throw std::out_of_range("Index out of range for YUYV images");
+      }
+      break;
+    default:
+      throw std::invalid_argument("Invalid image type");
+  }
+  return folder + std::string("Image") + std::to_string(index) + std::string(".raw");
+}
+
+bool ReadImage(Mat& img, unsigned int index, ImageType type)
+{
+  if (type != ImageType::BAYER && type != ImageType::YUYV)
+  {
+    std::cerr << "Unsupported image type." << std::endl;
+    return false;
+  }
+  if (index >= (type == ImageType::BAYER ? NUM_BAYER_IMAGES : NUM_YUYV_IMAGES))
+  {
+    std::cerr << "Index out of range for the specified image type." << std::endl;
+    return false;
+  }
+  
+  std::string fileName = ImageFileName(index, type);
+  std::ifstream file(fileName, std::ios::binary);
+  if (!file.is_open())
+  {
+    std::cerr << "Failed to open image file: " << fileName << std::endl;
+    return false;
+  }
+
+  // Read the raw image data
+  if (type == ImageType::BAYER)
+  {
+    img.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC1);
+  }
+  else if (type == ImageType::YUYV)
+  {
+    img.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2);
+  }
+  else
+  {
+    std::cerr << "Unsupported image type" << std::endl;
+    file.close();
+    return false;
+  }
+
+  file.read(reinterpret_cast<char*>(img.data), img.total() * img.elemSize());
+  if (!file)
+  {
+    std::cerr << "Failed to read image data from file: " << fileName << std::endl;
+    file.close();
+    return false;
+  }
+
+  file.close();
+  return true;
+}
+
+void ProcessFrame(const Mat& inFrame, Mat& outFrame)
+{
+  // Convert YUYV to a 3-channel YUV image
+  outFrame.create(inFrame.rows, inFrame.cols, CV_8UC3);
+  for (int i = 0; i < inFrame.rows; ++i)
+  {
+    for (int j = 0; j < inFrame.cols; j += 2)
+    {
+      // Extract Y, U, and V components
+      uchar y0 = inFrame.at<Vec2b>(i, j)[0];
+      uchar u = inFrame.at<Vec2b>(i, j)[1];
+      uchar y1 = inFrame.at<Vec2b>(i, j + 1)[0];
+      uchar v = inFrame.at<Vec2b>(i, j + 1)[1];
+
+      // Store in the YUV image
+      outFrame.at<Vec3b>(i, j) = Vec3b(y0, u, v);
+      if (j + 1 < inFrame.cols)
+      {
+        outFrame.at<Vec3b>(i, j + 1) = Vec3b(y1, u, v);
+      }
+    }
+  }
+}
+
+int Sandbox()
+{
+  int exitCode = 0;
+
+  TimingStats timing;
+  Mat inFrame, bgrFrame, outFrame;
+  inFrame.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC1); // For YUYV images
+  bgrFrame.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC3); // For RGB output
+  outFrame.create(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC3); // For HSV output
+  for (int i = 0; i < NUM_YUYV_IMAGES; ++i)
+  {
+    if (!ReadImage(inFrame, i, ImageType::BAYER))
+    {
+      std::cerr << "Failed to read image " << i << std::endl;
+      exitCode = 1;
+      break;
+    }
+
+    Stopwatch stopwatch(timing);
+    // ProcessFrame(inFrame, outFrame);
+    cvtColor(inFrame, bgrFrame, COLOR_BayerBG2BGR); // Convert Bayer to BGR
+    cvtColor(bgrFrame, outFrame, COLOR_BGR2HSV); // Convert BGR to HSV
+    stopwatch.Stop();
+    
+    // Save the RGB frame to a file
+    std::string outputFileName = SOURCE_DIR "build/out_" + std::to_string(i) + ".png";
+    if (!imwrite(outputFileName, outFrame))
+    {
+      std::cerr << "Failed to save output image to file: " << outputFileName << std::endl;
+      exitCode = 1;
+      break;
+    }
+  }
+
+  printStats<std::chrono::microseconds>("YUYV Frame Processing", timing);
+
+  return exitCode;
+}
+
 volatile sig_atomic_t g_shutdown = false;
 void sigint_handler(int signal)
 {
@@ -40,125 +194,15 @@ void sigint_handler(int signal)
   g_shutdown = true;
 }
 
-// Helper class for automatic VideoWriter management
-class VideoWriterHelper {
-public:
-  VideoWriter writer;
-  std::string filename;
-  VideoWriterHelper(const std::string& title, int width, int height, double fps)
-  {
-    filename = title + ".mp4";
-    // Hardcoded: avc1 codec, 30 fps fallback, .mp4 extension
-    writer.open(
-      filename,
-      VideoWriter::fourcc('a', 'v', 'c', '1'),
-      (fps > 0) ? fps : 30,
-      Size(width, height)
-    );
-    if (!writer.isOpened()) {
-      throw std::runtime_error("Failed to open video writer: " + filename);
-    }
-  }
-  ~VideoWriterHelper() {
-    writer.release();
-  }
-  void write(const Mat& frame) { writer.write(frame); }
-};
-
-std::vector<Vec3b> CollectRedBallPixels(VideoCapture& video)
-{
-  // --- Collect red ball pixels from first 30 frames ---
-  std::vector<Vec3b> ballPixels;
-  Mat frame;
-  for (int i = 0; i < 30; ++i) {
-    if (!video.read(frame) || frame.empty()) break;
-
-    Mat hsv;
-    cvtColor(frame, hsv, COLOR_BGR2HSV);
-
-    // Looser bounds!
-    Mat mask1, mask2, mask;
-    inRange(hsv, Scalar(0, 30, 30), Scalar(15, 255, 255), mask1);
-    inRange(hsv, Scalar(165, 30, 30), Scalar(180, 255, 255), mask2);
-    mask = mask1 | mask2;
-
-    morphologyEx(mask, mask, MORPH_OPEN, getStructuringElement(MORPH_ELLIPSE, Size(5,5)));
-
-    // Find largest contour (presume it's the ball)
-    std::vector<std::vector<Point>> contours;
-    findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-    if (!contours.empty()) {
-    size_t largest = 0;
-      double maxArea = 0;
-      for (size_t c = 0; c < contours.size(); ++c) {
-        double area = contourArea(contours[c]);
-        if (area > maxArea) { maxArea = area; largest = c; }
-      }
-      
-      // Fit a circle to the largest contour and draw it
-      Point2f center;
-      float radius;
-      minEnclosingCircle(contours[largest], center, radius);
-      circle(frame, center, static_cast<int>(radius), Scalar(255, 0, 0), 2); // blue circle
-
-      // Collect pixels inside the circle
-      int x0 = std::max(0, static_cast<int>(center.x - radius));
-      int x1 = std::min(frame.cols - 1, static_cast<int>(center.x + radius));
-      int y0 = std::max(0, static_cast<int>(center.y - radius));
-      int y1 = std::min(frame.rows - 1, static_cast<int>(center.y + radius));
-      float r2 = radius * radius;
-      for (int y = y0; y <= y1; ++y) {
-        for (int x = x0; x <= x1; ++x) {
-          float dx = x - center.x;
-          float dy = y - center.y;
-          if ((dx*dx + dy*dy) <= r2)
-            ballPixels.push_back(hsv.at<Vec3b>(y, x));
-        }
-      }
-    }
-  }
-  return ballPixels;
-}
-
 // --- Main Function ---
 int main()
 {
   const std::string EXECUTABLE_NAME = "Sandbox";
   PrintHeader(EXECUTABLE_NAME);
-  int exitCode = 0;
-
   std::signal(SIGINT, sigint_handler);
+  cv::setNumThreads(0); // Set OpenCV to use a single thread for consistency
 
-  std::string videoFilePath = std::string(SOURCE_DIR) + "/test_video.mp4";
-  VideoCapture video(videoFilePath);
-  if (!video.isOpened()) {
-    std::cerr << "Error: Could not open video file: " << videoFilePath << std::endl;
-    PrintFooter(EXECUTABLE_NAME, -1);
-    return -1;
-  }
-
-  int frame_width = static_cast<int>(video.get(CAP_PROP_FRAME_WIDTH));
-  int frame_height = static_cast<int>(video.get(CAP_PROP_FRAME_HEIGHT));
-  double fps = video.get(CAP_PROP_FPS);
-
-  VideoWriterHelper outputVideo("output_annotated", frame_width, frame_height, fps);
-  VideoWriterHelper maskVideo("output_mask", frame_width, frame_height, fps);
-
-  std::vector<Vec3b> redBallPixels = CollectRedBallPixels(video);
-
-  Mat frame, hsv, mask, maskBGR;
-  while(video.read(frame) && !frame.empty())
-  {
-    cvtColor(frame, hsv, COLOR_BGR2HSV);
-    
-    Mat mask1, mask2, mask;
-    inRange(hsv, Scalar(0, 30, 30), Scalar(15, 255, 255), mask1);
-    inRange(hsv, Scalar(165, 30, 30), Scalar(180, 255, 255), mask2);
-    mask = mask1 | mask2;
-
-    cvtColor(mask, maskBGR, COLOR_GRAY2BGR);
-    maskVideo.write(maskBGR);
-  }
+  int exitCode = Sandbox();
 
   PrintFooter(EXECUTABLE_NAME, exitCode);
   return exitCode;
