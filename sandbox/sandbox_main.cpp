@@ -32,34 +32,98 @@ using namespace cv;
 using namespace Pylon;
 using namespace GenApi;
 
-Vec3f DetectBall(const Mat& in)
+bool DetectBall(const Mat& in, Vec3f& out)
 {
   std::vector<std::vector<cv::Point>> contours;
   cv::findContours(in, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-  if (contours.empty())
+  // Find the most circular contour, that is of a minimum size
+  double bestScore = 0.5; // Minimum score for a valid circle
+  int bestIndex = -1;
+  for (int i = 0; i < contours.size(); ++i)
   {
-    return Vec3f(0, 0, -1); // No contours found
-  }
+    const std::vector<cv::Point>& contour = contours[i];
+    if (contour.size() < 5) continue; // Need at least 5 points for fitting an ellipse
 
-  // Find the largest contour
-  auto largestContour = std::max_element(contours.begin(), contours.end(),
-    [](const std::vector<cv::Point>& a, const std::vector<cv::Point>& b) {
-      return cv::contourArea(a) < cv::contourArea(b);
-    });
-  if (largestContour == contours.end())
-  {
-    return Vec3f(0, 0, -1); // No valid largest contour found
+    // Fit an ellipse to the contour
+    cv::RotatedRect ellipse = cv::fitEllipse(contour);
+    if (ellipse.size.width < 10 || ellipse.size.height < 10) continue; // Filter out small ellipses
+
+    // Calculate the score based on the circularity of the ellipse
+    double score = std::min(ellipse.size.width, ellipse.size.height) / std::max(ellipse.size.width, ellipse.size.height);
+    if (score > bestScore)
+    {
+      bestScore = score;
+      bestIndex = i;
+    }
   }
+  if (bestIndex < 0)
+    return false; // No valid circle found
 
   Point2f center;
   float radius;
-  cv::minEnclosingCircle(*largestContour, center, radius);
-  if (radius < 10) // Minimum radius threshold
+  minEnclosingCircle(contours[bestIndex], center, radius);
+  out = Vec3f(center.x, center.y, radius);
+  return true; // Circle found
+}
+
+void ExtractV(const Mat& in, Mat& out)
+{
+  // Extract the V channel from a YUV image
+  for (int i = 0; i < in.rows; ++i)
   {
-    return Vec3f(0, 0, -1); // Ball too small
+    const uchar* const inRow = in.ptr<uchar>(i);    // 2 channels per pixel
+    uchar* outRow = out.ptr<uchar>(i / 2);
+
+    for (int j = 0; j < CameraHelpers::IMAGE_WIDTH; j += 2)
+    {
+      outRow[j / 2] = inRow[2 * j + 3];      // channel 1 of pixel j+1 (V)
+    }
   }
-  return Vec3f(center.x, center.y, radius);
+}
+
+int ProcessYUYVImages()
+{
+  int exitCode = 0;
+  
+  // Setup the image reader/writer which will automatically read image into in and write processed image to out each loop
+  Mat in = ImageProcessing::CreateYUYVMat(CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
+  Mat out(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC3); // Subsampled 3 channel output
+  ImageHelpers::ImageReaderWriter readerWriter(ImageHelpers::ImageType::YUYV, in, out);
+
+  TimingStats timing;
+
+  Mat yuv(out.size(), CV_8UC3);
+  Mat v(out.size(), CV_8UC1);
+  Mat mask(out.size(), CV_8UC1);
+  Vec3f ball;
+  for (int index : readerWriter)
+  {
+    Stopwatch stopwatch(timing);
+    ExtractV(in, v); // Extract the V channel from the YUYV image
+    threshold(v, mask, 144, 255, THRESH_BINARY); // Threshold the V channel to create a mask
+
+    // Clean up the mask
+    Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
+    morphologyEx(mask, mask, MORPH_CLOSE, kernel); // Close small holes in the mask
+    morphologyEx(mask, mask, MORPH_OPEN, kernel); // Remove noise with morphological opening
+
+
+    cvtColor(mask, out, COLOR_GRAY2BGR); // Convert mask to 3-channel BGR for output
+
+    bool foundBall = DetectBall(mask, ball);
+    // Draw the detected ball if it exists
+    if (foundBall) // If radius is valid
+    {
+      Point2f center(ball[0], ball[1]);
+      float radius = ball[2];
+      circle(out, center, static_cast<int>(radius), Scalar(0, 255, 0), 2); // Draw circle around detected ball
+    }
+  }
+
+  printStats<std::chrono::microseconds>("YUYV Image Processing", timing);
+
+  return exitCode;
 }
 
 void SubsampleBayer(const Mat& in, Mat& out)
@@ -98,21 +162,6 @@ void SubsampleYUYV(const Mat& in, Mat& out)
   }
 }
 
-void ExtractV(const Mat& in, Mat& out)
-{
-  // Extract the V channel from a YUV image
-  for (int i = 0; i < in.rows; ++i)
-  {
-    const uchar* const inRow = in.ptr<uchar>(i);    // 2 channels per pixel
-    uchar* outRow = out.ptr<uchar>(i / 2);
-
-    for (int j = 0; j < CameraHelpers::IMAGE_WIDTH; j += 2)
-    {
-      outRow[j / 2] = inRow[2 * j + 3];      // channel 1 of pixel j+1 (V)
-    }
-  }
-}
-
 int ProcessBayerImages()
 {
   int exitCode = 0;
@@ -130,6 +179,7 @@ int ProcessBayerImages()
   Mat mask1(out.size(), CV_8UC1);
   Mat mask2(out.size(), CV_8UC1);
   Mat mask(out.size(), CV_8UC1);
+  Vec3f ball;
   for (int index : readerWriter)
   {
     Stopwatch stopwatch(timing);
@@ -141,12 +191,12 @@ int ProcessBayerImages()
     inRange(hsv, Scalar(160, 30, 30), Scalar(180, 255, 255), mask2);
     bitwise_or(mask1, mask2, mask);
 
-    Vec3f ball = DetectBall(mask);
-
     cvtColor(mask, out, COLOR_GRAY2BGR); // Convert mask to 3-channel BGR for output
 
+    bool foundBall = DetectBall(mask, ball);
+
     // Draw the detected ball if it exists
-    if (ball[2] > 0) // If radius is valid
+    if (foundBall) // If radius is valid
     {
       Point2f center(ball[0], ball[1]);
       float radius = ball[2];
@@ -155,46 +205,6 @@ int ProcessBayerImages()
   }
 
   printStats<std::chrono::microseconds>("Bayer Image Processing", timing);
-
-  return exitCode;
-}
-
-int ProcessYUYVImages()
-{
-  int exitCode = 0;
-  
-  // Setup the image reader/writer which will automatically read image into in and write processed image to out each loop
-  Mat in = ImageProcessing::CreateYUYVMat(CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
-  Mat out(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC3); // Subsampled 3 channel output
-  ImageHelpers::ImageReaderWriter readerWriter(ImageHelpers::ImageType::YUYV, in, out);
-
-  TimingStats timing;
-
-  Mat yuv(out.size(), CV_8UC3);
-  Mat v(out.size(), CV_8UC1);
-  Mat blurred(out.size(), CV_8UC1);
-  Mat edges(out.size(), CV_8UC1);
-  Mat mask(out.size(), CV_8UC1);
-  for (int index : readerWriter)
-  {
-    Stopwatch stopwatch(timing);
-    ExtractV(in, v); // Extract the V channel from the YUYV image
-    inRange(v, Scalar(140), Scalar(255), mask); // Threshold the V channel to create a mask
-
-    Vec3f ball = DetectBall(mask);
-
-    cvtColor(mask, out, COLOR_GRAY2BGR); // Convert mask to 3-channel BGR for output
-
-    // Draw the detected ball if it exists
-    if (ball[2] > 0) // If radius is valid
-    {
-      Point2f center(ball[0], ball[1]);
-      float radius = ball[2];
-      circle(out, center, static_cast<int>(radius), Scalar(0, 255, 0), 2); // Draw circle around detected ball
-    }
-  }
-
-  printStats<std::chrono::microseconds>("YUYV Image Processing", timing);
 
   return exitCode;
 }
@@ -215,7 +225,7 @@ int main()
   cv::setNumThreads(0); // Turn off OpenCV threading
 
   int exitCode = 0;
-  exitCode += ProcessBayerImages();
+  // exitCode += ProcessBayerImages();
   exitCode += ProcessYUYVImages();
 
   MiscHelpers::PrintFooter(EXECUTABLE_NAME, exitCode);
