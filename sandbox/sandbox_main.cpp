@@ -96,6 +96,7 @@ int ProcessYUYVImages()
   Mat yuv(out.size(), CV_8UC3);
   Mat v(out.size(), CV_8UC1);
   Mat mask(out.size(), CV_8UC1);
+  Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(7, 7));
   Vec3f ball;
   for (int index : readerWriter)
   {
@@ -104,20 +105,19 @@ int ProcessYUYVImages()
     threshold(v, mask, 144, 255, THRESH_BINARY); // Threshold the V channel to create a mask
 
     // Clean up the mask
-    Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(5, 5));
     morphologyEx(mask, mask, MORPH_CLOSE, kernel); // Close small holes in the mask
     morphologyEx(mask, mask, MORPH_OPEN, kernel); // Remove noise with morphological opening
 
-
-    cvtColor(mask, out, COLOR_GRAY2BGR); // Convert mask to 3-channel BGR for output
-
     bool foundBall = DetectBall(mask, ball);
+    stopwatch.Stop(); // Stop the stopwatch for timing
+
     // Draw the detected ball if it exists
+    cvtColor(mask, out, COLOR_GRAY2BGR); // Convert mask to 3-channel BGR for output
     if (foundBall) // If radius is valid
     {
       Point2f center(ball[0], ball[1]);
       float radius = ball[2];
-      circle(out, center, static_cast<int>(radius), Scalar(0, 255, 0), 2); // Draw circle around detected ball
+      circle(out, center, static_cast<int>(radius), Scalar(0, 255, 0), 1); // Draw circle around detected ball
     }
   }
 
