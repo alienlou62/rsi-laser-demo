@@ -8,13 +8,12 @@
 namespace ImageProcessing
 {
   // Constants for image processing
-  inline static constexpr double MIN_CIRCLE_RADIUS = 1.0;
-  inline static constexpr double MIN_CONTOUR_AREA = 700.0;
-
-  inline static constexpr int lowH = 105, highH = 126, lowS = 0, highS = 255, lowV = 35, highV = 190;
-
-  // If the target is within this pixel tolerance of the center, then we consider the offset to be zero
-  inline static constexpr unsigned int PIXEL_TOLERANCE = 10;
+  inline static constexpr double RED_THRESHOLD = 143.5; // Threshold for red channel (v) in YUYV format
+  inline static constexpr double MIN_CIRCULARITY = 0.50; // Minimum circularity score for a valid circle
+  inline static constexpr double MIN_CONTOUR_AREA = 100.0; // Minimum contour area to consider for ball detection
+  
+  // Offsets under this threshold are considered negligible and are ignored
+  inline constexpr unsigned int PIXEL_THRESHOLD = 10; 
 
   bool TryDetectBall(const cv::Mat& bayerFrame, double& offsetX, double& offsetY);
 

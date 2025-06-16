@@ -38,16 +38,15 @@ bool DetectBall(const Mat& in, Vec3f& out)
   cv::findContours(in, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
   // Find the most circular contour, that is of a minimum size
-  double bestScore = 0.5; // Minimum score for a valid circle
+  double bestScore = 0.50; // Minimum score for a valid circle
   int bestIndex = -1;
   for (int i = 0; i < contours.size(); ++i)
   {
     const std::vector<cv::Point>& contour = contours[i];
-    if (contour.size() < 5) continue; // Need at least 5 points for fitting an ellipse
+    if (contour.size() < 100) continue; // Filter small contours
 
     // Fit an ellipse to the contour
     cv::RotatedRect ellipse = cv::fitEllipse(contour);
-    if (ellipse.size.width < 10 || ellipse.size.height < 10) continue; // Filter out small ellipses
 
     // Calculate the score based on the circularity of the ellipse
     double score = std::min(ellipse.size.width, ellipse.size.height) / std::max(ellipse.size.width, ellipse.size.height);

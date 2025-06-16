@@ -78,11 +78,11 @@ int main()
 
       // --- Image Processing ---
       auto processingStopwatch = Stopwatch(processingTiming);
-      cv::Mat bayerFrame = ImageProcessing::WrapBayerBuffer(
+      cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(
             static_cast<uint8_t *>(ptrGrabResult->GetBuffer()),
             CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
       double offsetX(0.0), offsetY(0.0);
-      bool ballDetected = ImageProcessing::TryDetectBall(bayerFrame, offsetX, offsetY);
+      bool ballDetected = ImageProcessing::TryDetectBall(yuyvFrame, offsetX, offsetY);
       if (!ballDetected)
       {
         ++processFailures;

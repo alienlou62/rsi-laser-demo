@@ -86,11 +86,11 @@ RSI_TASK(DetectBall)
   double initialX(RTAxisGet(0)->ActualPositionGet());
   double initialY(RTAxisGet(1)->ActualPositionGet());
 
-  cv::Mat bayerFrame = ImageProcessing::WrapBayerBuffer(
+  cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(
       static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()),
-      g_ptrGrabResult->GetWidth(), g_ptrGrabResult->GetHeight());
+      CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
   double offsetX(0.0), offsetY(0.0);
-  bool targetFound = ImageProcessing::TryDetectBall(bayerFrame, offsetX, offsetY);
+  bool targetFound = ImageProcessing::TryDetectBall(yuyvFrame, offsetX, offsetY);
   if (!targetFound) return;
 
   // Calculate the target positions based on the offsets and the position at the time of frame grab

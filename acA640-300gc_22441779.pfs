@@ -10,7 +10,7 @@ BlackLevelRaw	0
 BlackLevelSelector	All
 GammaEnable	1
 GammaSelector	sRGB
-PixelFormat	BayerBG8
+PixelFormat	YUV422_YUYV_Packed
 ReverseX	0
 ReverseY	0
 TestImageSelector	Off
