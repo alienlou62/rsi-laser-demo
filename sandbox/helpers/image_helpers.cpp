@@ -21,6 +21,8 @@ namespace ImageHelpers {
     numImages = static_cast<unsigned int>(inputFiles.size());
     std::sort(inputFiles.begin(), inputFiles.end());
     const std::string outputFolder = std::filesystem::path(OUTPUT_FOLDER) / imageFolder;
+    std::filesystem::create_directories(outputFolder);
+    outputFiles.reserve(numImages);
     for (const auto& p : inputFiles) {
       outputFiles.push_back(std::filesystem::path(outputFolder) / p.filename().replace_extension(OUTPUT_IMAGE_EXTENSION));
     }

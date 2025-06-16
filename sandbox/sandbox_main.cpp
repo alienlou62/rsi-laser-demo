@@ -32,19 +32,47 @@ using namespace cv;
 using namespace Pylon;
 using namespace GenApi;
 
-void SubsampleBayer(const Mat& inFrame, Mat& outFrame)
+Vec3f DetectBall(const Mat& in)
+{
+  std::vector<std::vector<cv::Point>> contours;
+  cv::findContours(in, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+  if (contours.empty())
+  {
+    return Vec3f(0, 0, -1); // No contours found
+  }
+
+  // Find the largest contour
+  auto largestContour = std::max_element(contours.begin(), contours.end(),
+    [](const std::vector<cv::Point>& a, const std::vector<cv::Point>& b) {
+      return cv::contourArea(a) < cv::contourArea(b);
+    });
+  if (largestContour == contours.end())
+  {
+    return Vec3f(0, 0, -1); // No valid largest contour found
+  }
+
+  Point2f center;
+  float radius;
+  cv::minEnclosingCircle(*largestContour, center, radius);
+  if (radius < 10) // Minimum radius threshold
+  {
+    return Vec3f(0, 0, -1); // Ball too small
+  }
+  return Vec3f(center.x, center.y, radius);
+}
+
+void SubsampleBayer(const Mat& in, Mat& out)
 {
   // Subsample the Bayer image by taking every second 2x2 pixel block
-  outFrame.create(inFrame.rows / 2, inFrame.cols / 2, CV_8UC1);
+  for (int y = 0; y < CameraHelpers::IMAGE_HEIGHT; y += 4) {
+    const uchar* const row0 = in.ptr<uchar>(y);
+    const uchar* const row1 = in.ptr<uchar>(y + 1);
 
-  for (int y = 0; y < inFrame.rows; y += 4) {
-    const uchar* row0 = inFrame.ptr<uchar>(y);
-    const uchar* row1 = inFrame.ptr<uchar>(y + 1);
+    uchar* outRow0 = out.ptr<uchar>(y / 2);
+    uchar* outRow1 = out.ptr<uchar>(y / 2 + 1);
 
-    uchar* outRow0 = outFrame.ptr<uchar>(y / 2);
-    uchar* outRow1 = outFrame.ptr<uchar>(y / 2 + 1);
-
-    for (int x = 0; x < inFrame.cols; x += 4)
+    for (int x = 0; x < CameraHelpers::IMAGE_WIDTH; x += 4)
     {
       outRow0[x / 2    ] = row0[x    ];
       outRow0[x / 2 + 1] = row0[x + 1];
@@ -54,14 +82,14 @@ void SubsampleBayer(const Mat& inFrame, Mat& outFrame)
   }
 }
 
-void SubsampleYUYV(const Mat& inFrame, Mat& outFrame)
+void SubsampleYUYV(const Mat& in, Mat& out)
 {
-  for (int i = 0; i < inFrame.rows; i += 2)
+  for (int i = 0; i < CameraHelpers::IMAGE_HEIGHT; i += 2)
   {
-    const uchar* inRow = inFrame.ptr<uchar>(i);          // 2 channels per pixel
-    uchar* outRow = outFrame.ptr<uchar>(i / 2);          // 3 channels per pixel
+    const uchar* const inRow = in.ptr<uchar>(i);    // 2 channels per pixel
+    uchar* outRow = out.ptr<uchar>(i / 2);          // 3 channels per pixel
 
-    for (int j = 0; j < inFrame.cols - 1; j += 2)
+    for (int j = 0; j < CameraHelpers::IMAGE_WIDTH; j += 2)
     {
       outRow[3 * (j / 2)    ] = inRow[2 * j    ];      // channel 0 of pixel j (Y)
       outRow[3 * (j / 2) + 1] = inRow[2 * j + 1];      // channel 1 of pixel j (U)
@@ -70,25 +98,60 @@ void SubsampleYUYV(const Mat& inFrame, Mat& outFrame)
   }
 }
 
+void ExtractV(const Mat& in, Mat& out)
+{
+  // Extract the V channel from a YUV image
+  for (int i = 0; i < in.rows; ++i)
+  {
+    const uchar* const inRow = in.ptr<uchar>(i);    // 2 channels per pixel
+    uchar* outRow = out.ptr<uchar>(i / 2);
+
+    for (int j = 0; j < CameraHelpers::IMAGE_WIDTH; j += 2)
+    {
+      outRow[j / 2] = inRow[2 * j + 3];      // channel 1 of pixel j+1 (V)
+    }
+  }
+}
+
 int ProcessBayerImages()
 {
   int exitCode = 0;
   
-  // Setup the image reader/writer which will automatically read image into inFrame and write processed image to outFrame each loop
-  Mat inFrame = ImageProcessing::CreateBayerMat(CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
-  Mat outFrame(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC3); // Subsampled 3 channel output
-  ImageHelpers::ImageReaderWriter readerWriter(ImageHelpers::ImageType::BAYER, inFrame, outFrame);
+  // Setup the image reader/writer which will automatically read image into in and write processed image to out each loop
+  Mat in = ImageProcessing::CreateBayerMat(CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
+  Mat out(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC3); // Subsampled 3 channel output
+  ImageHelpers::ImageReaderWriter readerWriter(ImageHelpers::ImageType::BAYER, in, out);
 
   TimingStats timing;
 
-  Mat subsampledFrame(outFrame.size(), CV_8UC1);
-  Mat rgbFrame(outFrame.size(), CV_8UC3);
+  Mat subsampled(out.size(), CV_8UC1);
+  Mat rgb(out.size(), CV_8UC3);
+  Mat hsv(out.size(), CV_8UC3);
+  Mat mask1(out.size(), CV_8UC1);
+  Mat mask2(out.size(), CV_8UC1);
+  Mat mask(out.size(), CV_8UC1);
   for (int index : readerWriter)
   {
     Stopwatch stopwatch(timing);
-    SubsampleBayer(inFrame, subsampledFrame);
-    cvtColor(subsampledFrame, rgbFrame, COLOR_BayerBG2RGB);
-    cvtColor(rgbFrame, outFrame, COLOR_RGB2HSV);
+    SubsampleBayer(in, subsampled);
+    cvtColor(subsampled, rgb, COLOR_BayerBG2BGR);
+    cvtColor(rgb, hsv, COLOR_RGB2HSV);
+
+    inRange(hsv, Scalar(0, 30, 30), Scalar(15, 255, 255), mask1);
+    inRange(hsv, Scalar(160, 30, 30), Scalar(180, 255, 255), mask2);
+    bitwise_or(mask1, mask2, mask);
+
+    Vec3f ball = DetectBall(mask);
+
+    cvtColor(mask, out, COLOR_GRAY2BGR); // Convert mask to 3-channel BGR for output
+
+    // Draw the detected ball if it exists
+    if (ball[2] > 0) // If radius is valid
+    {
+      Point2f center(ball[0], ball[1]);
+      float radius = ball[2];
+      circle(out, center, static_cast<int>(radius), Scalar(0, 255, 0), 2); // Draw circle around detected ball
+    }
   }
 
   printStats<std::chrono::microseconds>("Bayer Image Processing", timing);
@@ -100,17 +163,35 @@ int ProcessYUYVImages()
 {
   int exitCode = 0;
   
-  // Setup the image reader/writer which will automatically read image into inFrame and write processed image to outFrame each loop
-  Mat inFrame = ImageProcessing::CreateYUYVMat(CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
-  Mat outFrame(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC3); // Subsampled 3 channel output
-  ImageHelpers::ImageReaderWriter readerWriter(ImageHelpers::ImageType::YUYV, inFrame, outFrame);
+  // Setup the image reader/writer which will automatically read image into in and write processed image to out each loop
+  Mat in = ImageProcessing::CreateYUYVMat(CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
+  Mat out(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC3); // Subsampled 3 channel output
+  ImageHelpers::ImageReaderWriter readerWriter(ImageHelpers::ImageType::YUYV, in, out);
 
   TimingStats timing;
 
+  Mat yuv(out.size(), CV_8UC3);
+  Mat v(out.size(), CV_8UC1);
+  Mat blurred(out.size(), CV_8UC1);
+  Mat edges(out.size(), CV_8UC1);
+  Mat mask(out.size(), CV_8UC1);
   for (int index : readerWriter)
   {
     Stopwatch stopwatch(timing);
-    SubsampleYUYV(inFrame, outFrame);
+    ExtractV(in, v); // Extract the V channel from the YUYV image
+    inRange(v, Scalar(140), Scalar(255), mask); // Threshold the V channel to create a mask
+
+    Vec3f ball = DetectBall(mask);
+
+    cvtColor(mask, out, COLOR_GRAY2BGR); // Convert mask to 3-channel BGR for output
+
+    // Draw the detected ball if it exists
+    if (ball[2] > 0) // If radius is valid
+    {
+      Point2f center(ball[0], ball[1]);
+      float radius = ball[2];
+      circle(out, center, static_cast<int>(radius), Scalar(0, 255, 0), 2); // Draw circle around detected ball
+    }
   }
 
   printStats<std::chrono::microseconds>("YUYV Image Processing", timing);
