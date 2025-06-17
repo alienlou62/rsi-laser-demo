@@ -44,7 +44,10 @@ double CircleFitError(const std::vector<cv::Point>& pts, const cv::Point2f& cent
 
 void FitCircleTaubin(const std::vector<cv::Point> &pts, cv::Point2f &center, float &radius)
 {
-  // Taubin fit method for circle fitting : https://people.cas.uab.edu/~mosya/cl/CPPcircle.html
+  // Taubin fit method for circle fitting : https://people.cas.uab.edu/~mosya/cl/MATLABcircle.html
+  constexpr int MAX_ITERS = 10;
+  constexpr double EPSILON = 1e-12;
+
   const size_t numPoints = pts.size();
 
   double sum_x = 0, sum_y = 0;
@@ -83,15 +86,13 @@ void FitCircleTaubin(const std::vector<cv::Point> &pts, cv::Point2f &center, flo
   double A1 = Mzz*Mz + 4*Cov_xy*Mz - Mxz*Mxz - Myz*Myz;
   double A0 = Mxz*Mxz*Myy + Myz*Myz*Mxx - Mzz*Cov_xy - 2*Mxz*Myz*Mxy;
   double xnew = 0;
-  const int iter_max = 20;
-  const double epsilon = 1e-12;
 
-  for (int i = 0; i < iter_max; ++i) {
+  for (int i = 0; i < MAX_ITERS; ++i) {
     double y = A3*xnew*xnew*xnew + A2*xnew*xnew + A1*xnew + A0;
     double Dy = 3*A3*xnew*xnew + 2*A2*xnew + A1;
     double xold = xnew;
     xnew = xold - y/Dy;
-    if (fabs((xnew - xold)/xnew) < epsilon) break;
+    if (fabs((xnew - xold)/xnew) < EPSILON) break;
   }
 
   double det = xnew*xnew + xnew*Mz + Cov_xy;
