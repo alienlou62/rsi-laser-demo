@@ -2,18 +2,19 @@
 #define IMAGE_PROCESSING_H
 
 #include <cstdint> // For uint8_t
+#include <numbers>
 
 #include <opencv2/opencv.hpp>
 
 namespace ImageProcessing
 {
-  // Constants for image processing
-  inline static constexpr double RED_THRESHOLD = 143.5; // Threshold for red channel (v) in YUYV format
-  inline static constexpr double MIN_CIRCULARITY = 0.50; // Minimum circularity score for a valid circle
-  inline static constexpr double MIN_CONTOUR_AREA = 100.0; // Minimum contour area to consider for ball detection
-  
   // Offsets under this threshold are considered negligible and are ignored
   inline constexpr unsigned int PIXEL_THRESHOLD = 10; 
+
+  // Constants for image processing
+  inline static constexpr double RED_THRESHOLD = 145; // Threshold for red channel (v) in YUYV format
+  inline static constexpr double MAX_CIRCLE_FIT_ERROR = 120; // Maximum error allowed for circle fitting to consider a contour as a valid ball
+  inline static constexpr double MIN_CONTOUR_AREA = std::numbers::pi * PIXEL_THRESHOLD * PIXEL_THRESHOLD; // Minimum area for a contour to be considered valid
 
   bool TryDetectBall(const cv::Mat& bayerFrame, double& offsetX, double& offsetY);
 

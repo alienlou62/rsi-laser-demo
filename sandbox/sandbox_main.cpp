@@ -32,7 +32,7 @@ using namespace cv;
 using namespace Pylon;
 using namespace GenApi;
 
-double circle_fit_error(const std::vector<cv::Point>& pts, const cv::Point2f& center, float radius)
+double CircleFitError(const std::vector<cv::Point>& pts, const cv::Point2f& center, float radius)
 {
   double sum = 0.0;
   for (const auto& p : pts) {
@@ -42,21 +42,22 @@ double circle_fit_error(const std::vector<cv::Point>& pts, const cv::Point2f& ce
   return pts.empty() ? 0.0 : sum / pts.size();
 }
 
-bool TaubinCircleFit(const std::vector<cv::Point> &pts, cv::Point2f &center, float &radius)
+void FitCircleTaubin(const std::vector<cv::Point> &pts, cv::Point2f &center, float &radius)
 {
-  if (pts.size() < 3) return false;
+  // Taubin fit method for circle fitting : https://people.cas.uab.edu/~mosya/cl/CPPcircle.html
+  const size_t numPoints = pts.size();
 
   double sum_x = 0, sum_y = 0;
   for (const auto &p : pts) {
     sum_x += p.x;
     sum_y += p.y;
   }
-  double mean_x = sum_x / pts.size();
-  double mean_y = sum_y / pts.size();
+  double mean_x = sum_x / numPoints;
+  double mean_y = sum_y /numPoints;
 
   // Center data
   std::vector<cv::Point2f> cpts;
-  cpts.reserve(pts.size());
+  cpts.reserve(numPoints);
   for (const auto &p : pts) cpts.emplace_back(p.x - mean_x, p.y - mean_y);
 
   // Compute moments
@@ -71,8 +72,8 @@ bool TaubinCircleFit(const std::vector<cv::Point> &pts, cv::Point2f &center, flo
     Myz += y*z;
     Mzz += z*z;
   }
-  Mxx /= pts.size(); Myy /= pts.size(); Mxy /= pts.size();
-  Mxz /= pts.size(); Myz /= pts.size(); Mzz /= pts.size();
+  Mxx /= numPoints; Myy /= numPoints; Mxy /= numPoints;
+  Mxz /= numPoints; Myz /= numPoints; Mzz /= numPoints;
 
   // Taubin’s eigenproblem coefficients
   double Mz = Mxx + Myy;
@@ -100,13 +101,12 @@ bool TaubinCircleFit(const std::vector<cv::Point> &pts, cv::Point2f &center, flo
 
   center = cv::Point2f(static_cast<float>(a + mean_x), static_cast<float>(b + mean_y));
   radius = static_cast<float>(r);
-
-  return true;
 }
 
-double FitCircle(const std::vector<Point> &contour, Point2f &center, float &radius)
+void FitCircleLeastSquares(const std::vector<Point> &contour, Point2f &center, float &radius)
 {
   /*
+  Least Squares Circle Fitting method:
   Setup a linear system:
     (x - a)^2 + (y - b)^2 = r^2
 
@@ -151,18 +151,6 @@ double FitCircle(const std::vector<Point> &contour, Point2f &center, float &radi
   center.x = X.at<float>(0) * 0.5f;
   center.y = X.at<float>(1) * 0.5f;
   radius = sqrt( X.at<float>(2) + center.x*center.x + center.y*center.y );
-
-  // Calculate the error (sum of squared distances from the contour points to the circle)
-  double error = 0.0;
-  for( int i=0; i<contour.size(); ++i )
-  {
-    const auto &point = contour[i];
-    double dx = point.x - center.x;
-    double dy = point.y - center.y;
-    double dist = sqrt(dx*dx + dy*dy);
-    error += (dist - radius) * (dist - radius);
-  }
-  return error / contour.size(); // Return the average squared error
 }
 
 bool DetectBall(const Mat& in, Vec3f& out)
@@ -181,19 +169,13 @@ bool DetectBall(const Mat& in, Vec3f& out)
 
     Point2f center;
     float radius;
-    // double error = FitCircle(contour, center, radius);
-    TaubinCircleFit(contour, center, radius);
-    double error = circle_fit_error(contour, center, radius);
-    // std::cout << "Error for contour " << i << ": " << error << std::endl;
+    FitCircleTaubin(contour, center, radius);
+    double error = CircleFitError(contour, center, radius);
     if (error < minError)
     {
       minError = error;
       out = Vec3f(center.x, center.y, radius);
     }
-  }
-  if (minError == std::numeric_limits<double>::max())
-  {
-    return false;
   }
   return true;
 }
