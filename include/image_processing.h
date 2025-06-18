@@ -16,7 +16,7 @@ namespace ImageProcessing
   inline static constexpr double MAX_CIRCLE_FIT_ERROR = 200; // Maximum error allowed for circle fitting to consider a contour as a valid ball
   inline static constexpr double MIN_CONTOUR_AREA = 100; // Minimum area for a contour to be considered valid
 
-  bool TryDetectBall(const cv::Mat& bayerFrame, double& offsetX, double& offsetY);
+  bool TryDetectBall(const cv::Mat& yuyvFrame, double& offsetX, double& offsetY);
 
   // -- Utility functions to create OpenCV Mat objects --
   inline cv::Mat CreateBayerMat(int width, int height)
