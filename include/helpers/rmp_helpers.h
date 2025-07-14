@@ -4,6 +4,7 @@
 #include <source_location>
 #include <memory>
 #include <string>
+#include <chrono>
 
 #include "rsi.h"
 #include "rttask.h"

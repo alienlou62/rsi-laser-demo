@@ -137,6 +137,7 @@ int main()
   try
   {
     std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
     SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
     FirmwareValue cameraReady = manager->GlobalValueGet("cameraReady");
