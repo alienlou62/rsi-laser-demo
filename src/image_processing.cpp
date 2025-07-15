@@ -222,9 +222,9 @@ namespace ImageProcessing
     ExtractV(yuyvFrame, v);
     MaskV(v, v);
 
-    imshow("processed V mask", v);
+    // imshow("processed V mask", v);
     //imshow("raw frame", yuyvFrame);
-    waitKey(1);
+    // waitKey(1);
 
     foundBall = FindBall(v, ball);
     if(!foundBall) return false;
