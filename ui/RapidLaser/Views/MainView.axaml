@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:RapidLaser.ViewModels"
+             xmlns:converters="clr-namespace:RapidLaser.Converters"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="RapidLaser.Views.MainView"
              x:DataType="vm:MainViewModel">
@@ -130,6 +131,109 @@
             BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="16">
       <ScrollViewer>
         <StackPanel Spacing="20">
+          <!-- gRPC Connection Controls -->
+          <StackPanel>
+            <TextBlock Text="gRPC Connection" FontWeight="SemiBold" FontSize="14" 
+                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,12"/>
+            
+            <!-- Connection Status -->
+            <Border Background="{StaticResource MainContentColor}" 
+                    BorderBrush="{StaticResource BorderBrush}" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Padding="8" Margin="0,0,0,8">
+              <StackPanel>
+                <TextBlock Text="Status:" 
+                           FontSize="12" 
+                           Foreground="{StaticResource SubtleTextBrush}"/>
+                <TextBlock Text="{Binding ConnectionStatus}" 
+                           FontSize="14" 
+                           FontWeight="SemiBold" 
+                           Foreground="{Binding IsConnected, Converter={x:Static converters:BoolConverters.ConnectedToColorConverter}}"/>
+              </StackPanel>
+            </Border>
+            
+            <!-- Mock Service Toggle -->
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+              <CheckBox IsChecked="{Binding UseMockService}" 
+                        Content="Use Mock Service" 
+                        Foreground="{StaticResource TextBrush}"/>
+              <TextBlock Text="(for testing)" 
+                         FontSize="11" 
+                         Foreground="{StaticResource SubtleTextBrush}" 
+                         VerticalAlignment="Center"/>
+            </StackPanel>
+            
+            <!-- Server Configuration (disabled when using mock) -->
+            <StackPanel Spacing="8" IsEnabled="{Binding !UseMockService}">
+              
+              <!-- IP Address -->
+              <StackPanel>
+                <TextBlock Text="Server IP Address:" 
+                           FontSize="12" 
+                           Foreground="{StaticResource SubtleTextBrush}" 
+                           Margin="0,0,0,4"/>
+                <TextBox Text="{Binding IpAddress}" 
+                         Background="{StaticResource MainContentColor}" 
+                         Foreground="{StaticResource TextBrush}" 
+                         BorderBrush="{StaticResource BorderBrush}" 
+                         Padding="8,6"/>
+              </StackPanel>
+              
+              <!-- Port -->
+              <StackPanel>
+                <TextBlock Text="Port:" 
+                           FontSize="12" 
+                           Foreground="{StaticResource SubtleTextBrush}" 
+                           Margin="0,0,0,4"/>
+                <TextBox Text="{Binding Port}" 
+                         Background="{StaticResource MainContentColor}" 
+                         Foreground="{StaticResource TextBrush}" 
+                         BorderBrush="{StaticResource BorderBrush}" 
+                         Padding="8,6"/>
+              </StackPanel>
+            </StackPanel>
+            
+            <!-- Connection Buttons -->
+            <StackPanel Spacing="8" Margin="0,8,0,0">
+              <Button Content="Connect" 
+                      Command="{Binding ConnectCommand}"
+                      Background="{StaticResource AccentBrush}" 
+                      Foreground="White" 
+                      HorizontalAlignment="Stretch" 
+                      Padding="12,8" 
+                      IsVisible="{Binding !IsConnected}"
+                      IsEnabled="{Binding !IsConnecting}"/>
+              
+              <Button Content="Disconnect" 
+                      Command="{Binding DisconnectCommand}"
+                      Background="#F44336" 
+                      Foreground="White" 
+                      HorizontalAlignment="Stretch" 
+                      Padding="12,8" 
+                      IsVisible="{Binding IsConnected}"/>
+              
+              <Button Content="Test Connection" 
+                      Command="{Binding TestConnectionCommand}" 
+                      Background="Transparent" 
+                      Foreground="{StaticResource SubtleTextBrush}" 
+                      BorderBrush="{StaticResource BorderBrush}" 
+                      BorderThickness="1" 
+                      HorizontalAlignment="Stretch" 
+                      Padding="12,8" 
+                      IsVisible="{Binding IsConnected}"/>
+            </StackPanel>
+            
+            <!-- Error Display -->
+            <TextBlock Text="{Binding LastError}" 
+                       FontSize="12" 
+                       Foreground="#F44336" 
+                       TextWrapping="Wrap" 
+                       IsVisible="{Binding LastError, Converter={x:Static converters:BoolConverters.StringNotEmptyToBoolConverter}}" 
+                       Margin="0,8,0,0"/>
+            
+          </StackPanel>
+          
           <!-- RT Task Manager Controls -->
           <StackPanel>
             <TextBlock Text="RT Task Manager" FontWeight="SemiBold" FontSize="14" 
@@ -221,9 +325,10 @@
                   
                   <!-- Ball detection circle overlay -->
                   <Canvas Width="640" Height="480">
-                    <!-- Detected ball circle (example position) -->
+                    <!-- Detected ball circle - bound to actual ball position -->
                     <Ellipse Width="40" Height="40" 
-                             Canvas.Left="300" Canvas.Top="220"
+                             Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}" 
+                             Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
                              Stroke="#00FF00" StrokeThickness="3" Fill="Transparent"/>
                     
                     <!-- Center crosshair -->
@@ -266,9 +371,10 @@
                   
                   <!-- White regions representing detected areas -->
                   <Canvas Width="640" Height="480">
-                    <!-- Ball mask region -->
+                    <!-- Ball mask region - bound to actual ball position -->
                     <Ellipse Width="40" Height="40" 
-                             Canvas.Left="300" Canvas.Top="220"
+                             Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}" 
+                             Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
                              Fill="#FFFFFF"/>
                   </Canvas>
                   
@@ -297,55 +403,8 @@
             BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0" Padding="16">
       <ScrollViewer>
         <StackPanel Spacing="20">
-          <!-- RTTask Global Values -->
-          <StackPanel>
-            <TextBlock Text="RTTask Global Values" FontWeight="SemiBold" FontSize="14" 
-                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,12"/>
-            <Border Background="#333333" CornerRadius="6" Padding="12">
-              <StackPanel Spacing="8">
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" Text="Ball X Position" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
-                  <TextBlock Grid.Column="1" Text="{Binding BallXPosition}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
-                </Grid>
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" Text="Ball Y Position" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
-                  <TextBlock Grid.Column="1" Text="{Binding BallYPosition}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
-                </Grid>
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" Text="Ball Velocity X" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
-                  <TextBlock Grid.Column="1" Text="{Binding BallVelocityX}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
-                </Grid>
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" Text="Ball Velocity Y" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
-                  <TextBlock Grid.Column="1" Text="{Binding BallVelocityY}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
-                </Grid>
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" Text="Detection Confidence" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
-                  <TextBlock Grid.Column="1" Text="{Binding DetectionConfidence, StringFormat={}{0:F0}%}" Foreground="#4CAF50" FontWeight="SemiBold"/>
-                </Grid>
-              </StackPanel>
-            </Border>
-          </StackPanel>
+          <!-- Global Values from gRPC - temporarily commented out -->
+          <!-- <views:GlobalValuesView DataContext="{Binding GlobalValues}"/> -->
           
           <!-- RTTaskManager Status -->
           <StackPanel>

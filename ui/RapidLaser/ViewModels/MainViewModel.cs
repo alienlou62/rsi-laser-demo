@@ -1,5 +1,11 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Timers;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Avalonia.Controls;
+using RapidLaser.Services;
 
 namespace RapidLaser.ViewModels;
 
@@ -13,12 +19,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly IImageProcessingService _imageProcessingService;
     private readonly IMotionControlService _motionControlService;
     private readonly IRTTaskManagerService _rtTaskManagerService;
+    private readonly IConnectionManagerService _connectionManager;
+    private readonly GlobalValueService? _globalValueService;
 
     // Timer for UI updates
     private readonly System.Timers.Timer _updateTimer;
 
     public MainViewModel()
     {
+        // Initialize connection manager
+        _connectionManager = new ConnectionManagerService();
+
+        // Initialize global value service
+        _globalValueService = new GlobalValueService(_connectionManager);
+
         // Initialize services (in real app, use DI)
         _cameraService = new SimulatedCameraService();
         _imageProcessingService = new SimulatedImageProcessingService();
@@ -29,6 +43,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         // Subscribe to service events
         _rtTaskManagerService.GlobalsUpdated += OnGlobalsUpdated;
         _rtTaskManagerService.TaskStatusChanged += OnTaskStatusChanged;
+
+        // Subscribe to global value service events
+        _globalValueService.GlobalValuesUpdated += OnGlobalValuesUpdated;
+
+        // Initialize connection settings
+        IpAddress = _connectionManager.Settings.IpAddress;
+        Port = _connectionManager.Settings.Port;
+        UseMockService = _connectionManager.Settings.UseMockService;
+        IsConnected = _connectionManager.IsConnected;
+
+        UpdateConnectionStatus();
 
         // Setup UI update timer
         _updateTimer = new System.Timers.Timer(100); // Update UI every 100ms
@@ -56,6 +81,35 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(TasksActive));
         OnPropertyChanged(nameof(BallDetectionStatus));
         OnPropertyChanged(nameof(MotionControlStatus));
+    }
+
+    private void OnGlobalValuesUpdated(object? sender, GlobalValuesUpdatedEventArgs e)
+    {
+        // Update ball position from gRPC global values when connected
+        if (e.Values.TryGetValue("BallX", out var ballX) && ballX is double)
+        {
+            BallXPosition = (double)ballX;
+        }
+        
+        if (e.Values.TryGetValue("BallY", out var ballY) && ballY is double)
+        {
+            BallYPosition = (double)ballY;
+        }
+        
+        if (e.Values.TryGetValue("BallVelocityX", out var velX) && velX is double)
+        {
+            BallVelocityX = (double)velX;
+        }
+        
+        if (e.Values.TryGetValue("BallVelocityY", out var velY) && velY is double)
+        {
+            BallVelocityY = (double)velY;
+        }
+        
+        if (e.Values.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
+        {
+            DetectionConfidence = (double)confidence;
+        }
     }
 
     private void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
@@ -138,6 +192,28 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private int _objectsDetected = 1;
 
+    // Connection Properties
+    [ObservableProperty]
+    private string _ipAddress = "localhost";
+
+    [ObservableProperty]
+    private int _port = 50051;
+
+    [ObservableProperty]
+    private bool _isConnected = false;
+
+    [ObservableProperty]
+    private bool _useMockService = true; // Start with mock for testing
+
+    [ObservableProperty]
+    private bool _isConnecting = false;
+
+    [ObservableProperty]
+    private string _connectionStatus = "Disconnected";
+
+    [ObservableProperty]
+    private string _lastError = string.Empty;
+
     // Display Properties
     public string MotionPausedDisplay => MotionPaused ? "Yes" : "No";
     public string MotionToggleButtonText => MotionPaused ? "Resume Motion" : "Pause Motion";
@@ -196,6 +272,127 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         MotionPaused = _motionControlService.MotionPaused;
     }
 
+    // Connection Commands
+    [RelayCommand]
+    private async Task ConnectAsync()
+    {
+        if (IsConnecting) return;
+
+        try
+        {
+            IsConnecting = true;
+            LastError = string.Empty;
+
+            // Update connection manager settings
+            _connectionManager.Settings.IpAddress = IpAddress;
+            _connectionManager.Settings.Port = Port;
+            _connectionManager.Settings.UseMockService = UseMockService;
+
+            var success = await _connectionManager.ConnectAsync();
+
+            if (success)
+            {
+                IsConnected = true;
+                ConnectionStatus = UseMockService ? "Connected (Mock)" : $"Connected to {IpAddress}:{Port}";
+                
+                // Start global value polling if available
+                _globalValueService?.StartPolling(TimeSpan.FromSeconds(1));
+            }
+            else
+            {
+                LastError = "Failed to connect to server";
+                ConnectionStatus = "Connection Failed";
+            }
+        }
+        catch (Exception ex)
+        {
+            LastError = ex.Message;
+            ConnectionStatus = "Connection Error";
+        }
+        finally
+        {
+            IsConnecting = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DisconnectAsync()
+    {
+        try
+        {
+            // Stop global value polling
+            _globalValueService?.StopPolling();
+            
+            await _connectionManager.DisconnectAsync();
+            IsConnected = false;
+            UpdateConnectionStatus();
+        }
+        catch (Exception ex)
+        {
+            LastError = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleMockService()
+    {
+        _connectionManager.SetMockMode(UseMockService);
+        UpdateConnectionStatus();
+    }
+
+    [RelayCommand]
+    private async Task TestConnectionAsync()
+    {
+        if (!IsConnected) return;
+
+        try
+        {
+            // Test by getting a simple global value
+            var testValue = await _connectionManager.GrpcService.GetGlobalValueAsync<string>("SystemStatus");
+            LastError = $"Test successful. SystemStatus: {testValue ?? "N/A"}";
+        }
+        catch (Exception ex)
+        {
+            LastError = $"Test failed: {ex.Message}";
+        }
+    }
+
+    private void UpdateConnectionStatus()
+    {
+        if (IsConnected)
+        {
+            ConnectionStatus = UseMockService ? "Connected (Mock)" : $"Connected to {IpAddress}:{Port}";
+        }
+        else
+        {
+            ConnectionStatus = "Disconnected";
+        }
+    }
+
+    partial void OnUseMockServiceChanged(bool value)
+    {
+        _connectionManager.SetMockMode(value);
+        UpdateConnectionStatus();
+    }
+
+    partial void OnIpAddressChanged(string value)
+    {
+        if (_connectionManager?.Settings != null)
+        {
+            _connectionManager.Settings.IpAddress = value;
+        }
+    }
+
+    partial void OnPortChanged(int value)
+    {
+        if (_connectionManager?.Settings != null)
+        {
+            _connectionManager.Settings.Port = value;
+        }
+    }
+
+    // Window Commands
+
     [RelayCommand]
     private void MinimizeWindow()
     {
@@ -226,6 +423,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         _updateTimer?.Stop();
         _updateTimer?.Dispose();
+        _globalValueService?.StopPolling();
+        if (_globalValueService != null)
+        {
+            _globalValueService.GlobalValuesUpdated -= OnGlobalValuesUpdated;
+        }
         _rtTaskManagerService?.Dispose();
     }
 }

@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
@@ -12,17 +13,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\protos\**" LinkBase="Assets\protos">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Protobuf Include="C:\RSI\10.6.8\protos\**\*.proto" ProtoRoot="C:\RSI\10.6.8\protos" />
-  </ItemGroup>
+		<Protobuf Include="C:\RSI\10.6.8\protos\rapidcode.proto" GrpcServices="Client">
+			<Link>Assets\protos\rapidcode.proto</Link>
+		</Protobuf>
+		<Protobuf Include="C:\RSI\10.6.8\protos\rapidgrpc.proto" GrpcServices="Client">
+			<Link>Assets\protos\rapidgrpc.proto</Link>
+		</Protobuf>
+		<Protobuf Include="C:\RSI\10.6.8\protos\rsienums.proto" GrpcServices="Client">
+			<Link>Assets\protos\rsienums.proto</Link>
+		</Protobuf>
+	</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
@@ -40,4 +44,5 @@
   <ItemGroup>
     <Folder Include="Assets\protos\" />
   </ItemGroup>
+
 </Project>
