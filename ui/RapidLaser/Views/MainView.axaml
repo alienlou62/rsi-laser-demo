@@ -1,0 +1,463 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RapidLaser.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="RapidLaser.Views.MainView"
+             x:DataType="vm:MainViewModel">
+  <Design.DataContext>
+    <!-- This only sets the DataContext for the previewer in an IDE,
+         to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+    <vm:MainViewModel />
+  </Design.DataContext>
+
+
+  <UserControl.Resources>
+    <!-- Dark theme colors -->
+    <Color x:Key="DarkBackgroundColor">#1E1E1E</Color>
+    <Color x:Key="SidebarColor">#2D2D2D</Color>
+    <Color x:Key="TopBarColor">#2D2D2D</Color>
+    <Color x:Key="MainContentColor">#1A1A1A</Color>
+    <Color x:Key="AccentColor">#0078D4</Color>
+    <Color x:Key="TextColor">#FFFFFF</Color>
+    <Color x:Key="SubtleTextColor">#CCCCCC</Color>
+    <Color x:Key="BorderColor">#3F3F3F</Color>
+    
+    <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SidebarColor}"/>
+    <SolidColorBrush x:Key="TopBarBrush" Color="{StaticResource TopBarColor}"/>
+    <SolidColorBrush x:Key="MainContentBrush" Color="{StaticResource MainContentColor}"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+    <SolidColorBrush x:Key="SubtleTextBrush" Color="{StaticResource SubtleTextColor}"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+  </UserControl.Resources>
+
+  <Grid Background="{StaticResource DarkBackgroundColor}">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="250"/>
+      <ColumnDefinition Width="*"/>
+      <ColumnDefinition Width="280"/>
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="50"/>
+      <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+
+    <!-- Top bar with drag region -->
+    <Border Grid.ColumnSpan="3" Grid.Row="0" Background="{StaticResource TopBarBrush}" 
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+      <Grid Margin="16,0,16,0">
+        <!-- Left side content -->
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="16" 
+                    HorizontalAlignment="Left">
+          <TextBlock Text="RSI Laser Ball Tracker" FontWeight="SemiBold" FontSize="16" 
+                     Foreground="{StaticResource TextBrush}" VerticalAlignment="Center"/>
+          <TextBlock Text="Real-time Processing" FontSize="14" 
+                     Foreground="{StaticResource SubtleTextBrush}" VerticalAlignment="Center"/>
+        </StackPanel>
+        
+        <!-- Center drag area -->
+        <Border Background="Transparent" HorizontalAlignment="Stretch" 
+                VerticalAlignment="Stretch" Margin="200,0,200,0"
+                PointerPressed="OnTitleBarPointerPressed"/>
+        
+        <!-- Right side content with status and custom window controls -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" 
+                    Spacing="12" Margin="0,0,0,0">
+          <!-- System Status Indicator -->
+          <Border Background="#4CAF50" CornerRadius="3" Padding="8,4">
+            <TextBlock Text="{Binding SystemStatus}" FontSize="10" FontWeight="Bold" Foreground="White"/>
+          </Border>
+          
+          <!-- FPS Counter -->
+          <TextBlock Text="{Binding FrameRate, StringFormat={}{0:F0} FPS}" FontSize="12" Foreground="{StaticResource SubtleTextBrush}" 
+                     VerticalAlignment="Center"/>
+          
+          <!-- Custom Window Controls -->
+          <StackPanel Orientation="Horizontal" Spacing="0" Margin="16,0,0,0" VerticalAlignment="Center">
+            <!-- Minimize Button -->
+            <Button Name="MinimizeButton" Command="{Binding MinimizeWindowCommand}"
+                    Background="Transparent" Foreground="{StaticResource SubtleTextBrush}" 
+                    Padding="12,6" Width="40" Height="32" VerticalAlignment="Center">
+              <Button.Content>
+                <Path Data="M 0,0 L 8,0" 
+                      Stroke="{Binding $parent[Button].Foreground}" 
+                      StrokeThickness="1"
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Center"/>
+              </Button.Content>
+            </Button>
+            
+            <!-- Maximize/Restore Button -->
+            <Button Name="MaximizeButton" Command="{Binding MaximizeWindowCommand}"
+                    Background="Transparent" Foreground="{StaticResource SubtleTextBrush}" 
+                    Padding="12,6" Width="40" Height="32" VerticalAlignment="Center">
+              <Button.Content>
+                <Path Data="M 0,0 L 8,0 L 8,8 L 0,8 Z" 
+                      Stroke="{Binding $parent[Button].Foreground}" 
+                      StrokeThickness="1" 
+                      Fill="Transparent"
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Center"/>
+              </Button.Content>
+            </Button>
+            
+            <!-- Close Button -->
+            <Button Name="CloseButton" Command="{Binding CloseWindowCommand}"
+                    Background="Transparent" Foreground="{StaticResource SubtleTextBrush}" 
+                    Padding="12,6" Width="40" Height="32" VerticalAlignment="Center">
+              <Button.Content>
+                <Path Data="M 0,0 L 8,8 M 8,0 L 0,8" 
+                      Stroke="{Binding $parent[Button].Foreground}" 
+                      StrokeThickness="1"
+                      VerticalAlignment="Center"
+                      HorizontalAlignment="Center"/>
+              </Button.Content>
+              <Button.Styles>
+                <Style Selector="Button:pointerover">
+                  <Setter Property="Foreground" Value="#E81123"/>
+                </Style>
+              </Button.Styles>
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Left sidebar -->
+    <Border Grid.Column="0" Grid.Row="1" Background="{StaticResource SidebarBrush}"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,1,0" Padding="16">
+      <ScrollViewer>
+        <StackPanel Spacing="20">
+          <!-- RT Task Manager Controls -->
+          <StackPanel>
+            <TextBlock Text="RT Task Manager" FontWeight="SemiBold" FontSize="14" 
+                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,12"/>
+            <StackPanel Spacing="8">
+              <Button Content="Start Tasks" HorizontalAlignment="Stretch" 
+                      Background="{StaticResource AccentBrush}" Foreground="White" Padding="12,8"
+                      Command="{Binding StartTasksCommand}"/>
+              <Button Content="Shutdown Tasks" HorizontalAlignment="Stretch" 
+                      Background="Transparent" Foreground="{StaticResource SubtleTextBrush}"
+                      BorderBrush="{StaticResource BorderBrush}" Padding="12,8"
+                      Command="{Binding ShutdownTasksCommand}"/>
+              <Button Content="Launch RSIConfig" HorizontalAlignment="Stretch" 
+                      Background="Transparent" Foreground="{StaticResource SubtleTextBrush}"
+                      BorderBrush="{StaticResource BorderBrush}" Padding="12,8"
+                      Command="{Binding LaunchRsiConfigCommand}"/>
+            </StackPanel>
+          </StackPanel>
+          
+          <!-- Motion Controls -->
+          <StackPanel>
+            <TextBlock Text="Motion Control" FontWeight="SemiBold" FontSize="14" 
+                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,12"/>
+            <StackPanel Spacing="8">
+              <Button Content="{Binding MotionToggleButtonText}" 
+                      Background="{Binding MotionToggleButtonColor}"
+                      HorizontalAlignment="Stretch" 
+                      Foreground="White" Padding="12,8"
+                      Command="{Binding ToggleMotionPauseCommand}"/>
+            </StackPanel>
+          </StackPanel>
+          
+          <!-- Task Status -->
+          <StackPanel>
+            <TextBlock Text="Task Status" FontWeight="SemiBold" FontSize="14" 
+                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,12"/>
+            <Border Background="#333333" CornerRadius="6" Padding="12">
+              <StackPanel Spacing="8">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="RT Task Manager" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Text="Status: Running" Foreground="#4CAF50" FontWeight="SemiBold"/>
+                </StackPanel>
+                <StackPanel Spacing="4">
+                  <TextBlock Text="Ball Detection Task" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Text="Status: Active" Foreground="#4CAF50" FontWeight="SemiBold"/>
+                </StackPanel>
+                <StackPanel Spacing="4">
+                  <TextBlock Text="Motion Task" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Text="Status: Active" Foreground="#4CAF50" FontWeight="SemiBold"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <!-- Main content area -->
+    <Border Grid.Column="1" Grid.Row="1" Background="{StaticResource MainContentBrush}" 
+            Margin="0" Padding="20">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Live Camera Feed &amp; Image Processing" 
+                   FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" 
+                   Margin="0,0,0,16"/>
+        
+        <!-- Image display area -->
+        <Grid Grid.Row="1">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="16"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+          
+          <!-- Camera Feed with Ball Circle -->
+          <Border Grid.Column="0" Background="#000000" CornerRadius="8" 
+                  BorderBrush="{StaticResource BorderBrush}" BorderThickness="2">
+            <Grid>
+              <!-- Camera feed placeholder (640x480 aspect ratio) -->
+              <Border Background="#1A1A1A" Margin="8">
+                <Grid>
+                  <!-- Simulated camera feed background -->
+                  <Rectangle Fill="#2A2A2A" Width="640" Height="480"/>
+                  
+                  <!-- Ball detection circle overlay -->
+                  <Canvas Width="640" Height="480">
+                    <!-- Detected ball circle (example position) -->
+                    <Ellipse Width="40" Height="40" 
+                             Canvas.Left="300" Canvas.Top="220"
+                             Stroke="#00FF00" StrokeThickness="3" Fill="Transparent"/>
+                    
+                    <!-- Center crosshair -->
+                    <Line StartPoint="0,240" EndPoint="640,240" 
+                          Stroke="#333333" StrokeThickness="1" StrokeDashArray="5,5"/>
+                    <Line StartPoint="320,0" EndPoint="320,480" 
+                          Stroke="#333333" StrokeThickness="1" StrokeDashArray="5,5"/>
+                  </Canvas>
+                  
+                  <!-- Overlay info -->
+                  <Border VerticalAlignment="Top" HorizontalAlignment="Left" 
+                          Margin="12" Background="#80000000" Padding="8">
+                    <StackPanel>
+                      <TextBlock Text="CAMERA FEED" FontSize="12" FontWeight="Bold" 
+                                 Foreground="#00FF00"/>
+                      <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Ball Detected: X=" FontSize="10" Foreground="{StaticResource TextBrush}"/>
+                        <TextBlock Text="{Binding BallXPosition, StringFormat={}{0:F0}}" FontSize="10" Foreground="{StaticResource TextBrush}"/>
+                        <TextBlock Text=", Y=" FontSize="10" Foreground="{StaticResource TextBrush}"/>
+                        <TextBlock Text="{Binding BallYPosition, StringFormat={}{0:F0}}" FontSize="10" Foreground="{StaticResource TextBrush}"/>
+                      </StackPanel>
+                      <TextBlock Text="{Binding DetectionConfidence, StringFormat=Confidence: {0:F0}%}" FontSize="10" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                    </StackPanel>
+                  </Border>
+                </Grid>
+              </Border>
+            </Grid>
+          </Border>
+          
+          <!-- Image Mask Display -->
+          <Border Grid.Column="2" Background="#000000" CornerRadius="8" 
+                  BorderBrush="{StaticResource BorderBrush}" BorderThickness="2">
+            <Grid>
+              <!-- Image mask placeholder (640x480 aspect ratio, black and white) -->
+              <Border Background="#1A1A1A" Margin="8">
+                <Grid>
+                  <!-- Simulated image mask -->
+                  <Rectangle Fill="#000000" Width="640" Height="480"/>
+                  
+                  <!-- White regions representing detected areas -->
+                  <Canvas Width="640" Height="480">
+                    <!-- Ball mask region -->
+                    <Ellipse Width="40" Height="40" 
+                             Canvas.Left="300" Canvas.Top="220"
+                             Fill="#FFFFFF"/>
+                  </Canvas>
+                  
+                  <!-- Overlay info -->
+                  <Border VerticalAlignment="Top" HorizontalAlignment="Left" 
+                          Margin="12" Background="#80000000" Padding="8">
+                    <StackPanel>
+                      <TextBlock Text="IMAGE MASK" FontSize="12" FontWeight="Bold" 
+                                 Foreground="#FFFFFF"/>
+                      <TextBlock Text="{Binding BinaryThreshold, StringFormat=Binary Threshold: {0}}" FontSize="10" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                      <TextBlock Text="{Binding ObjectsDetected, StringFormat=Objects: {0}}" FontSize="10" 
+                                 Foreground="{StaticResource TextBrush}"/>
+                    </StackPanel>
+                  </Border>
+                </Grid>
+              </Border>
+            </Grid>
+          </Border>
+        </Grid>
+      </Grid>
+    </Border>
+
+    <!-- Right sidebar -->
+    <Border Grid.Column="2" Grid.Row="1" Background="{StaticResource SidebarBrush}"
+            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0" Padding="16">
+      <ScrollViewer>
+        <StackPanel Spacing="20">
+          <!-- RTTask Global Values -->
+          <StackPanel>
+            <TextBlock Text="RTTask Global Values" FontWeight="SemiBold" FontSize="14" 
+                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,12"/>
+            <Border Background="#333333" CornerRadius="6" Padding="12">
+              <StackPanel Spacing="8">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Ball X Position" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding BallXPosition}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Ball Y Position" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding BallYPosition}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Ball Velocity X" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding BallVelocityX}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Ball Velocity Y" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding BallVelocityY}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Detection Confidence" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding DetectionConfidence, StringFormat={}{0:F0}%}" Foreground="#4CAF50" FontWeight="SemiBold"/>
+                </Grid>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          
+          <!-- RTTaskManager Status -->
+          <StackPanel>
+            <TextBlock Text="RTTaskManager Status" FontWeight="SemiBold" FontSize="14" 
+                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,12"/>
+            <Border Background="#333333" CornerRadius="6" Padding="12">
+              <StackPanel Spacing="8">
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Manager State" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding ManagerState}" Foreground="#4CAF50" FontWeight="SemiBold"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Tasks Active" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding TasksActive}" Foreground="#4CAF50" FontWeight="SemiBold"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="CPU Usage" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding CpuUsage, StringFormat={}{0:F0}%}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Memory Usage" Foreground="{StaticResource SubtleTextBrush}" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding MemoryUsage, StringFormat={}{0:F0} MB}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold"/>
+                </Grid>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          
+          <!-- Individual Task Status -->
+          <StackPanel>
+            <TextBlock Text="Task Details" FontWeight="SemiBold" FontSize="14" 
+                       Foreground="{StaticResource TextBrush}" Margin="0,0,0,12"/>
+            
+            <!-- Ball Detection Task -->
+            <Border Background="#333333" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+              <StackPanel Spacing="6">
+                <TextBlock Text="Ball Detection Task" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" FontSize="13"/>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Status" Foreground="{StaticResource SubtleTextBrush}" FontSize="11"/>
+                  <TextBlock Grid.Column="1" Text="{Binding BallDetectionStatus}" Foreground="#4CAF50" FontSize="11"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Loop Time" Foreground="{StaticResource SubtleTextBrush}" FontSize="11"/>
+                  <TextBlock Grid.Column="1" Text="{Binding BallDetectionLoopTime, StringFormat={}{0:F0}ms}" Foreground="{StaticResource TextBrush}" FontSize="11"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Iterations" Foreground="{StaticResource SubtleTextBrush}" FontSize="11"/>
+                  <TextBlock Grid.Column="1" Text="{Binding BallDetectionIterations, StringFormat=N0}" Foreground="{StaticResource TextBrush}" FontSize="11"/>
+                </Grid>
+              </StackPanel>
+            </Border>
+            
+            <!-- Motion Task -->
+            <Border Background="#333333" CornerRadius="6" Padding="12">
+              <StackPanel Spacing="6">
+                <TextBlock Text="Motion Control Task" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" FontSize="13"/>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Status" Foreground="{StaticResource SubtleTextBrush}" FontSize="11"/>
+                  <TextBlock Grid.Column="1" Text="{Binding MotionControlStatus}" Foreground="#4CAF50" FontSize="11"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Motion Paused" Foreground="{StaticResource SubtleTextBrush}" FontSize="11"/>
+                  <TextBlock Grid.Column="1" Text="{Binding MotionPausedDisplay}" Foreground="{StaticResource TextBrush}" FontSize="11"/>
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="Loop Time" Foreground="{StaticResource SubtleTextBrush}" FontSize="11"/>
+                  <TextBlock Grid.Column="1" Text="{Binding MotionControlLoopTime, StringFormat={}{0:F0}ms}" Foreground="{StaticResource TextBrush}" FontSize="11"/>
+                </Grid>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>
