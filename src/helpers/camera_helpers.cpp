@@ -15,11 +15,10 @@ namespace CameraHelpers {
     try
     {
       camera.Attach(CTlFactory::GetInstance().CreateFirstDevice());
-      std::cout << "Using device: " << camera.GetDeviceInfo().GetModelName() << std::endl;
       camera.Open();
 
-      CFeaturePersistence::Load(CONFIG_FILE, &camera.GetNodeMap());
       INodeMap &nodeMap = camera.GetNodeMap();
+      CFeaturePersistence::Load(CONFIG_FILE, &nodeMap);
     }
     catch (const GenericException &e)
     {

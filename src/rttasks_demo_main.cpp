@@ -147,8 +147,16 @@ int main()
       return -1;
     }
 
+    FirmwareValue multiAxisReady = manager->GlobalValueGet("multiAxisReady");
+    if (!multiAxisReady.Bool)
+    {
+      std::cerr << "Error: MultiAxis is not ready." << std::endl;
+      return -1;
+    }
+
     std::shared_ptr<RTTask> ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0, TaskPriority::Low);
     std::shared_ptr<RTTask> motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1, TaskPriority::High);
+    manager->GlobalValueSet("motionEnabled", true);
 
     // --- Main Loop ---
     while (!g_shutdown)

@@ -64,6 +64,8 @@ struct GlobalData
   GlobalData(GlobalData&& other) { std::memcpy(this, &other, sizeof(*this)); }
 
   RSI_GLOBAL(bool, cameraReady);
+  RSI_GLOBAL(bool, multiAxisReady);
+  RSI_GLOBAL(bool, motionEnabled);
   RSI_GLOBAL(bool, newTarget);
   RSI_GLOBAL(double, targetX);
   RSI_GLOBAL(double, targetY);
@@ -72,6 +74,8 @@ struct GlobalData
 inline constexpr GlobalMetadataMap<RSI::RapidCode::RealTimeTasks::GlobalMaxSize> GlobalMetadata(
 {
   REGISTER_GLOBAL(cameraReady),
+  REGISTER_GLOBAL(multiAxisReady),
+  REGISTER_GLOBAL(motionEnabled),
   REGISTER_GLOBAL(newTarget),
   REGISTER_GLOBAL(targetX),
   REGISTER_GLOBAL(targetY),

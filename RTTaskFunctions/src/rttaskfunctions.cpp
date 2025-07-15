@@ -22,14 +22,20 @@ PylonAutoInitTerm g_PylonAutoInitTerm;
 CInstantCamera g_camera;
 CGrabResultPtr g_ptrGrabResult;
 
-// Initializes the global data structure.
+// Initializes the global data structure and sets up the camera and multi-axis.
 RSI_TASK(Initialize)
 {
-  // Setup the camera
+  // Initialize the global data
   data->cameraReady = false;
+  data->multiAxisReady = false;
+  data->motionEnabled = false;
+  data->newTarget = false;
+  data->targetX = 0.0;
+  data->targetY = 0.0;
+
   try
   {
-    g_camera.Attach(Pylon::CTlFactory::GetInstance().CreateFirstDevice());
+    CameraHelpers::ConfigureCamera(g_camera);
     CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
     data->cameraReady = true;
   }
@@ -58,16 +64,15 @@ RSI_TASK(Initialize)
   RTMultiAxisGet(0)->ClearFaults();
   RTMultiAxisGet(0)->AmpEnableSet(true);
 
-  // Move the motors to the initial position
-  data->newTarget = false;
-  data->targetX = 0.0;
-  data->targetY = 0.0;
-  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
+  data->multiAxisReady = true;
 }
 
 // Moves the motors based on the target positions.
 RSI_TASK(MoveMotors)
 {
+  if (!data->motionEnabled) return;
+  if (!data->multiAxisReady) return;
+
   // Check if there is a new target, if not, return early
   if (!data->newTarget.exchange(false)) return;
 
