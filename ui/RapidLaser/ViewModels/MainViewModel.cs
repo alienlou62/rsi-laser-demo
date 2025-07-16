@@ -94,7 +94,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     // Display Properties
     public string MotionPausedDisplay => MotionPaused ? "Yes" : "No";
-    public string MotionToggleButtonText => MotionPaused ? "Resume Motion" : "Pause Motion";
     public string MotionToggleButtonColor => MotionPaused ? "#4CAF50" : "#FF6B35";
 
     // New property to disable connection inputs when connected
@@ -130,23 +129,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         catch (Exception ex)
         {
             SystemStatus = $"SHUTDOWN ERROR: {ex.Message}";
-        }
-    }
-
-    [RelayCommand]
-    private void LaunchRsiConfig()
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "RSIConfig.exe", // Replace with actual path
-                UseShellExecute = true
-            });
-        }
-        catch
-        {
-            SystemStatus = "RSIConfig not found";
         }
     }
 

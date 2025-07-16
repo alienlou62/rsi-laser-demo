@@ -94,6 +94,7 @@
                         Background="#4CAF50"
                         CornerRadius="3">
                         <TextBlock
+                            VerticalAlignment="Center"
                             FontSize="10"
                             FontWeight="Bold"
                             Foreground="White"
@@ -232,10 +233,10 @@
                         Margin="0,0,0,8"
                         IsVisible="{Binding !IsConnected}"
                         Orientation="Horizontal"
-                        Spacing="8">
+                        Spacing="4">
                         <CheckBox
-                            Classes="size-sm"
-                            Content="Use Mock Service"
+                            Classes="size-xs"
+                            Content="Use mock server"
                             IsChecked="{Binding UseMockService}" />
                         <TextBlock
                             VerticalAlignment="Center"
@@ -322,46 +323,47 @@
                         Color="Black" />
                 </Border.Effect>
                 <StackPanel Spacing="16">
-                    <!--  RT Task Manager Controls  -->
+                    <!--  Cemo Control  -->
                     <StackPanel>
                         <TextBlock
                             Margin="0,0,0,8"
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="RT Task Manager" />
-                        <StackPanel Spacing="8">
+                            Text="Program (RT Task)" />
+                        <UniformGrid ColumnSpacing="8" Columns="3">
+
                             <Button
                                 Classes="theme-solid success"
                                 HorizontalAlignment="Stretch"
-                                Command="{Binding StartTasksCommand}"
-                                Content="Start Tasks" />
-                            <Button
-                                HorizontalAlignment="Stretch"
-                                Background="Transparent"
-                                Command="{Binding ShutdownTasksCommand}"
-                                Content="Shutdown Tasks" />
-                            <Button
-                                HorizontalAlignment="Stretch"
-                                Background="Transparent"
-                                Command="{Binding LaunchRsiConfigCommand}"
-                                Content="Launch RSIConfig" />
-                        </StackPanel>
-                    </StackPanel>
+                                Command="{Binding StartTasksCommand}">
+                                <materialIcons:MaterialIcon Kind="Play" />
+                            </Button>
 
-                    <!--  Motion Controls  -->
-                    <StackPanel>
-                        <TextBlock
-                            Margin="0,0,0,8"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource TextBrush}"
-                            Text="Motion Control" />
-                        <Button
-                            Classes="theme-solid warning"
-                            HorizontalAlignment="Stretch"
-                            Command="{Binding ToggleMotionPauseCommand}"
-                            Content="{Binding MotionToggleButtonText}" />
+                            <Button
+                                Classes="theme-solid danger"
+                                HorizontalAlignment="Stretch"
+                                Background="Transparent"
+                                Command="{Binding ShutdownTasksCommand}">
+                                <materialIcons:MaterialIcon Kind="Skull" />
+                            </Button>
+
+                            <Button
+                                Classes="theme-soft warning"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding ToggleMotionPauseCommand}"
+                                IsVisible="{Binding !MotionPaused}">
+                                <materialIcons:MaterialIcon Kind="Pause" />
+                            </Button>
+                            <Button
+                                Classes="theme-soft success"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding ToggleMotionPauseCommand}"
+                                IsVisible="{Binding MotionPaused}">
+                                <materialIcons:MaterialIcon Kind="PlayOutline" />
+                            </Button>
+
+                        </UniformGrid>
                     </StackPanel>
                 </StackPanel>
             </Border>
