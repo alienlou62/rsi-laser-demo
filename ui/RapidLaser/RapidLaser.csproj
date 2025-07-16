@@ -25,6 +25,7 @@
 	</ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="ActiproSoftware.Controls.Avalonia" />
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
@@ -34,6 +35,8 @@
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
+    <!--HotAvalonia for hot reload during development-->
+    <PackageReference Include="HotAvalonia" Condition="'$(Configuration)' == 'Debug'" PrivateAssets="All" Publish="True" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />

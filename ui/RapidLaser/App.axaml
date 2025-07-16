@@ -2,8 +2,32 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:RapidLaser"
              x:Class="RapidLaser.App"
+             xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.Resources>
+        <!-- Dark theme colors -->
+        <Color x:Key="DarkBackgroundColor">#121212</Color>
+        <Color x:Key="SidebarColor">#1E1E1E</Color>
+        <Color x:Key="TopBarColor">#1E1E1E</Color>
+        <Color x:Key="MainContentColor">#121212</Color>
+        <Color x:Key="AccentColor">#0078D4</Color>
+        <Color x:Key="TextColor">#FFFFFF</Color>
+        <Color x:Key="SubtleTextColor">#CCCCCC</Color>
+        <Color x:Key="BorderColor">#2D2D2D</Color>
+        
+        <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SidebarColor}"/>
+        <SolidColorBrush x:Key="TopBarBrush" Color="{StaticResource TopBarColor}"/>
+        <SolidColorBrush x:Key="MainContentBrush" Color="{StaticResource MainContentColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+        <SolidColorBrush x:Key="SubtleTextBrush" Color="{StaticResource SubtleTextColor}"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+        
+        <!-- Corner radius resource -->
+        <CornerRadius x:Key="StandardCornerRadius">4</CornerRadius>
+    </Application.Resources>
 
     <Application.DataTemplates>
         <local:ViewLocator/>
@@ -11,5 +35,6 @@
 
     <Application.Styles>
         <FluentTheme />
+        <actipro:ModernTheme />
     </Application.Styles>
 </Application>
