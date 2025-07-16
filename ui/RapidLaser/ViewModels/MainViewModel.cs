@@ -188,7 +188,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private string _ipAddress = "localhost";
 
     [ObservableProperty]
-    private int _port = 50051;
+    private int _port = 50061;
 
     [ObservableProperty]
     private bool _isConnected = false;
@@ -209,6 +209,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public string MotionPausedDisplay => MotionPaused ? "Yes" : "No";
     public string MotionToggleButtonText => MotionPaused ? "Resume Motion" : "Pause Motion";
     public string MotionToggleButtonColor => MotionPaused ? "#4CAF50" : "#FF6B35";
+
+    // New property to disable connection inputs when connected
+    public bool ConnectionInputsEnabled => !IsConnected;
 
     // Commands for UI actions
     [RelayCommand]
@@ -284,7 +287,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (success)
             {
                 IsConnected = true;
-                ConnectionStatus = UseMockService ? "Connected (Mock)" : $"Connected to {IpAddress}:{Port}";
+                UpdateConnectionStatus(); // Use the simplified status
 
                 // Start global value polling if available
                 _globalValueService?.StartPolling(TimeSpan.FromSeconds(1));
@@ -352,12 +355,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (IsConnected)
         {
-            ConnectionStatus = UseMockService ? "Connected (Mock)" : $"Connected to {IpAddress}:{Port}";
+            ConnectionStatus = "Connected";
         }
         else
         {
             ConnectionStatus = "Disconnected";
         }
+
+        // Notify that ConnectionInputsEnabled has changed
+        OnPropertyChanged(nameof(ConnectionInputsEnabled));
+    }
+
+    partial void OnIsConnectedChanged(bool value)
+    {
+        // Update connection inputs enabled state when connection status changes
+        OnPropertyChanged(nameof(ConnectionInputsEnabled));
     }
 
     partial void OnUseMockServiceChanged(bool value)

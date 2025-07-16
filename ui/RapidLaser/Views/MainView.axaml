@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="clr-namespace:RapidLaser.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:RapidLaser.ViewModels"
     d:DesignHeight="450"
@@ -108,11 +109,11 @@
                         <!--  Minimize Button  -->
                         <Button
                             Name="MinimizeButton"
-                            Width="40"
+                            Classes="theme-subtle"
+                            Width="32"
                             Height="32"
-                            Padding="12,6"
+                            Padding="6"
                             VerticalAlignment="Center"
-                            Background="Transparent"
                             Command="{Binding MinimizeWindowCommand}"
                             Foreground="{StaticResource SubtleTextBrush}">
                             <Button.Content>
@@ -128,11 +129,11 @@
                         <!--  Maximize/Restore Button  -->
                         <Button
                             Name="MaximizeButton"
-                            Width="40"
+                            Classes="theme-subtle"
+                            Width="32"
                             Height="32"
-                            Padding="12,6"
+                            Padding="6"
                             VerticalAlignment="Center"
-                            Background="Transparent"
                             Command="{Binding MaximizeWindowCommand}"
                             Foreground="{StaticResource SubtleTextBrush}">
                             <Button.Content>
@@ -149,11 +150,11 @@
                         <!--  Close Button  -->
                         <Button
                             Name="CloseButton"
-                            Width="40"
+                            Classes="theme-subtle"
+                            Width="32"
                             Height="32"
-                            Padding="12,6"
+                            Padding="6"
                             VerticalAlignment="Center"
-                            Background="Transparent"
                             Command="{Binding CloseWindowCommand}"
                             Foreground="{StaticResource SubtleTextBrush}">
                             <Button.Content>
@@ -243,8 +244,8 @@
                             Text="(for testing)" />
                     </StackPanel>
 
-                    <!--  Server Configuration (disabled when using mock)  -->
-                    <StackPanel IsEnabled="{Binding !UseMockService}" Spacing="8">
+                    <!--  Server Configuration (disabled when using mock or when connected)  -->
+                    <StackPanel IsEnabled="{Binding ConnectionInputsEnabled}" Spacing="8">
 
                         <!--  IP Address  -->
                         <StackPanel>
@@ -258,6 +259,7 @@
                                 Background="{StaticResource MainContentColor}"
                                 BorderBrush="{StaticResource BorderBrush}"
                                 Foreground="{StaticResource TextBrush}"
+                                IsEnabled="{Binding ConnectionInputsEnabled}"
                                 Text="{Binding IpAddress}" />
                         </StackPanel>
 
@@ -273,6 +275,7 @@
                                 Background="{StaticResource MainContentColor}"
                                 BorderBrush="{StaticResource BorderBrush}"
                                 Foreground="{StaticResource TextBrush}"
+                                IsEnabled="{Binding ConnectionInputsEnabled}"
                                 Text="{Binding Port}" />
                         </StackPanel>
                     </StackPanel>

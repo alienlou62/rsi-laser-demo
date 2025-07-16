@@ -6,7 +6,7 @@ public partial class ConnectionSettings : ObservableObject
     private string _ipAddress = "localhost";
 
     [ObservableProperty]
-    private int _port = 50051;
+    private int _port = 50061;
 
     [ObservableProperty]
     private bool _isConnected = false;
@@ -39,13 +39,13 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
     [ObservableProperty]
     private IRSIGrpcService _grpcService;
 
-    private readonly RSIGrpcService _realService;
-    private readonly RSIGrpcService_Mock _mockService;
+    private readonly RmpGrpcService _realService;
+    private readonly RmpGrpcService_Mock _mockService;
 
     public ConnectionManagerService()
     {
-        _realService = new RSIGrpcService();
-        _mockService = new RSIGrpcService_Mock();
+        _realService = new RmpGrpcService();
+        _mockService = new RmpGrpcService_Mock();
         _grpcService = _mockService; // Start with mock service
     }
 

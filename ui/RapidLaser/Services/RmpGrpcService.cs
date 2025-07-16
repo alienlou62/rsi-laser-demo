@@ -1,3 +1,9 @@
+using Grpc.Core;
+using RSI.RapidCodeRemote;
+using RSI.RapidServer;
+using System.Threading.Channels;
+using static RSI.RapidServer.ServerControlService;
+
 namespace RapidLaser.Services;
 
 public interface IRSIGrpcService
@@ -17,15 +23,15 @@ public interface IRSIGrpcService
     Task<Dictionary<string, double>> GetAxisPositionsAsync();
 }
 
-public class RSIGrpcService : IRSIGrpcService
+public class RmpGrpcService : IRSIGrpcService
 {
     private GrpcChannel? _channel;
     private bool _isConnected = false;
 
     // These will be the actual gRPC clients generated from your proto files
     // You'll need to replace these with the actual generated clients
-    // private RapidCode.RapidCodeClient? _rapidCodeClient;
-    // private RapidGrpc.RapidGrpcClient? _rapidGrpcClient;
+    private RMPService.RMPServiceClient? _rmpClient;
+    private ServerControlServiceClient? _serverClient;
 
     public bool IsConnected => _isConnected;
 
@@ -36,15 +42,16 @@ public class RSIGrpcService : IRSIGrpcService
             // Create gRPC channel
             _channel = GrpcChannel.ForAddress($"http://{serverAddress}");
 
+            // Check if the channel is valid
+            _serverClient = new ServerControlServiceClient(_channel);
+            var reply = await _serverClient.GetInfoAsync(new(), options: new CallOptions(deadline: DateTime.UtcNow.AddSeconds(2)));
+
+            _isConnected = (reply != null);
+
             // Initialize the gRPC clients with the generated proto clients
-            // _rapidCodeClient = new RapidCode.RapidCodeClient(_channel);
-            // _rapidGrpcClient = new RapidGrpc.RapidGrpcClient(_channel);
+            _rmpClient = new RMPService.RMPServiceClient(_channel);
 
-            // Test connection with a simple call
-            // await TestConnectionAsync();
-
-            _isConnected = true;
-            return true;
+            return _isConnected;
         }
         catch (Exception ex)
         {
