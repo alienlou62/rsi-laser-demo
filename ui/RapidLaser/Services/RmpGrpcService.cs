@@ -25,16 +25,19 @@ public interface IRSIGrpcService
 
 public class RmpGrpcService : IRSIGrpcService
 {
+    // FIELDS
+    /// private
     private GrpcChannel? _channel;
     private bool _isConnected = false;
-
-    // These will be the actual gRPC clients generated from your proto files
-    // You'll need to replace these with the actual generated clients
     private RMPService.RMPServiceClient? _rmpClient;
     private ServerControlServiceClient? _serverClient;
 
+    /// public
     public bool IsConnected => _isConnected;
 
+
+    // METHODS
+    /// network
     public async Task<bool> ConnectAsync(string serverAddress)
     {
         try
@@ -73,6 +76,7 @@ public class RmpGrpcService : IRSIGrpcService
         _isConnected = false;
     }
 
+    /// globals
     public async Task<Dictionary<string, object>> GetGlobalValuesAsync()
     {
         if (!_isConnected)
@@ -122,6 +126,7 @@ public class RmpGrpcService : IRSIGrpcService
         return true;
     }
 
+    /// motion
     public async Task<bool> StartMotionAsync()
     {
         if (!_isConnected)
@@ -142,6 +147,7 @@ public class RmpGrpcService : IRSIGrpcService
         return true;
     }
 
+    /// status
     public async Task<Dictionary<string, double>> GetAxisPositionsAsync()
     {
         if (!_isConnected)

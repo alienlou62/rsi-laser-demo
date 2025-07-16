@@ -1,6 +1,4 @@
-using Avalonia.Controls;
 using Avalonia.Input;
-using RapidLaser.ViewModels;
 
 namespace RapidLaser.Views;
 

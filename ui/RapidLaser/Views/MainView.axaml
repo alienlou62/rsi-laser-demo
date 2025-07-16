@@ -200,47 +200,39 @@
                         Color="Black" />
                 </Border.Effect>
                 <StackPanel>
-                    <TextBlock
-                        Margin="0,0,0,12"
-                        FontSize="14"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource TextBrush}"
-                        Text="RapidServer" />
-
-                    <!--  Connection Status  -->
-                    <Border
-                        Margin="0,0,0,8"
-                        Padding="8"
-                        Background="{StaticResource MainContentColor}"
-                        BorderBrush="{StaticResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="{StaticResource StandardCornerRadius}">
-                        <StackPanel>
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{StaticResource SubtleTextBrush}"
-                                Text="Status:" />
-                            <TextBlock
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Foreground="{Binding IsConnected, Converter={x:Static converters:BoolConverters.ConnectedToColorConverter}}"
-                                Text="{Binding ConnectionStatus}" />
-                        </StackPanel>
-                    </Border>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            Grid.Column="0"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource TextBrush}"
+                            Text="RapidServer" />
+                        <materialIcons:MaterialIcon
+                            Grid.Column="1"
+                            Width="20"
+                            Height="20"
+                            VerticalAlignment="Center"
+                            Foreground="{Binding IsConnected, Converter={x:Static converters:BoolConverters.ConnectedToColorConverter}}"
+                            Kind="Circle" />
+                    </Grid>
 
                     <!--  Mock Service Toggle  -->
                     <StackPanel
                         Margin="0,0,0,8"
+                        IsVisible="{Binding !IsConnected}"
                         Orientation="Horizontal"
                         Spacing="8">
                         <CheckBox
+                            Classes="size-sm"
                             Content="Use Mock Service"
-                            Foreground="{StaticResource TextBrush}"
                             IsChecked="{Binding UseMockService}" />
                         <TextBlock
                             VerticalAlignment="Center"
                             FontSize="11"
-                            Foreground="{StaticResource SubtleTextBrush}"
                             Text="(for testing)" />
                     </StackPanel>
 
@@ -248,75 +240,57 @@
                     <StackPanel IsEnabled="{Binding ConnectionInputsEnabled}" Spacing="8">
 
                         <!--  IP Address  -->
-                        <StackPanel>
-                            <TextBlock
-                                Margin="0,0,0,4"
-                                FontSize="12"
-                                Foreground="{StaticResource SubtleTextBrush}"
-                                Text="Server IP Address:" />
-                            <TextBox
-                                Padding="8,6"
-                                Background="{StaticResource MainContentColor}"
-                                BorderBrush="{StaticResource BorderBrush}"
-                                Foreground="{StaticResource TextBrush}"
-                                IsEnabled="{Binding ConnectionInputsEnabled}"
-                                Text="{Binding IpAddress}" />
-                        </StackPanel>
+                        <TextBox
+                            Padding="8,6"
+                            Background="{StaticResource MainContentColor}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            Foreground="{StaticResource TextBrush}"
+                            IsEnabled="{Binding ConnectionInputsEnabled}"
+                            Text="{Binding IpAddress}"
+                            UseFloatingWatermark="True"
+                            Watermark="IP Address" />
 
                         <!--  Port  -->
-                        <StackPanel>
-                            <TextBlock
-                                Margin="0,0,0,4"
-                                FontSize="12"
-                                Foreground="{StaticResource SubtleTextBrush}"
-                                Text="Port:" />
-                            <TextBox
-                                Padding="8,6"
-                                Background="{StaticResource MainContentColor}"
-                                BorderBrush="{StaticResource BorderBrush}"
-                                Foreground="{StaticResource TextBrush}"
-                                IsEnabled="{Binding ConnectionInputsEnabled}"
-                                Text="{Binding Port}" />
-                        </StackPanel>
+                        <TextBox
+                            Padding="8,6"
+                            Background="{StaticResource MainContentColor}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            Foreground="{StaticResource TextBrush}"
+                            IsEnabled="{Binding ConnectionInputsEnabled}"
+                            Text="{Binding Port}"
+                            UseFloatingWatermark="True"
+                            Watermark="Port" />
+
                     </StackPanel>
 
                     <!--  Connection Buttons  -->
                     <StackPanel Margin="0,8,0,0" Spacing="8">
                         <Button
-                            Padding="12,8"
+                            Classes="theme-solid success"
                             HorizontalAlignment="Stretch"
-                            Background="{StaticResource AccentBrush}"
                             Command="{Binding ConnectCommand}"
                             Content="Connect"
-                            Foreground="White"
                             IsEnabled="{Binding !IsConnecting}"
                             IsVisible="{Binding !IsConnected}" />
 
                         <Button
-                            Padding="12,8"
+                            Classes="theme-soft danger"
                             HorizontalAlignment="Stretch"
-                            Background="#F44336"
                             Command="{Binding DisconnectCommand}"
                             Content="Disconnect"
-                            Foreground="White"
                             IsVisible="{Binding IsConnected}" />
 
                         <Button
-                            Padding="12,8"
+                            Classes="theme-soft"
                             HorizontalAlignment="Stretch"
-                            Background="Transparent"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="1"
                             Command="{Binding TestConnectionCommand}"
                             Content="Test Connection"
-                            Foreground="{StaticResource SubtleTextBrush}"
                             IsVisible="{Binding IsConnected}" />
                     </StackPanel>
 
                     <!--  Error Display  -->
                     <TextBlock
                         Margin="0,8,0,0"
-                        FontSize="12"
                         Foreground="#F44336"
                         IsVisible="{Binding LastError, Converter={x:Static converters:BoolConverters.StringNotEmptyToBoolConverter}}"
                         Text="{Binding LastError}"
@@ -472,9 +446,7 @@
                 CornerRadius="{StaticResource StandardCornerRadius}">
                 <Grid ColumnDefinitions="* *">
                     <!--  Camera feed placeholder (640x480 aspect ratio)  -->
-                    <Border
-                        Grid.Column="0"
-                        Margin="8">
+                    <Border Grid.Column="0" Margin="8">
                         <Grid>
                             <!--  Simulated camera feed background  -->
                             <Rectangle
@@ -550,9 +522,7 @@
                     </Border>
 
                     <!--  Image mask placeholder (640x480 aspect ratio, black and white)  -->
-                    <Border
-                        Grid.Column="1"
-                        Margin="0,8,8,8">
+                    <Border Grid.Column="1" Margin="0,8,8,8">
                         <Grid>
                             <!--  Simulated image mask  -->
                             <Rectangle
