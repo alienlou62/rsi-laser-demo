@@ -133,15 +133,16 @@ public class RmpGrpcService_Mock : IRSIGrpcService
         await Task.Delay(100);
 
         // Simulate motion by gradually changing positions
-        Task.Run(async () =>
+        for (int i = 0; i < 50; i++)
         {
-            for (int i = 0; i < 50; i++)
-            {
-                await Task.Delay(100);
-                _mockAxisPositions["X"] += _random.NextDouble() * 0.1;
-                _mockAxisPositions["Y"] += _random.NextDouble() * 0.1;
-            }
-        });
+            await Task.Delay(100);
+            _mockAxisPositions["X"] += _random.NextDouble() * 0.1;
+            _mockAxisPositions["Y"] += _random.NextDouble() * 0.1;
+            // Clamp X between 0 and 620
+            _mockAxisPositions["X"] = Math.Clamp(_mockAxisPositions["X"], 0, 620);
+            // Clamp Y between 0 and 480
+            _mockAxisPositions["Y"] = Math.Clamp(_mockAxisPositions["Y"], 0, 480);
+        }
 
         return true;
     }

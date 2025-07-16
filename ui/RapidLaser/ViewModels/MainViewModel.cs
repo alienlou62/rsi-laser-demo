@@ -16,113 +16,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // Timer for UI updates
     private readonly System.Timers.Timer _updateTimer;
 
-    public MainViewModel()
-    {
-        // Initialize connection manager
-        _connectionManager = new ConnectionManagerService();
-
-        // Initialize global value service
-        _globalValueService = new GlobalValueService(_connectionManager);
-
-        // Initialize services (in real app, use DI)
-        _cameraService = new SimulatedCameraService();
-        _imageProcessingService = new SimulatedImageProcessingService();
-        _motionControlService = new SimulatedMotionControlService();
-        _rtTaskManagerService = new SimulatedRTTaskManagerService(
-            _cameraService, _imageProcessingService, _motionControlService);
-
-        // Subscribe to service events
-        _rtTaskManagerService.GlobalsUpdated += OnGlobalsUpdated;
-        _rtTaskManagerService.TaskStatusChanged += OnTaskStatusChanged;
-
-        // Subscribe to global value service events
-        _globalValueService.GlobalValuesUpdated += OnGlobalValuesUpdated;
-
-        // Initialize connection settings
-        IpAddress = _connectionManager.Settings.IpAddress;
-        Port = _connectionManager.Settings.Port;
-        UseMockService = _connectionManager.Settings.UseMockService;
-        IsConnected = _connectionManager.IsConnected;
-
-        UpdateConnectionStatus();
-
-        // Setup UI update timer
-        _updateTimer = new System.Timers.Timer(100); // Update UI every 100ms
-        _updateTimer.Elapsed += OnUpdateTimerElapsed;
-        _updateTimer.Start();
-    }
-
-    public void SetMainWindow(Window window)
-    {
-        _mainWindow = window;
-    }
-
-    // Event handlers
-    private void OnGlobalsUpdated(object? sender, RTTaskGlobals globals)
-    {
-        // Update UI properties with latest global values
-        BallXPosition = globals.TargetX;
-        BallYPosition = globals.TargetY;
-    }
-
-    private void OnTaskStatusChanged(object? sender, EventArgs e)
-    {
-        // Update task status properties
-        OnPropertyChanged(nameof(ManagerState));
-        OnPropertyChanged(nameof(TasksActive));
-        OnPropertyChanged(nameof(BallDetectionStatus));
-        OnPropertyChanged(nameof(MotionControlStatus));
-    }
-
-    private void OnGlobalValuesUpdated(object? sender, GlobalValuesUpdatedEventArgs e)
-    {
-        // Update ball position from gRPC global values when connected
-        if (e.Values.TryGetValue("BallX", out var ballX) && ballX is double)
-        {
-            BallXPosition = (double)ballX;
-        }
-
-        if (e.Values.TryGetValue("BallY", out var ballY) && ballY is double)
-        {
-            BallYPosition = (double)ballY;
-        }
-
-        if (e.Values.TryGetValue("BallVelocityX", out var velX) && velX is double)
-        {
-            BallVelocityX = (double)velX;
-        }
-
-        if (e.Values.TryGetValue("BallVelocityY", out var velY) && velY is double)
-        {
-            BallVelocityY = (double)velY;
-        }
-
-        if (e.Values.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
-        {
-            DetectionConfidence = (double)confidence;
-        }
-    }
-
-    private void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
-    {
-        // Update UI properties that change continuously
-        if (_rtTaskManagerService.IsRunning)
-        {
-            CpuUsage = _rtTaskManagerService.CpuUsage;
-            MemoryUsage = _rtTaskManagerService.MemoryUsage;
-            BallDetectionLoopTime = _rtTaskManagerService.BallDetectionLoopTime;
-            BallDetectionIterations = _rtTaskManagerService.BallDetectionIterations;
-            MotionControlLoopTime = _rtTaskManagerService.MotionControlLoopTime;
-
-            // Update motion positions
-            BallXPosition = _motionControlService.CurrentX;
-            BallYPosition = _motionControlService.CurrentY;
-
-            // Update motion paused status
-            MotionPaused = _motionControlService.MotionPaused;
-        }
-    }
-
     // RTTask Global Values
     [ObservableProperty]
     private double _ballXPosition = 320;
@@ -213,7 +106,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // New property to disable connection inputs when connected
     public bool ConnectionInputsEnabled => !IsConnected;
 
-    // Commands for UI actions
+
+    // ===== COMMANDS ===== 
+    // tasks
     [RelayCommand]
     private async Task StartTasks()
     {
@@ -266,7 +161,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         MotionPaused = _motionControlService.MotionPaused;
     }
 
-    // Connection Commands
+    // connection
     [RelayCommand]
     private async Task ConnectAsync()
     {
@@ -394,8 +289,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
-    // Window Commands
-
+    // window
     [RelayCommand]
     private void MinimizeWindow()
     {
@@ -422,6 +316,68 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _mainWindow?.Close();
     }
 
+
+    // ===== CONSTRUCTOR ===== 
+    public MainViewModel()
+    {
+        // Initialize connection manager
+        _connectionManager = new ConnectionManagerService();
+
+        // Initialize global value service
+        _globalValueService = new GlobalValueService(_connectionManager);
+
+        // Initialize services (in real app, use DI)
+        _cameraService = new SimulatedCameraService();
+        _imageProcessingService = new SimulatedImageProcessingService();
+        _motionControlService = new SimulatedMotionControlService();
+        _rtTaskManagerService = new SimulatedRTTaskManagerService(
+            _cameraService, _imageProcessingService, _motionControlService);
+
+        // Subscribe to service events
+        _rtTaskManagerService.GlobalsUpdated += OnGlobalsUpdated;
+        _rtTaskManagerService.TaskStatusChanged += OnTaskStatusChanged;
+
+        // Subscribe to global value service events
+        _globalValueService.GlobalValuesUpdated += OnGlobalValuesUpdated;
+
+        // Initialize connection settings
+        IpAddress = _connectionManager.Settings.IpAddress;
+        Port = _connectionManager.Settings.Port;
+        UseMockService = _connectionManager.Settings.UseMockService;
+        IsConnected = _connectionManager.IsConnected;
+
+        UpdateConnectionStatus();
+
+        // Setup UI update timer
+        _updateTimer = new System.Timers.Timer(100); // Update UI every 100ms
+        _updateTimer.Elapsed += OnUpdateTimerElapsed;
+        _updateTimer.Start();
+    }
+
+
+    // ===== POLL =====
+    private void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
+    {
+        // Update UI properties that change continuously
+        if (_rtTaskManagerService.IsRunning)
+        {
+            CpuUsage                = _rtTaskManagerService.CpuUsage;
+            MemoryUsage             = _rtTaskManagerService.MemoryUsage;
+            BallDetectionLoopTime   = _rtTaskManagerService.BallDetectionLoopTime;
+            BallDetectionIterations = _rtTaskManagerService.BallDetectionIterations;
+            MotionControlLoopTime   = _rtTaskManagerService.MotionControlLoopTime;
+
+            // Update motion positions
+            BallXPosition = _motionControlService.CurrentX;
+            BallYPosition = _motionControlService.CurrentY;
+
+            // Update motion paused status
+            MotionPaused = _motionControlService.MotionPaused;
+        }
+    }
+
+
+    // ===== METHODS ===== 
     public void Dispose()
     {
         _updateTimer?.Stop();
@@ -433,4 +389,57 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
         _rtTaskManagerService?.Dispose();
     }
+
+    public void SetMainWindow(Window window)
+    {
+        _mainWindow = window;
+    }
+
+
+    // ===== EVENTS ===== 
+    private void OnGlobalsUpdated(object? sender, RTTaskGlobals globals)
+    {
+        // Update UI properties with latest global values
+        BallXPosition = globals.TargetX;
+        BallYPosition = globals.TargetY;
+    }
+
+    private void OnTaskStatusChanged(object? sender, EventArgs e)
+    {
+        // Update task status properties
+        OnPropertyChanged(nameof(ManagerState));
+        OnPropertyChanged(nameof(TasksActive));
+        OnPropertyChanged(nameof(BallDetectionStatus));
+        OnPropertyChanged(nameof(MotionControlStatus));
+    }
+
+    private void OnGlobalValuesUpdated(object? sender, GlobalValuesUpdatedEventArgs e)
+    {
+        // Update ball position from gRPC global values when connected
+        if (e.Values.TryGetValue("BallX", out var ballX) && ballX is double)
+        {
+            BallXPosition = (double)ballX;
+        }
+
+        if (e.Values.TryGetValue("BallY", out var ballY) && ballY is double)
+        {
+            BallYPosition = (double)ballY;
+        }
+
+        if (e.Values.TryGetValue("BallVelocityX", out var velX) && velX is double)
+        {
+            BallVelocityX = (double)velX;
+        }
+
+        if (e.Values.TryGetValue("BallVelocityY", out var velY) && velY is double)
+        {
+            BallVelocityY = (double)velY;
+        }
+
+        if (e.Values.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
+        {
+            DetectionConfidence = (double)confidence;
+        }
+    }
+
 }

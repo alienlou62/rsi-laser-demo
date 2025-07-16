@@ -47,13 +47,20 @@
                     Color="Black" />
             </Border.Effect>
 
-            <Grid Margin="16,0,0,0">
+            <Grid Margin="8,0,0,0">
                 <!--  Left side content  -->
                 <StackPanel
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
                     Spacing="16">
+                    <materialIcons:MaterialIcon
+                        Width="25"
+                        Height="25"
+                        Margin="0,0,-8,-1"
+                        VerticalAlignment="Center"
+                        Foreground="{StaticResource TextBrush}"
+                        Kind="MotionOutline" />
                     <TextBlock
                         VerticalAlignment="Center"
                         FontSize="16"
@@ -304,7 +311,8 @@
                 Background="{StaticResource SidebarBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="1"
-                CornerRadius="{StaticResource StandardCornerRadius}">
+                CornerRadius="{StaticResource StandardCornerRadius}"
+                IsEnabled="{Binding IsConnected}">
                 <Border.Effect>
                     <DropShadowEffect
                         BlurRadius="8"
@@ -324,28 +332,20 @@
                             Text="RT Task Manager" />
                         <StackPanel Spacing="8">
                             <Button
-                                Padding="12,8"
+                                Classes="theme-solid success"
                                 HorizontalAlignment="Stretch"
-                                Background="{StaticResource AccentBrush}"
                                 Command="{Binding StartTasksCommand}"
-                                Content="Start Tasks"
-                                Foreground="White" />
+                                Content="Start Tasks" />
                             <Button
-                                Padding="12,8"
                                 HorizontalAlignment="Stretch"
                                 Background="Transparent"
-                                BorderBrush="{StaticResource BorderBrush}"
                                 Command="{Binding ShutdownTasksCommand}"
-                                Content="Shutdown Tasks"
-                                Foreground="{StaticResource SubtleTextBrush}" />
+                                Content="Shutdown Tasks" />
                             <Button
-                                Padding="12,8"
                                 HorizontalAlignment="Stretch"
                                 Background="Transparent"
-                                BorderBrush="{StaticResource BorderBrush}"
                                 Command="{Binding LaunchRsiConfigCommand}"
-                                Content="Launch RSIConfig"
-                                Foreground="{StaticResource SubtleTextBrush}" />
+                                Content="Launch RSIConfig" />
                         </StackPanel>
                     </StackPanel>
 
@@ -358,12 +358,10 @@
                             Foreground="{StaticResource TextBrush}"
                             Text="Motion Control" />
                         <Button
-                            Padding="12,8"
+                            Classes="theme-solid warning"
                             HorizontalAlignment="Stretch"
-                            Background="{Binding MotionToggleButtonColor}"
                             Command="{Binding ToggleMotionPauseCommand}"
-                            Content="{Binding MotionToggleButtonText}"
-                            Foreground="White" />
+                            Content="{Binding MotionToggleButtonText}" />
                     </StackPanel>
                 </StackPanel>
             </Border>
