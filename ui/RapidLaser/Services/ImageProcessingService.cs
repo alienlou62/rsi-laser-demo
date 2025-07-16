@@ -1,5 +1,3 @@
-using System.Drawing;
-
 namespace RapidLaser.Services;
 
 public struct BallDetectionResult

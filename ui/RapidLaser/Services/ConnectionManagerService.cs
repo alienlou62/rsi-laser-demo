@@ -1,7 +1,3 @@
-using System;
-using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.ComponentModel;
-
 namespace RapidLaser.Services;
 
 public partial class ConnectionSettings : ObservableObject
@@ -44,12 +40,12 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
     private IRSIGrpcService _grpcService;
 
     private readonly RSIGrpcService _realService;
-    private readonly MockRSIGrpcService _mockService;
+    private readonly RSIGrpcService_Mock _mockService;
 
     public ConnectionManagerService()
     {
         _realService = new RSIGrpcService();
-        _mockService = new MockRSIGrpcService();
+        _mockService = new RSIGrpcService_Mock();
         _grpcService = _mockService; // Start with mock service
     }
 

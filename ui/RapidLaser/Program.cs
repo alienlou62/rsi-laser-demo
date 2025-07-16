@@ -1,8 +1,3 @@
-using System;
-using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Logging;
-
 namespace RapidLaser;
 
 sealed class Program

@@ -1,8 +1,3 @@
-using System;
-using Avalonia.Controls;
-using Avalonia.Controls.Templates;
-using RapidLaser.ViewModels;
-
 namespace RapidLaser;
 
 public class ViewLocator : IDataTemplate

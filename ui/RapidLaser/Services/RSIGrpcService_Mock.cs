@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace RapidLaser.Services;
 
-public class MockRSIGrpcService : IRSIGrpcService
+public class RSIGrpcService_Mock : IRSIGrpcService
 {
     private readonly Dictionary<string, object> _mockGlobalValues;
     private readonly Dictionary<string, double> _mockAxisPositions;
@@ -12,7 +8,7 @@ public class MockRSIGrpcService : IRSIGrpcService
 
     public bool IsConnected { get; private set; } = true; // Mock is always "connected"
 
-    public MockRSIGrpcService()
+    public RSIGrpcService_Mock()
     {
         // Initialize with some mock global values
         _mockGlobalValues = new Dictionary<string, object>

@@ -1,13 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using System.Timers;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Avalonia.Controls;
-using RapidLaser.Services;
-
-namespace RapidLaser.ViewModels;
+﻿namespace RapidLaser.ViewModels;
 
 public partial class MainViewModel : ViewModelBase, IDisposable
 {
@@ -90,22 +81,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             BallXPosition = (double)ballX;
         }
-        
+
         if (e.Values.TryGetValue("BallY", out var ballY) && ballY is double)
         {
             BallYPosition = (double)ballY;
         }
-        
+
         if (e.Values.TryGetValue("BallVelocityX", out var velX) && velX is double)
         {
             BallVelocityX = (double)velX;
         }
-        
+
         if (e.Values.TryGetValue("BallVelocityY", out var velY) && velY is double)
         {
             BallVelocityY = (double)velY;
         }
-        
+
         if (e.Values.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
         {
             DetectionConfidence = (double)confidence;
@@ -294,7 +285,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 IsConnected = true;
                 ConnectionStatus = UseMockService ? "Connected (Mock)" : $"Connected to {IpAddress}:{Port}";
-                
+
                 // Start global value polling if available
                 _globalValueService?.StartPolling(TimeSpan.FromSeconds(1));
             }
@@ -322,7 +313,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             // Stop global value polling
             _globalValueService?.StopPolling();
-            
+
             await _connectionManager.DisconnectAsync();
             IsConnected = false;
             UpdateConnectionStatus();
