@@ -47,7 +47,7 @@
                     Color="Black" />
             </Border.Effect>
 
-            <Grid Margin="8,0,0,0">
+            <Grid Margin="6,0,0,0">
                 <!--  Left side content  -->
                 <StackPanel
                     HorizontalAlignment="Left"
@@ -57,7 +57,7 @@
                     <materialIcons:MaterialIcon
                         Width="25"
                         Height="25"
-                        Margin="0,0,-8,-1"
+                        Margin="0,0,-10,-1"
                         VerticalAlignment="Center"
                         Foreground="{StaticResource TextBrush}"
                         Kind="MotionOutline" />
@@ -193,7 +193,7 @@
 
             <!--  gRPC Connection Card  -->
             <Border
-                Padding="20"
+                Padding="{StaticResource CardPadding}"
                 Background="{StaticResource SidebarBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="1"
@@ -307,7 +307,7 @@
 
             <!--  Actions Card  -->
             <Border
-                Padding="20"
+                Padding="{StaticResource CardPadding}"
                 Background="{StaticResource SidebarBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="1"
@@ -368,7 +368,7 @@
 
             <!--  Status Card  -->
             <Border
-                Padding="20"
+                Padding="{StaticResource CardPadding}"
                 Background="{StaticResource SidebarBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="1"
@@ -574,7 +574,7 @@
             Grid.Row="1"
             Grid.Column="2"
             Margin="0"
-            Padding="20"
+            Padding="{StaticResource CardPadding}"
             VerticalAlignment="Top"
             Background="{StaticResource SidebarBrush}"
             BorderBrush="{StaticResource BorderBrush}"
@@ -588,7 +588,8 @@
                     Opacity="0.3"
                     Color="Black" />
             </Border.Effect>
-            <StackPanel Spacing="20">
+
+            <StackPanel>
                 <!--  Global Values from gRPC - temporarily commented out  -->
                 <!-- <views:GlobalValuesView DataContext="{Binding GlobalValues}"/> -->
 

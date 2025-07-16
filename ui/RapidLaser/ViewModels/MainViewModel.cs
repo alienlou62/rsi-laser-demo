@@ -8,10 +8,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // Services
     private readonly ICameraService _cameraService;
     private readonly IImageProcessingService _imageProcessingService;
-    private readonly IMotionControlService _motionControlService;
-    private readonly IRTTaskManagerService _rtTaskManagerService;
     private readonly IConnectionManagerService _connectionManager;
-    private readonly GlobalValueService? _globalValueService;
+    private IRmpGrpcService? _rmp = null;
 
     // Timer for UI updates
     private readonly System.Timers.Timer _updateTimer;
@@ -32,18 +30,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private double _detectionConfidence = 95.0;
 
-    // RTTaskManager Status
-    public string ManagerState => _rtTaskManagerService?.ManagerState ?? "Stopped";
-    public string TasksActive => _rtTaskManagerService?.TasksActive.ToString() + "/2" ?? "0/2";
-
     [ObservableProperty]
     private double _cpuUsage = 23.0;
 
     [ObservableProperty]
     private double _memoryUsage = 145.0; // MB
-
-    // Ball Detection Task Status
-    public string BallDetectionStatus => _rtTaskManagerService?.BallDetectionStatus ?? "Inactive";
 
     [ObservableProperty]
     private double _ballDetectionLoopTime = 33.0; // ms
@@ -51,13 +42,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private long _ballDetectionIterations = 45123;
 
-    // Motion Control Task Status
-    public string MotionControlStatus => _rtTaskManagerService?.MotionControlStatus ?? "Inactive";
-
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(MotionPausedDisplay))]
-    [NotifyPropertyChangedFor(nameof(MotionToggleButtonText))]
-    [NotifyPropertyChangedFor(nameof(MotionToggleButtonColor))]
     private bool _motionPaused = false;
 
     [ObservableProperty]
@@ -98,6 +83,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _lastError = string.Empty;
 
+    [ObservableProperty]
+    private string _managerState = "Stopped";
+    [ObservableProperty]
+    private string _tasksActive = "0/2";
+    [ObservableProperty]
+    private string _ballDetectionStatus = "Inactive";
+    [ObservableProperty]
+    private string _motionControlStatus = "Inactive";
+
     // Display Properties
     public string MotionPausedDisplay => MotionPaused ? "Yes" : "No";
     public string MotionToggleButtonText => MotionPaused ? "Resume Motion" : "Pause Motion";
@@ -112,10 +106,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task StartTasks()
     {
+        // Example: Start motion via RMP
         try
         {
-            await _rtTaskManagerService.StartTasksAsync();
-            SystemStatus = "TASKS STARTING";
+            var result = await _rmp.StartMotionAsync();
+            SystemStatus = result ? "TASKS STARTING" : "START ERROR";
         }
         catch (Exception ex)
         {
@@ -126,10 +121,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task ShutdownTasks()
     {
+        // Example: Stop motion via RMP
         try
         {
-            await _rtTaskManagerService.ShutdownTasksAsync();
-            SystemStatus = "TASKS STOPPED";
+            var result = await _rmp.StopMotionAsync();
+            SystemStatus = result ? "TASKS STOPPED" : "SHUTDOWN ERROR";
         }
         catch (Exception ex)
         {
@@ -157,8 +153,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private void ToggleMotionPause()
     {
-        _motionControlService.MotionPaused = !_motionControlService.MotionPaused;
-        MotionPaused = _motionControlService.MotionPaused;
+        // Example: Toggle a global value for motion pause
+        MotionPaused = !MotionPaused;
+        _ = _rmp.SetGlobalValueAsync("MotionPaused", MotionPaused);
     }
 
     // connection
@@ -182,13 +179,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (success)
             {
                 IsConnected = true;
-                UpdateConnectionStatus(); // Use the simplified status
 
-                // Start global value polling if available
-                _globalValueService?.StartPolling(TimeSpan.FromSeconds(1));
+                // rmp service
+                _rmp = _connectionManager.GrpcService;
+
+                UpdateConnectionStatus();
             }
             else
             {
+                // rmp service
+                _rmp = null;
                 LastError = "Failed to connect to server";
                 ConnectionStatus = "Connection Failed";
             }
@@ -209,9 +209,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            // Stop global value polling
-            _globalValueService?.StopPolling();
-
             await _connectionManager.DisconnectAsync();
             IsConnected = false;
             UpdateConnectionStatus();
@@ -236,8 +233,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
-            // Test by getting a simple global value
-            var testValue = await _connectionManager.GrpcService.GetGlobalValueAsync<string>("SystemStatus");
+            var testValue = await _rmp.GetGlobalValueAsync<string>("SystemStatus");
             LastError = $"Test successful. SystemStatus: {testValue ?? "N/A"}";
         }
         catch (Exception ex)
@@ -248,22 +244,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private void UpdateConnectionStatus()
     {
-        if (IsConnected)
-        {
-            ConnectionStatus = "Connected";
-        }
-        else
-        {
-            ConnectionStatus = "Disconnected";
-        }
-
-        // Notify that ConnectionInputsEnabled has changed
+        ConnectionStatus = IsConnected ? "Connected" : "Disconnected";
         OnPropertyChanged(nameof(ConnectionInputsEnabled));
     }
 
     partial void OnIsConnectedChanged(bool value)
     {
-        // Update connection inputs enabled state when connection status changes
         OnPropertyChanged(nameof(ConnectionInputsEnabled));
     }
 
@@ -323,28 +309,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         // Initialize connection manager
         _connectionManager = new ConnectionManagerService();
 
-        // Initialize global value service
-        _globalValueService = new GlobalValueService(_connectionManager);
 
         // Initialize services (in real app, use DI)
         _cameraService = new SimulatedCameraService();
         _imageProcessingService = new SimulatedImageProcessingService();
-        _motionControlService = new SimulatedMotionControlService();
-        _rtTaskManagerService = new SimulatedRTTaskManagerService(
-            _cameraService, _imageProcessingService, _motionControlService);
-
-        // Subscribe to service events
-        _rtTaskManagerService.GlobalsUpdated += OnGlobalsUpdated;
-        _rtTaskManagerService.TaskStatusChanged += OnTaskStatusChanged;
-
-        // Subscribe to global value service events
-        _globalValueService.GlobalValuesUpdated += OnGlobalValuesUpdated;
 
         // Initialize connection settings
-        IpAddress = _connectionManager.Settings.IpAddress;
-        Port = _connectionManager.Settings.Port;
+        IpAddress      = _connectionManager.Settings.IpAddress;
+        Port           = _connectionManager.Settings.Port;
         UseMockService = _connectionManager.Settings.UseMockService;
-        IsConnected = _connectionManager.IsConnected;
+        IsConnected    = _connectionManager.IsConnected;
 
         UpdateConnectionStatus();
 
@@ -356,24 +330,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
 
     // ===== POLL =====
-    private void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
+    private async void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
     {
-        // Update UI properties that change continuously
-        if (_rtTaskManagerService.IsRunning)
+        if (!IsConnected) return;
+        try
         {
-            CpuUsage                = _rtTaskManagerService.CpuUsage;
-            MemoryUsage             = _rtTaskManagerService.MemoryUsage;
-            BallDetectionLoopTime   = _rtTaskManagerService.BallDetectionLoopTime;
-            BallDetectionIterations = _rtTaskManagerService.BallDetectionIterations;
-            MotionControlLoopTime   = _rtTaskManagerService.MotionControlLoopTime;
-
-            // Update motion positions
-            BallXPosition = _motionControlService.CurrentX;
-            BallYPosition = _motionControlService.CurrentY;
-
-            // Update motion paused status
-            MotionPaused = _motionControlService.MotionPaused;
+            var globals = await _rmp.GetGlobalValuesAsync();
+            if (globals.TryGetValue("BallX", out var ballX) && ballX is double)
+                BallXPosition = (double)ballX;
+            if (globals.TryGetValue("BallY", out var ballY) && ballY is double)
+                BallYPosition = (double)ballY;
+            if (globals.TryGetValue("BallVelocityX", out var velX) && velX is double)
+                BallVelocityX = (double)velX;
+            if (globals.TryGetValue("BallVelocityY", out var velY) && velY is double)
+                BallVelocityY = (double)velY;
+            if (globals.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
+                DetectionConfidence = (double)confidence;
+            // Add more global values as needed
         }
+        catch { }
     }
 
 
@@ -382,64 +357,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         _updateTimer?.Stop();
         _updateTimer?.Dispose();
-        _globalValueService?.StopPolling();
-        if (_globalValueService != null)
-        {
-            _globalValueService.GlobalValuesUpdated -= OnGlobalValuesUpdated;
-        }
-        _rtTaskManagerService?.Dispose();
     }
 
     public void SetMainWindow(Window window)
     {
         _mainWindow = window;
-    }
-
-
-    // ===== EVENTS ===== 
-    private void OnGlobalsUpdated(object? sender, RTTaskGlobals globals)
-    {
-        // Update UI properties with latest global values
-        BallXPosition = globals.TargetX;
-        BallYPosition = globals.TargetY;
-    }
-
-    private void OnTaskStatusChanged(object? sender, EventArgs e)
-    {
-        // Update task status properties
-        OnPropertyChanged(nameof(ManagerState));
-        OnPropertyChanged(nameof(TasksActive));
-        OnPropertyChanged(nameof(BallDetectionStatus));
-        OnPropertyChanged(nameof(MotionControlStatus));
-    }
-
-    private void OnGlobalValuesUpdated(object? sender, GlobalValuesUpdatedEventArgs e)
-    {
-        // Update ball position from gRPC global values when connected
-        if (e.Values.TryGetValue("BallX", out var ballX) && ballX is double)
-        {
-            BallXPosition = (double)ballX;
-        }
-
-        if (e.Values.TryGetValue("BallY", out var ballY) && ballY is double)
-        {
-            BallYPosition = (double)ballY;
-        }
-
-        if (e.Values.TryGetValue("BallVelocityX", out var velX) && velX is double)
-        {
-            BallVelocityX = (double)velX;
-        }
-
-        if (e.Values.TryGetValue("BallVelocityY", out var velY) && velY is double)
-        {
-            BallVelocityY = (double)velY;
-        }
-
-        if (e.Values.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
-        {
-            DetectionConfidence = (double)confidence;
-        }
     }
 
 }

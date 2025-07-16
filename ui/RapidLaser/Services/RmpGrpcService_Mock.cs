@@ -1,6 +1,6 @@
 namespace RapidLaser.Services;
 
-public class RmpGrpcService_Mock : IRSIGrpcService
+public class RmpGrpcService_Mock : IRmpGrpcService
 {
     private readonly Dictionary<string, object> _mockGlobalValues;
     private readonly Dictionary<string, double> _mockAxisPositions;

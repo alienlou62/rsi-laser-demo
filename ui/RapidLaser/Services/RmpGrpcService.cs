@@ -1,12 +1,10 @@
 using Grpc.Core;
 using RSI.RapidCodeRemote;
-using RSI.RapidServer;
-using System.Threading.Channels;
 using static RSI.RapidServer.ServerControlService;
 
 namespace RapidLaser.Services;
 
-public interface IRSIGrpcService
+public interface IRmpGrpcService
 {
     bool IsConnected { get; }
     Task<bool> ConnectAsync(string serverAddress);
@@ -23,7 +21,7 @@ public interface IRSIGrpcService
     Task<Dictionary<string, double>> GetAxisPositionsAsync();
 }
 
-public class RmpGrpcService : IRSIGrpcService
+public class RmpGrpcService : IRmpGrpcService
 {
     // FIELDS
     /// private

@@ -21,7 +21,7 @@ public interface IConnectionManagerService
 {
     ConnectionSettings Settings { get; }
     bool IsConnected { get; }
-    IRSIGrpcService GrpcService { get; }
+    IRmpGrpcService GrpcService { get; }
 
     Task<bool> ConnectAsync();
     Task DisconnectAsync();
@@ -37,7 +37,7 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
     private bool _isConnected = false;
 
     [ObservableProperty]
-    private IRSIGrpcService _grpcService;
+    private IRmpGrpcService _grpcService;
 
     private readonly RmpGrpcService _realService;
     private readonly RmpGrpcService_Mock _mockService;

@@ -29,6 +29,9 @@
 
         <!--  Corner radius resource  -->
         <CornerRadius x:Key="StandardCornerRadius">4</CornerRadius>
+
+        <!--  Card padding resource  -->
+        <Thickness x:Key="CardPadding">12</Thickness>
     </Application.Resources>
 
     <Application.DataTemplates>
