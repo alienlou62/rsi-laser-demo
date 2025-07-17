@@ -69,10 +69,14 @@
             <Setter Property="Background" Value="{StaticResource MainContentColor}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
             <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+            <Setter Property="FontFamily" Value="{StaticResource Saira}" />
         </Style>
 
         <!--  Label style with Saira font and positioning  -->
-        <Style Selector="Label, TextBlock, TextBox">
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+        </Style>
+        <Style Selector="Label">
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
         </Style>
 
