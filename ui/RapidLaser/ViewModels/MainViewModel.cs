@@ -2,19 +2,20 @@
 
 public partial class MainViewModel : ViewModelBase, IDisposable
 {
-    // Reference to the main window for window operations
     private Window? _mainWindow;
 
-    // Services
+    // SERVICES
     private readonly ICameraService _cameraService;
     private readonly IImageProcessingService _imageProcessingService;
     private readonly IConnectionManagerService _connectionManager;
     private IRmpGrpcService? _rmp = null;
 
-    // Timer for UI updates
+
+    // FIELDS
+    /// updater/polling
     private readonly System.Timers.Timer _updateTimer;
 
-    // RTTask Global Values
+    /// globals
     [ObservableProperty]
     private double _ballXPosition = 320;
 
@@ -42,16 +43,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private long _ballDetectionIterations = 45123;
 
+    /// program
     [ObservableProperty]
-    private bool _motionPaused = false;
+    private bool _isProgramPaused = false;
 
     [ObservableProperty]
-    private bool _programStarted = false;
+    private bool _isProgramRunning = false;
 
     [ObservableProperty]
     private double _motionControlLoopTime = 16.0; // ms
 
-    // Camera/Display Properties
+    /// Camera/Display Properties
     [ObservableProperty]
     private double _frameRate = 30.0;
 
@@ -88,19 +90,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private string _managerState = "Stopped";
+
     [ObservableProperty]
     private string _tasksActive = "0/2";
+
     [ObservableProperty]
     private string _ballDetectionStatus = "Inactive";
+
     [ObservableProperty]
     private string _motionControlStatus = "Inactive";
 
     // Display Properties
-    public string MotionPausedDisplay => MotionPaused ? "Yes" : "No";
-    public string MotionToggleButtonColor => MotionPaused ? "#4CAF50" : "#FF6B35";
+    public string IsProgramPausedDisplay => IsProgramPaused ? "Yes" : "No";
 
     // New property to disable connection inputs when connected
     public bool ConnectionInputsEnabled => !IsConnected;
+
+    // mocks
+    [ObservableProperty]
+    private bool _isSimulatingBallPosition = false;
 
 
     // ===== COMMANDS ===== 
@@ -112,7 +120,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             var result = await _rmp.StartMotionAsync();
-            SystemStatus = result ? "TASKS STARTING" : "START ERROR";
+            IsProgramRunning = result;
+            SystemStatus = IsProgramRunning ? "TASKS STARTING" : "START ERROR";
         }
         catch (Exception ex)
         {
@@ -127,7 +136,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             var result = await _rmp.StopMotionAsync();
-            SystemStatus = result ? "TASKS STOPPED" : "SHUTDOWN ERROR";
+            IsProgramRunning = !result;
+            SystemStatus = IsProgramRunning ? "TASKS STOPPED" : "SHUTDOWN ERROR";
         }
         catch (Exception ex)
         {
@@ -139,8 +149,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void ToggleMotionPause()
     {
         // Example: Toggle a global value for motion pause
-        MotionPaused = !MotionPaused;
-        _ = _rmp.SetGlobalValueAsync("MotionPaused", MotionPaused);
+        IsProgramPaused = !IsProgramPaused;
+        _ = _rmp.SetGlobalValueAsync("IsProgramPaused", IsProgramPaused);
     }
 
     // connection
@@ -209,22 +219,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         _connectionManager.SetMockMode(UseMockService);
         UpdateConnectionStatus();
-    }
-
-    [RelayCommand]
-    private async Task TestConnectionAsync()
-    {
-        if (!IsConnected) return;
-
-        try
-        {
-            var testValue = await _rmp.GetGlobalValueAsync<string>("SystemStatus");
-            LastError = $"Test successful. SystemStatus: {testValue ?? "N/A"}";
-        }
-        catch (Exception ex)
-        {
-            LastError = $"Test failed: {ex.Message}";
-        }
     }
 
     private void UpdateConnectionStatus()
@@ -317,20 +311,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // ===== POLL =====
     private async void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
     {
-        if (!IsConnected) return;
+        if (!IsConnected) 
+            return;
+
         try
         {
-            var globals = await _rmp.GetGlobalValuesAsync();
-            if (globals.TryGetValue("BallX", out var ballX) && ballX is double)
-                BallXPosition = (double)ballX;
-            if (globals.TryGetValue("BallY", out var ballY) && ballY is double)
-                BallYPosition = (double)ballY;
-            if (globals.TryGetValue("BallVelocityX", out var velX) && velX is double)
-                BallVelocityX = (double)velX;
-            if (globals.TryGetValue("BallVelocityY", out var velY) && velY is double)
-                BallVelocityY = (double)velY;
-            if (globals.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
-                DetectionConfidence = (double)confidence;
+            if (!IsSimulatingBallPosition)
+            {
+                var globals = await _rmp.GetGlobalValuesAsync();
+                if (globals.TryGetValue("BallX", out var ballX) && ballX is double)
+                    BallXPosition = (double)ballX;
+                if (globals.TryGetValue("BallY", out var ballY) && ballY is double)
+                    BallYPosition = (double)ballY;
+                if (globals.TryGetValue("BallVelocityX", out var velX) && velX is double)
+                    BallVelocityX = (double)velX;
+                if (globals.TryGetValue("BallVelocityY", out var velY) && velY is double)
+                    BallVelocityY = (double)velY;
+                if (globals.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
+                    DetectionConfidence = (double)confidence;
+            }
+            else
+            {
+
+            }
             // Add more global values as needed
         }
         catch { }

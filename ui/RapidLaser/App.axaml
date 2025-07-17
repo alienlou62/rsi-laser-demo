@@ -45,5 +45,12 @@
         <!--  Material Icons  -->
         <materialIcons:MaterialIconStyles />
 
+        <!--  Custom TextBox style  -->
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{StaticResource MainContentColor}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
+            <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+        </Style>
+
     </Application.Styles>
 </Application>

@@ -2,204 +2,44 @@
     x:Class="RapidLaser.Views.MainView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:converters="clr-namespace:RapidLaser.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+    xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="clr-namespace:RapidLaser.ViewModels"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    d:DesignHeight="1000"
+    d:DesignWidth="1500"
     x:DataType="vm:MainViewModel"
     mc:Ignorable="d">
     <Design.DataContext>
         <vm:MainViewModel />
     </Design.DataContext>
 
+    <ContentControl Classes.is-connected="{Binding IsConnected, Mode=TwoWay}" Classes.is-connected-n="{Binding !IsConnected, Mode=TwoWay}">
 
-    <Grid Margin="12">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="280" />
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="60" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+        <Grid Margin="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="280" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="60" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <!--  Top bar card with drag region  -->
-        <Border
-            Grid.Row="0"
-            Grid.ColumnSpan="3"
-            Margin="0,0,0,12"
-            Padding="4"
-            Background="{StaticResource TopBarBrush}"
-            BorderBrush="{StaticResource BorderBrush}"
-            BorderThickness="1"
-            CornerRadius="{StaticResource StandardCornerRadius}"
-            PointerPressed="OnTitleBarPointerPressed">
-            <Border.Effect>
-                <DropShadowEffect
-                    BlurRadius="8"
-                    OffsetX="2"
-                    OffsetY="2"
-                    Opacity="0.3"
-                    Color="Black" />
-            </Border.Effect>
-
-            <Grid Margin="6,0,0,0">
-                <!--  Left side content  -->
-                <StackPanel
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    Orientation="Horizontal"
-                    Spacing="16">
-                    <materialIcons:MaterialIcon
-                        Width="25"
-                        Height="25"
-                        Margin="0,0,-10,0"
-                        VerticalAlignment="Center"
-                        Foreground="{StaticResource TextBrush}"
-                        Kind="MotionOutline" />
-                    <TextBlock
-                        Margin="0,-1,0,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource TextBrush}"
-                        Text="RapidLaser" />
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="14"
-                        Foreground="{StaticResource SubtleTextBrush}"
-                        Text="Real-time Laser Ball Tracker" />
-                </StackPanel>
-
-                <!--  Center drag area  -->
-                <Border
-                    Margin="200,0,200,0"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch"
-                    Background="Transparent" />
-
-                <!--  Right side content with status and custom window controls  -->
-                <StackPanel
-                    Margin="0,0,0,0"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Orientation="Horizontal"
-                    Spacing="12">
-                    <!--  System Status Indicator  -->
-                    <Border
-                        Padding="8,4"
-                        Background="#4CAF50"
-                        CornerRadius="3">
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            FontSize="10"
-                            FontWeight="Bold"
-                            Foreground="White"
-                            Text="{Binding SystemStatus}" />
-                    </Border>
-
-                    <!--  FPS Counter  -->
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        Foreground="{StaticResource SubtleTextBrush}"
-                        Text="{Binding FrameRate, StringFormat={}{0:F0} FPS}" />
-
-                    <!--  Custom Window Controls  -->
-                    <StackPanel
-                        Margin="16,0,0,0"
-                        VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                        Spacing="0">
-                        <!--  Minimize Button  -->
-                        <Button
-                            Name="MinimizeButton"
-                            Classes="theme-subtle"
-                            Width="32"
-                            Height="32"
-                            Padding="6"
-                            VerticalAlignment="Center"
-                            Command="{Binding MinimizeWindowCommand}"
-                            Foreground="{StaticResource SubtleTextBrush}">
-                            <Button.Content>
-                                <Path
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Data="M 0,0 L 8,0"
-                                    Stroke="{Binding $parent[Button].Foreground}"
-                                    StrokeThickness="1" />
-                            </Button.Content>
-                        </Button>
-
-                        <!--  Maximize/Restore Button  -->
-                        <Button
-                            Name="MaximizeButton"
-                            Classes="theme-subtle"
-                            Width="32"
-                            Height="32"
-                            Padding="6"
-                            VerticalAlignment="Center"
-                            Command="{Binding MaximizeWindowCommand}"
-                            Foreground="{StaticResource SubtleTextBrush}">
-                            <Button.Content>
-                                <Path
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Data="M 0,0 L 8,0 L 8,8 L 0,8 Z"
-                                    Fill="Transparent"
-                                    Stroke="{Binding $parent[Button].Foreground}"
-                                    StrokeThickness="1" />
-                            </Button.Content>
-                        </Button>
-
-                        <!--  Close Button  -->
-                        <Button
-                            Name="CloseButton"
-                            Classes="theme-subtle"
-                            Width="32"
-                            Height="32"
-                            Padding="6"
-                            VerticalAlignment="Center"
-                            Command="{Binding CloseWindowCommand}"
-                            Foreground="{StaticResource SubtleTextBrush}">
-                            <Button.Content>
-                                <Path
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Data="M 0,0 L 8,8 M 8,0 L 0,8"
-                                    Stroke="{Binding $parent[Button].Foreground}"
-                                    StrokeThickness="1" />
-                            </Button.Content>
-                            <Button.Styles>
-                                <Style Selector="Button:pointerover">
-                                    <Setter Property="Foreground" Value="#E81123" />
-                                </Style>
-                            </Button.Styles>
-                        </Button>
-                    </StackPanel>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!--  Left sidebar - stacked cards  -->
-        <StackPanel
-            Grid.Row="1"
-            Grid.Column="0"
-            Margin="0,0,12,0"
-            VerticalAlignment="Top"
-            Spacing="12">
-
-            <!--  gRPC Connection Card  -->
+            <!--  Top bar card with drag region  -->
             <Border
-                Padding="{StaticResource CardPadding}"
-                Background="{StaticResource SidebarBrush}"
+                Grid.Row="0"
+                Grid.ColumnSpan="3"
+                Margin="0,0,0,12"
+                Padding="4"
+                Background="{StaticResource TopBarBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="1"
-                CornerRadius="{StaticResource StandardCornerRadius}">
+                CornerRadius="{StaticResource StandardCornerRadius}"
+                PointerPressed="OnTitleBarPointerPressed">
                 <Border.Effect>
                     <DropShadowEffect
                         BlurRadius="8"
@@ -208,172 +48,544 @@
                         Opacity="0.3"
                         Color="Black" />
                 </Border.Effect>
-                <StackPanel>
-                    <Grid Margin="0,0,0,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
 
+                <Grid Margin="6,0,0,0">
+                    <!--  Left side content  -->
+                    <StackPanel
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="16">
+                        <icons:MaterialIcon
+                            Width="25"
+                            Height="25"
+                            Margin="0,0,-10,0"
+                            VerticalAlignment="Center"
+                            Foreground="{StaticResource TextBrush}"
+                            Kind="MotionOutline" />
                         <TextBlock
-                            Grid.Column="0"
-                            FontSize="14"
+                            Margin="0,-1,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="16"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="RapidServer" />
-
-                        <materialIcons:MaterialIcon
-                            Grid.Column="1"
-                            Width="20"
-                            Height="20"
-                            VerticalAlignment="Center"
-                            Foreground="{Binding IsConnected, Converter={x:Static converters:BoolConverters.ConnectedToColorConverter}}"
-                            Kind="Circle" />
-                    </Grid>
-
-                    <!--  Mock Service Toggle  -->
-                    <StackPanel
-                        Margin="0,0,0,8"
-                        IsVisible="{Binding !IsConnected}"
-                        Orientation="Horizontal"
-                        Spacing="4">
-                        <CheckBox
-                            Classes="size-xs"
-                            Content="Use mock server"
-                            IsChecked="{Binding UseMockService}" />
+                            Text="RapidLaser" />
                         <TextBlock
                             VerticalAlignment="Center"
-                            FontSize="11"
-                            Text="(for testing)" />
+                            FontSize="14"
+                            Foreground="{StaticResource SubtleTextBrush}"
+                            Text="Real-time Laser Ball Tracker" />
                     </StackPanel>
 
-                    <!--  Server Configuration (disabled when using mock or when connected)  -->
-                    <StackPanel IsEnabled="{Binding ConnectionInputsEnabled}" Spacing="8">
+                    <!--  Center drag area  -->
+                    <Border
+                        Margin="200,0,200,0"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Background="Transparent" />
 
-                        <!--  IP Address  -->
-                        <TextBox
-                            Padding="8,6"
-                            Background="{StaticResource MainContentColor}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            Foreground="{StaticResource TextBrush}"
-                            IsEnabled="{Binding ConnectionInputsEnabled}"
-                            Text="{Binding IpAddress}"
-                            UseFloatingWatermark="True"
-                            Watermark="IP Address" />
+                    <!--  Right side content with status and custom window controls  -->
+                    <StackPanel
+                        Margin="0,0,0,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="12">
+                        <!--  System Status Indicator  -->
+                        <Border
+                            Padding="8,4"
+                            Background="#4CAF50"
+                            CornerRadius="3">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="10"
+                                FontWeight="Bold"
+                                Foreground="White"
+                                Text="{Binding SystemStatus}" />
+                        </Border>
 
-                        <!--  Port  -->
-                        <TextBox
-                            Padding="8,6"
-                            Background="{StaticResource MainContentColor}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            Foreground="{StaticResource TextBrush}"
-                            IsEnabled="{Binding ConnectionInputsEnabled}"
-                            Text="{Binding Port}"
-                            UseFloatingWatermark="True"
-                            Watermark="Port" />
+                        <!--  FPS Counter  -->
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{StaticResource SubtleTextBrush}"
+                            Text="{Binding FrameRate, StringFormat={}{0:F0} FPS}" />
 
+                        <!--  Custom Window Controls  -->
+                        <StackPanel
+                            Margin="16,0,0,0"
+                            VerticalAlignment="Center"
+                            Orientation="Horizontal"
+                            Spacing="0">
+                            <!--  Minimize Button  -->
+                            <Button
+                                Name="MinimizeButton"
+                                Classes="theme-subtle"
+                                Width="32"
+                                Height="32"
+                                Padding="6"
+                                VerticalAlignment="Center"
+                                Command="{Binding MinimizeWindowCommand}"
+                                Foreground="{StaticResource SubtleTextBrush}">
+                                <Button.Content>
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M 0,0 L 8,0"
+                                        Stroke="{Binding $parent[Button].Foreground}"
+                                        StrokeThickness="1" />
+                                </Button.Content>
+                            </Button>
+
+                            <!--  Maximize/Restore Button  -->
+                            <Button
+                                Name="MaximizeButton"
+                                Classes="theme-subtle"
+                                Width="32"
+                                Height="32"
+                                Padding="6"
+                                VerticalAlignment="Center"
+                                Command="{Binding MaximizeWindowCommand}"
+                                Foreground="{StaticResource SubtleTextBrush}">
+                                <Button.Content>
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M 0,0 L 8,0 L 8,8 L 0,8 Z"
+                                        Fill="Transparent"
+                                        Stroke="{Binding $parent[Button].Foreground}"
+                                        StrokeThickness="1" />
+                                </Button.Content>
+                            </Button>
+
+                            <!--  Close Button  -->
+                            <Button
+                                Name="CloseButton"
+                                Classes="theme-subtle"
+                                Width="32"
+                                Height="32"
+                                Padding="6"
+                                VerticalAlignment="Center"
+                                Command="{Binding CloseWindowCommand}"
+                                Foreground="{StaticResource SubtleTextBrush}">
+                                <Button.Content>
+                                    <Path
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Data="M 0,0 L 8,8 M 8,0 L 0,8"
+                                        Stroke="{Binding $parent[Button].Foreground}"
+                                        StrokeThickness="1" />
+                                </Button.Content>
+                                <Button.Styles>
+                                    <Style Selector="Button:pointerover">
+                                        <Setter Property="Foreground" Value="#E81123" />
+                                    </Style>
+                                </Button.Styles>
+                            </Button>
+                        </StackPanel>
                     </StackPanel>
+                </Grid>
+            </Border>
 
-                    <!--  Connection Buttons  -->
-                    <StackPanel Margin="0,8,0,0" Spacing="8">
-                        <Button
-                            Classes="theme-solid success"
-                            HorizontalAlignment="Stretch"
-                            Command="{Binding ConnectCommand}"
-                            Content="Connect"
-                            IsEnabled="{Binding !IsConnecting}"
-                            IsVisible="{Binding !IsConnected}" />
+            <!--  Left sidebar - stacked cards  -->
+            <StackPanel
+                Grid.Row="1"
+                Grid.Column="0"
+                Margin="0,0,12,0"
+                VerticalAlignment="Top"
+                Spacing="12">
+
+                <!--  gRPC Connection Card  -->
+                <Border
+                    Padding="{StaticResource CardPadding}"
+                    Background="{StaticResource SidebarBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource StandardCornerRadius}">
+                    <Border.Effect>
+                        <DropShadowEffect
+                            BlurRadius="8"
+                            OffsetX="2"
+                            OffsetY="2"
+                            Opacity="0.3"
+                            Color="Black" />
+                    </Border.Effect>
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextBrush}"
+                                Text="RapidServer" />
+
+                            <icons:MaterialIcon
+                                Grid.Column="1"
+                                Width="20"
+                                Height="20"
+                                VerticalAlignment="Center">
+                                <icons:MaterialIcon.Styles>
+                                    <Style Selector="ContentControl.is-connected icons|MaterialIcon">
+                                        <Setter Property="Kind" Value="LanCheck" />
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                    </Style>
+                                    <Style Selector="ContentControl:not(.is-connected) icons|MaterialIcon">
+                                        <Setter Property="Kind" Value="LanDisconnect" />
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                    </Style>
+                                </icons:MaterialIcon.Styles>
+                            </icons:MaterialIcon>
+                        </Grid>
+
+                        <!--  Mock Service Toggle  -->
+                        <StackPanel
+                            Margin="0,0,0,8"
+                            IsVisible="{Binding !IsConnected}"
+                            Orientation="Horizontal"
+                            Spacing="4">
+                            <CheckBox
+                                Classes="size-xs"
+                                Content="Use mock server"
+                                IsChecked="{Binding UseMockService}" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Text="(for testing)" />
+                        </StackPanel>
+
+                        <!--  Server Configuration (disabled when using mock or when connected)  -->
+                        <StackPanel IsEnabled="{Binding ConnectionInputsEnabled}" Spacing="8">
+
+                            <!--  IP Address  -->
+                            <TextBox
+                                IsEnabled="{Binding ConnectionInputsEnabled}"
+                                Text="{Binding IpAddress}"
+                                UseFloatingWatermark="True"
+                                Watermark="IP Address" />
+
+                            <!--  Port  -->
+                            <TextBox
+                                IsEnabled="{Binding ConnectionInputsEnabled}"
+                                Text="{Binding Port}"
+                                UseFloatingWatermark="True"
+                                Watermark="Port" />
+
+                            <!--  Connection Buttons  -->
+                            <Button
+                                Classes="theme-solid success"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding ConnectCommand}"
+                                Content="Connect"
+                                IsEnabled="{Binding !IsConnecting}"
+                                IsVisible="{Binding !IsConnected}" />
+
+                        </StackPanel>
 
                         <Button
-                            Classes="theme-soft danger"
+                            Classes="theme-subtle danger"
+                            Margin="0,8,0,0"
                             HorizontalAlignment="Stretch"
                             Command="{Binding DisconnectCommand}"
                             Content="Disconnect"
                             IsVisible="{Binding IsConnected}" />
 
-                        <Button
-                            Classes="theme-soft"
-                            HorizontalAlignment="Stretch"
-                            Command="{Binding TestConnectionCommand}"
-                            Content="Test Connection"
-                            IsVisible="{Binding IsConnected}" />
+                        <!--  Error Display  -->
+                        <TextBlock
+                            Margin="0,8,0,0"
+                            Foreground="#F44336"
+                            IsVisible="{Binding LastError, Converter={x:Static converters:BoolConverters.StringNotEmptyToBoolConverter}}"
+                            Text="{Binding LastError}"
+                            TextWrapping="Wrap" />
                     </StackPanel>
+                </Border>
 
-                    <!--  Error Display  -->
-                    <TextBlock
-                        Margin="0,8,0,0"
-                        Foreground="#F44336"
-                        IsVisible="{Binding LastError, Converter={x:Static converters:BoolConverters.StringNotEmptyToBoolConverter}}"
-                        Text="{Binding LastError}"
-                        TextWrapping="Wrap" />
-                </StackPanel>
-            </Border>
+                <!--  Actions Card  -->
+                <Border
+                    Padding="{StaticResource CardPadding}"
+                    Background="{StaticResource SidebarBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource StandardCornerRadius}"
+                    IsEnabled="{Binding IsConnected}">
+                    <Border.Effect>
+                        <DropShadowEffect
+                            BlurRadius="8"
+                            OffsetX="2"
+                            OffsetY="2"
+                            Opacity="0.3"
+                            Color="Black" />
+                    </Border.Effect>
+                    <StackPanel Spacing="16">
+                        <!--  Cemo Control  -->
+                        <StackPanel>
+                            <TextBlock
+                                Margin="0,0,0,8"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextBrush}"
+                                Text="Program (RT Task)" />
+                            <UniformGrid ColumnSpacing="8" Columns="3">
 
-            <!--  Actions Card  -->
-            <Border
-                Padding="{StaticResource CardPadding}"
-                Background="{StaticResource SidebarBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="{StaticResource StandardCornerRadius}"
-                IsEnabled="{Binding IsConnected}">
-                <Border.Effect>
-                    <DropShadowEffect
-                        BlurRadius="8"
-                        OffsetX="2"
-                        OffsetY="2"
-                        Opacity="0.3"
-                        Color="Black" />
-                </Border.Effect>
-                <StackPanel Spacing="16">
-                    <!--  Cemo Control  -->
+                                <!--  start  -->
+                                <Button
+                                    Classes="theme-solid success"
+                                    HorizontalAlignment="Stretch"
+                                    Command="{Binding StartTasksCommand}"
+                                    IsVisible="{Binding !IsProgramRunning}">
+                                    <icons:MaterialIcon Kind="Play" />
+                                </Button>
+
+                                <!--  kill  -->
+                                <Button
+                                    Classes="theme-solid danger"
+                                    HorizontalAlignment="Stretch"
+                                    Command="{Binding ShutdownTasksCommand}"
+                                    IsVisible="{Binding IsProgramRunning}">
+                                    <icons:MaterialIcon Kind="Skull" />
+                                </Button>
+
+                                <Panel IsVisible="{Binding IsProgramRunning}">
+
+                                    <!--  pause  -->
+                                    <Button
+                                        Classes="theme-soft accent"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding ToggleMotionPauseCommand}"
+                                        IsVisible="{Binding !IsProgramPaused}">
+                                        <icons:MaterialIcon Kind="Pause" />
+                                    </Button>
+
+                                    <!--  resume  -->
+                                    <Button
+                                        Classes="theme-soft success"
+                                        HorizontalAlignment="Stretch"
+                                        Command="{Binding ToggleMotionPauseCommand}"
+                                        IsVisible="{Binding IsProgramPaused}">
+                                        <icons:MaterialIcon Kind="PlayOutline" />
+                                    </Button>
+
+                                </Panel>
+
+                            </UniformGrid>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!--  Status Card  -->
+                <Border
+                    Padding="{StaticResource CardPadding}"
+                    Background="{StaticResource SidebarBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource StandardCornerRadius}">
+                    <Border.Effect>
+                        <DropShadowEffect
+                            BlurRadius="8"
+                            OffsetX="2"
+                            OffsetY="2"
+                            Opacity="0.3"
+                            Color="Black" />
+                    </Border.Effect>
                     <StackPanel>
                         <TextBlock
-                            Margin="0,0,0,8"
+                            Margin="0,0,0,12"
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="Program (RT Task)" />
-                        <UniformGrid ColumnSpacing="8" Columns="3">
-
-                            <Button
-                                Classes="theme-solid success"
-                                HorizontalAlignment="Stretch"
-                                Command="{Binding StartTasksCommand}">
-                                <materialIcons:MaterialIcon Kind="Play" />
-                            </Button>
-
-                            <Button
-                                Classes="theme-solid danger"
-                                HorizontalAlignment="Stretch"
-                                Background="Transparent"
-                                Command="{Binding ShutdownTasksCommand}">
-                                <materialIcons:MaterialIcon Kind="Skull" />
-                            </Button>
-
-                            <Button
-                                Classes="theme-soft warning"
-                                HorizontalAlignment="Stretch"
-                                Command="{Binding ToggleMotionPauseCommand}"
-                                IsVisible="{Binding !MotionPaused}">
-                                <materialIcons:MaterialIcon Kind="Pause" />
-                            </Button>
-                            <Button
-                                Classes="theme-soft success"
-                                HorizontalAlignment="Stretch"
-                                Command="{Binding ToggleMotionPauseCommand}"
-                                IsVisible="{Binding MotionPaused}">
-                                <materialIcons:MaterialIcon Kind="PlayOutline" />
-                            </Button>
-
-                        </UniformGrid>
+                            Text="Task Status" />
+                        <Border
+                            Padding="12"
+                            Background="#333333"
+                            CornerRadius="6">
+                            <StackPanel Spacing="8">
+                                <StackPanel Spacing="4">
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="RT Task Manager" />
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Foreground="#4CAF50"
+                                        Text="Status: Running" />
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Ball Detection Task" />
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Foreground="#4CAF50"
+                                        Text="Status: Active" />
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Motion Task" />
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Foreground="#4CAF50"
+                                        Text="Status: Active" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </StackPanel>
-            </Border>
+                </Border>
+            </StackPanel>
 
-            <!--  Status Card  -->
+            <!--  Main content area - no card wrapper  -->
+            <Grid
+                Grid.Row="1"
+                Grid.Column="1"
+                Margin="0,0,12,0"
+                Background="Transparent">
+                <!--  Image display area  -->
+                <Border
+                    Grid.Column="0"
+                    Background="#000000"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="2"
+                    CornerRadius="{StaticResource StandardCornerRadius}">
+                    <Grid ColumnDefinitions="* *">
+                        <!--  Camera feed placeholder (640x480 aspect ratio)  -->
+                        <Border Grid.Column="0" Margin="8">
+                            <Grid>
+                                <!--  Simulated camera feed background  -->
+                                <Rectangle
+                                    Width="640"
+                                    Height="480"
+                                    Fill="#2A2A2A" />
+
+                                <!--  Ball detection circle overlay  -->
+                                <Canvas Width="640" Height="480">
+                                    <!--  Detected ball circle - bound to actual ball position  -->
+                                    <Ellipse
+                                        Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
+                                        Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
+                                        Width="40"
+                                        Height="40"
+                                        Fill="Transparent"
+                                        Stroke="#00FF00"
+                                        StrokeThickness="3" />
+
+                                    <!--  Center crosshair  -->
+                                    <Line
+                                        Stroke="#333333"
+                                        StrokeDashArray="5,5"
+                                        StrokeThickness="1"
+                                        StartPoint="0,240"
+                                        EndPoint="640,240" />
+                                    <Line
+                                        Stroke="#333333"
+                                        StrokeDashArray="5,5"
+                                        StrokeThickness="1"
+                                        StartPoint="320,0"
+                                        EndPoint="320,480" />
+                                </Canvas>
+
+                                <!--  Overlay info  -->
+                                <Border
+                                    Margin="12"
+                                    Padding="8"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Background="#80000000">
+                                    <StackPanel>
+                                        <TextBlock
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="#00FF00"
+                                            Text="CAMERA FEED" />
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <TextBlock
+                                                FontSize="10"
+                                                Foreground="{StaticResource TextBrush}"
+                                                Text="Ball Detected: X=" />
+                                            <TextBlock
+                                                FontSize="10"
+                                                Foreground="{StaticResource TextBrush}"
+                                                Text="{Binding BallXPosition, StringFormat={}{0:F0}}" />
+                                            <TextBlock
+                                                FontSize="10"
+                                                Foreground="{StaticResource TextBrush}"
+                                                Text=", Y=" />
+                                            <TextBlock
+                                                FontSize="10"
+                                                Foreground="{StaticResource TextBrush}"
+                                                Text="{Binding BallYPosition, StringFormat={}{0:F0}}" />
+                                        </StackPanel>
+                                        <TextBlock
+                                            FontSize="10"
+                                            Foreground="{StaticResource TextBrush}"
+                                            Text="{Binding DetectionConfidence, StringFormat=Confidence: {0:F0}%}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!--  Image mask placeholder (640x480 aspect ratio, black and white)  -->
+                        <Border Grid.Column="1" Margin="0,8,8,8">
+                            <Grid>
+                                <!--  Simulated image mask  -->
+                                <Rectangle
+                                    Width="640"
+                                    Height="480"
+                                    Fill="#000000" />
+
+                                <!--  White regions representing detected areas  -->
+                                <Canvas Width="640" Height="480">
+                                    <!--  Ball mask region - bound to actual ball position  -->
+                                    <Ellipse
+                                        Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
+                                        Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
+                                        Width="40"
+                                        Height="40"
+                                        Fill="#FFFFFF" />
+                                </Canvas>
+
+                                <!--  Overlay info  -->
+                                <Border
+                                    Margin="12"
+                                    Padding="8"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"
+                                    Background="#80000000">
+                                    <StackPanel>
+                                        <TextBlock
+                                            FontSize="12"
+                                            FontWeight="Bold"
+                                            Foreground="#FFFFFF"
+                                            Text="IMAGE MASK" />
+                                        <TextBlock
+                                            FontSize="10"
+                                            Foreground="{StaticResource TextBrush}"
+                                            Text="{Binding BinaryThreshold, StringFormat=Binary Threshold: {0}}" />
+                                        <TextBlock
+                                            FontSize="10"
+                                            Foreground="{StaticResource TextBrush}"
+                                            Text="{Binding ObjectsDetected, StringFormat=Objects: {0}}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!--  Right sidebar card  -->
             <Border
+                Grid.Row="1"
+                Grid.Column="2"
+                Margin="0"
                 Padding="{StaticResource CardPadding}"
+                VerticalAlignment="Top"
                 Background="{StaticResource SidebarBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="1"
@@ -386,434 +598,229 @@
                         Opacity="0.3"
                         Color="Black" />
                 </Border.Effect>
+
                 <StackPanel>
-                    <TextBlock
-                        Margin="0,0,0,12"
-                        FontSize="14"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource TextBrush}"
-                        Text="Task Status" />
-                    <Border
-                        Padding="12"
-                        Background="#333333"
-                        CornerRadius="6">
-                        <StackPanel Spacing="8">
-                            <StackPanel Spacing="4">
-                                <TextBlock
-                                    FontSize="12"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="RT Task Manager" />
-                                <TextBlock
-                                    FontWeight="SemiBold"
-                                    Foreground="#4CAF50"
-                                    Text="Status: Running" />
+                    <!--  Global Values from gRPC - temporarily commented out  -->
+                    <!-- <views:GlobalValuesView DataContext="{Binding GlobalValues}"/> -->
+
+                    <!--  RTTaskManager Status  -->
+                    <StackPanel>
+                        <TextBlock
+                            Margin="0,0,0,12"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource TextBrush}"
+                            Text="RTTaskManager Status" />
+                        <Border
+                            Padding="12"
+                            Background="#333333"
+                            CornerRadius="6">
+                            <StackPanel Spacing="8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="12"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Manager State" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontWeight="SemiBold"
+                                        Foreground="#4CAF50"
+                                        Text="{Binding ManagerState}" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="12"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Tasks Active" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontWeight="SemiBold"
+                                        Foreground="#4CAF50"
+                                        Text="{Binding TasksActive}" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="12"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="CPU Usage" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="{Binding CpuUsage, StringFormat={}{0:F0}%}" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="12"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Memory Usage" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="{Binding MemoryUsage, StringFormat={}{0:F0} MB}" />
+                                </Grid>
                             </StackPanel>
-                            <StackPanel Spacing="4">
+                        </Border>
+                    </StackPanel>
+
+                    <!--  Individual Task Status  -->
+                    <StackPanel Margin="0,20,0,0">
+                        <TextBlock
+                            Margin="0,0,0,12"
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource TextBrush}"
+                            Text="Task Details" />
+
+                        <!--  Ball Detection Task  -->
+                        <Border
+                            Margin="0,0,0,8"
+                            Padding="12"
+                            Background="#333333"
+                            CornerRadius="6">
+                            <StackPanel Spacing="6">
                                 <TextBlock
-                                    FontSize="12"
-                                    Foreground="{StaticResource SubtleTextBrush}"
+                                    FontSize="13"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextBrush}"
                                     Text="Ball Detection Task" />
-                                <TextBlock
-                                    FontWeight="SemiBold"
-                                    Foreground="#4CAF50"
-                                    Text="Status: Active" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="11"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Status" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="11"
+                                        Foreground="#4CAF50"
+                                        Text="{Binding BallDetectionStatus}" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="11"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Loop Time" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="11"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="{Binding BallDetectionLoopTime, StringFormat={}{0:F0}ms}" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="11"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Iterations" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="11"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="{Binding BallDetectionIterations, StringFormat=N0}" />
+                                </Grid>
                             </StackPanel>
-                            <StackPanel Spacing="4">
+                        </Border>
+
+                        <!--  Motion Task  -->
+                        <Border
+                            Padding="12"
+                            Background="#333333"
+                            CornerRadius="6">
+                            <StackPanel Spacing="6">
                                 <TextBlock
-                                    FontSize="12"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Motion Task" />
-                                <TextBlock
+                                    FontSize="13"
                                     FontWeight="SemiBold"
-                                    Foreground="#4CAF50"
-                                    Text="Status: Active" />
+                                    Foreground="{StaticResource TextBrush}"
+                                    Text="Motion Control Task" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="11"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Status" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="11"
+                                        Foreground="#4CAF50"
+                                        Text="{Binding MotionControlStatus}" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="11"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Motion Paused" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="11"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="{Binding IsProgramPausedDisplay}" />
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="11"
+                                        Foreground="{StaticResource SubtleTextBrush}"
+                                        Text="Loop Time" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        FontSize="11"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="{Binding MotionControlLoopTime, StringFormat={}{0:F0}ms}" />
+                                </Grid>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
-            </Border>
-        </StackPanel>
-
-        <!--  Main content area - no card wrapper  -->
-        <Grid
-            Grid.Row="1"
-            Grid.Column="1"
-            Margin="0,0,12,0"
-            Background="Transparent">
-            <!--  Image display area  -->
-            <Border
-                Grid.Column="0"
-                Background="#000000"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="2"
-                CornerRadius="{StaticResource StandardCornerRadius}">
-                <Grid ColumnDefinitions="* *">
-                    <!--  Camera feed placeholder (640x480 aspect ratio)  -->
-                    <Border Grid.Column="0" Margin="8">
-                        <Grid>
-                            <!--  Simulated camera feed background  -->
-                            <Rectangle
-                                Width="640"
-                                Height="480"
-                                Fill="#2A2A2A" />
-
-                            <!--  Ball detection circle overlay  -->
-                            <Canvas Width="640" Height="480">
-                                <!--  Detected ball circle - bound to actual ball position  -->
-                                <Ellipse
-                                    Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
-                                    Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
-                                    Width="40"
-                                    Height="40"
-                                    Fill="Transparent"
-                                    Stroke="#00FF00"
-                                    StrokeThickness="3" />
-
-                                <!--  Center crosshair  -->
-                                <Line
-                                    Stroke="#333333"
-                                    StrokeDashArray="5,5"
-                                    StrokeThickness="1"
-                                    StartPoint="0,240"
-                                    EndPoint="640,240" />
-                                <Line
-                                    Stroke="#333333"
-                                    StrokeDashArray="5,5"
-                                    StrokeThickness="1"
-                                    StartPoint="320,0"
-                                    EndPoint="320,480" />
-                            </Canvas>
-
-                            <!--  Overlay info  -->
-                            <Border
-                                Margin="12"
-                                Padding="8"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Top"
-                                Background="#80000000">
-                                <StackPanel>
-                                    <TextBlock
-                                        FontSize="12"
-                                        FontWeight="Bold"
-                                        Foreground="#00FF00"
-                                        Text="CAMERA FEED" />
-                                    <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{StaticResource TextBrush}"
-                                            Text="Ball Detected: X=" />
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{StaticResource TextBrush}"
-                                            Text="{Binding BallXPosition, StringFormat={}{0:F0}}" />
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{StaticResource TextBrush}"
-                                            Text=", Y=" />
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{StaticResource TextBrush}"
-                                            Text="{Binding BallYPosition, StringFormat={}{0:F0}}" />
-                                    </StackPanel>
-                                    <TextBlock
-                                        FontSize="10"
-                                        Foreground="{StaticResource TextBrush}"
-                                        Text="{Binding DetectionConfidence, StringFormat=Confidence: {0:F0}%}" />
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </Border>
-
-                    <!--  Image mask placeholder (640x480 aspect ratio, black and white)  -->
-                    <Border Grid.Column="1" Margin="0,8,8,8">
-                        <Grid>
-                            <!--  Simulated image mask  -->
-                            <Rectangle
-                                Width="640"
-                                Height="480"
-                                Fill="#000000" />
-
-                            <!--  White regions representing detected areas  -->
-                            <Canvas Width="640" Height="480">
-                                <!--  Ball mask region - bound to actual ball position  -->
-                                <Ellipse
-                                    Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
-                                    Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
-                                    Width="40"
-                                    Height="40"
-                                    Fill="#FFFFFF" />
-                            </Canvas>
-
-                            <!--  Overlay info  -->
-                            <Border
-                                Margin="12"
-                                Padding="8"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Top"
-                                Background="#80000000">
-                                <StackPanel>
-                                    <TextBlock
-                                        FontSize="12"
-                                        FontWeight="Bold"
-                                        Foreground="#FFFFFF"
-                                        Text="IMAGE MASK" />
-                                    <TextBlock
-                                        FontSize="10"
-                                        Foreground="{StaticResource TextBrush}"
-                                        Text="{Binding BinaryThreshold, StringFormat=Binary Threshold: {0}}" />
-                                    <TextBlock
-                                        FontSize="10"
-                                        Foreground="{StaticResource TextBrush}"
-                                        Text="{Binding ObjectsDetected, StringFormat=Objects: {0}}" />
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </Border>
-
-                </Grid>
             </Border>
         </Grid>
 
-        <!--  Right sidebar card  -->
-        <Border
-            Grid.Row="1"
-            Grid.Column="2"
-            Margin="0"
-            Padding="{StaticResource CardPadding}"
-            VerticalAlignment="Top"
-            Background="{StaticResource SidebarBrush}"
-            BorderBrush="{StaticResource BorderBrush}"
-            BorderThickness="1"
-            CornerRadius="{StaticResource StandardCornerRadius}">
-            <Border.Effect>
-                <DropShadowEffect
-                    BlurRadius="8"
-                    OffsetX="2"
-                    OffsetY="2"
-                    Opacity="0.3"
-                    Color="Black" />
-            </Border.Effect>
-
-            <StackPanel>
-                <!--  Global Values from gRPC - temporarily commented out  -->
-                <!-- <views:GlobalValuesView DataContext="{Binding GlobalValues}"/> -->
-
-                <!--  RTTaskManager Status  -->
-                <StackPanel>
-                    <TextBlock
-                        Margin="0,0,0,12"
-                        FontSize="14"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource TextBrush}"
-                        Text="RTTaskManager Status" />
-                    <Border
-                        Padding="12"
-                        Background="#333333"
-                        CornerRadius="6">
-                        <StackPanel Spacing="8">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="12"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Manager State" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontWeight="SemiBold"
-                                    Foreground="#4CAF50"
-                                    Text="{Binding ManagerState}" />
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="12"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Tasks Active" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontWeight="SemiBold"
-                                    Foreground="#4CAF50"
-                                    Text="{Binding TasksActive}" />
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="12"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="CPU Usage" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontWeight="SemiBold"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="{Binding CpuUsage, StringFormat={}{0:F0}%}" />
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="12"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Memory Usage" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontWeight="SemiBold"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="{Binding MemoryUsage, StringFormat={}{0:F0} MB}" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-
-                <!--  Individual Task Status  -->
-                <StackPanel Margin="0,20,0,0">
-                    <TextBlock
-                        Margin="0,0,0,12"
-                        FontSize="14"
-                        FontWeight="SemiBold"
-                        Foreground="{StaticResource TextBrush}"
-                        Text="Task Details" />
-
-                    <!--  Ball Detection Task  -->
-                    <Border
-                        Margin="0,0,0,8"
-                        Padding="12"
-                        Background="#333333"
-                        CornerRadius="6">
-                        <StackPanel Spacing="6">
-                            <TextBlock
-                                FontSize="13"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="Ball Detection Task" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="11"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Status" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontSize="11"
-                                    Foreground="#4CAF50"
-                                    Text="{Binding BallDetectionStatus}" />
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="11"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Loop Time" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontSize="11"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="{Binding BallDetectionLoopTime, StringFormat={}{0:F0}ms}" />
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="11"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Iterations" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontSize="11"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="{Binding BallDetectionIterations, StringFormat=N0}" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <!--  Motion Task  -->
-                    <Border
-                        Padding="12"
-                        Background="#333333"
-                        CornerRadius="6">
-                        <StackPanel Spacing="6">
-                            <TextBlock
-                                FontSize="13"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="Motion Control Task" />
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="11"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Status" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontSize="11"
-                                    Foreground="#4CAF50"
-                                    Text="{Binding MotionControlStatus}" />
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="11"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Motion Paused" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontSize="11"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="{Binding MotionPausedDisplay}" />
-                            </Grid>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="11"
-                                    Foreground="{StaticResource SubtleTextBrush}"
-                                    Text="Loop Time" />
-                                <TextBlock
-                                    Grid.Column="1"
-                                    FontSize="11"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="{Binding MotionControlLoopTime, StringFormat={}{0:F0}ms}" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-            </StackPanel>
-        </Border>
-    </Grid>
+    </ContentControl>
 </UserControl>
