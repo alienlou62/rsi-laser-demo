@@ -69,12 +69,18 @@
             <Setter Property="Background" Value="{StaticResource MainContentColor}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
             <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+        </Style>
+
+        <!--  Label style with Saira font and positioning  -->
+        <Style Selector="Label, TextBlock, TextBox">
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
         </Style>
 
-        <!--  Global text style with Saira font  -->
-        <Style Selector="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+        <!--  we need to adjust the baselineoffset of the Saira font -->
+        <Style Selector="Label, TextBlock, TextBox /template/ TextPresenter, Button /template/ TextPresenter, CheckBox /template/ TextPresenter, RadioButton /template/ TextPresenter">
+            <Setter Property="RenderTransform">
+                <TranslateTransform Y="1" />
+            </Setter>
         </Style>
 
         <!--  Status Label Styles  -->
