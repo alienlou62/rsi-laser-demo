@@ -78,6 +78,18 @@ public static class BoolConverters
             // Return position offset by radius to center the ball
             return clampedPosition - ballRadius;
         });
+
+    /// <summary>
+    /// Converts nullable bool status to color brush for status labels
+    /// null = white, true = green, false = red
+    /// </summary>
+    public static readonly FuncValueConverter<bool?, IBrush> StatusColorConverter =
+        new(isActive => isActive switch
+        {
+            true => new SolidColorBrush(Color.FromRgb(76, 175, 80)),   // Green for active/true
+            false => new SolidColorBrush(Color.FromRgb(244, 67, 54)),  // Red for inactive/false
+            null => new SolidColorBrush(Color.FromRgb(255, 255, 255))  // White for neutral/null
+        });
 }
 
 public static class StringConverters

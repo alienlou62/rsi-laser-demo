@@ -3,6 +3,8 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+    xmlns:controls="clr-namespace:RapidLaser.Controls"
+    xmlns:converters="clr-namespace:RapidLaser.Converters"
     xmlns:local="using:RapidLaser"
     xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
     RequestedThemeVariant="Default">
@@ -102,6 +104,35 @@
 
         <Style Selector="TextBlock.status-neutral">
             <Setter Property="Foreground" Value="#9E9E9E" />
+        </Style>
+
+        <!--  StatusLabel Control Template  -->
+        <Style Selector="controls|StatusLabel">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock
+                            Grid.Column="0"
+                            FontSize="12"
+                            Foreground="{StaticResource SubtleTextBrush}"
+                            Text="{TemplateBinding Title}"
+                            VerticalAlignment="Center" />
+                        
+                        <TextBlock
+                            Grid.Column="1"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Text="{TemplateBinding Value}"
+                            Foreground="{TemplateBinding IsActive, Converter={x:Static converters:BoolConverters.StatusColorConverter}}"
+                            VerticalAlignment="Center" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter>
         </Style>
 
     </Application.Styles>
