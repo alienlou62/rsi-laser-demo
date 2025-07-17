@@ -14,6 +14,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // FIELDS
     /// updater/polling
     private readonly System.Timers.Timer _updateTimer;
+    private readonly Random _random = new Random();
 
     /// globals
     [ObservableProperty]
@@ -294,10 +295,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _imageProcessingService = new SimulatedImageProcessingService();
 
         // Initialize connection settings
-        IpAddress      = _connectionManager.Settings.IpAddress;
-        Port           = _connectionManager.Settings.Port;
+        IpAddress = _connectionManager.Settings.IpAddress;
+        Port = _connectionManager.Settings.Port;
         UseMockService = _connectionManager.Settings.UseMockService;
-        IsConnected    = _connectionManager.IsConnected;
+        IsConnected = _connectionManager.IsConnected;
 
         UpdateConnectionStatus();
 
@@ -311,7 +312,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // ===== POLL =====
     private async void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
     {
-        if (!IsConnected) 
+        if (!IsConnected)
             return;
 
         try
@@ -332,7 +333,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
             else
             {
+                // Simulate random ball position within canvas bounds (accounting for ball radius)
+                const int ballRadius = 20; // Half of 40px ball diameter
+                const int canvasWidth = 620;
+                const int canvasHeight = 480;
 
+                BallXPosition = ballRadius + _random.NextDouble() * (canvasWidth - 2 * ballRadius); // Random X between 20-600
+                BallYPosition = ballRadius + _random.NextDouble() * (canvasHeight - 2 * ballRadius); // Random Y between 20-460
+
+                // Optional: Add some randomization to other simulation values
+                BallVelocityX = (_random.NextDouble() - 0.5) * 25; // Random velocity between -12.5 and 12.5
+                BallVelocityY = (_random.NextDouble() - 0.5) * 25; // Random velocity between -12.5 and 12.5
+                DetectionConfidence = 85 + _random.NextDouble() * 15; // Random confidence between 85-100%
             }
             // Add more global values as needed
         }

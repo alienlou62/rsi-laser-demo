@@ -48,10 +48,36 @@ public static class BoolConverters
         new(str => !string.IsNullOrEmpty(str));
 
     /// <summary>
-    /// Converts ball position to canvas position (centers the ball circle)
+    /// Converts ball X position to canvas position (centers the ball circle and clamps to canvas bounds)
     /// </summary>
     public static readonly FuncValueConverter<double, double> BallPositionToCenterOffsetConverter =
-        new(position => position - 20); // Offset by half the circle diameter (40/2 = 20)
+        new(position =>
+        {
+            const int ballRadius = 20; // Half the circle diameter (40/2 = 20)
+            const int canvasWidth = 620;
+
+            // Clamp position to canvas bounds accounting for ball radius
+            double clampedPosition = Math.Max(ballRadius, Math.Min(position, canvasWidth - ballRadius));
+
+            // Return position offset by radius to center the ball
+            return clampedPosition - ballRadius;
+        });
+
+    /// <summary>
+    /// Converts ball Y position to canvas position (centers the ball circle and clamps to canvas bounds)
+    /// </summary>
+    public static readonly FuncValueConverter<double, double> BallYPositionToCenterOffsetConverter =
+        new(position =>
+        {
+            const int ballRadius = 20; // Half the circle diameter (40/2 = 20)
+            const int canvasHeight = 480;
+
+            // Clamp position to canvas bounds accounting for ball radius
+            double clampedPosition = Math.Max(ballRadius, Math.Min(position, canvasHeight - ballRadius));
+
+            // Return position offset by radius to center the ball
+            return clampedPosition - ballRadius;
+        });
 }
 
 public static class StringConverters

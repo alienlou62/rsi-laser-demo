@@ -32,6 +32,23 @@
 
         <!--  Card padding resource  -->
         <Thickness x:Key="CardPadding">12</Thickness>
+
+        <!--  Status label colors  -->
+        <Color x:Key="StatusActiveColor">#4CAF50</Color>
+        <Color x:Key="StatusWarningColor">#FF9800</Color>
+        <Color x:Key="StatusErrorColor">#F44336</Color>
+        <Color x:Key="StatusInfoColor">#2196F3</Color>
+        <Color x:Key="StatusNeutralColor">#9E9E9E</Color>
+
+        <SolidColorBrush x:Key="StatusActiveBrush" Color="{StaticResource StatusActiveColor}" />
+        <SolidColorBrush x:Key="StatusWarningBrush" Color="{StaticResource StatusWarningColor}" />
+        <SolidColorBrush x:Key="StatusErrorBrush" Color="{StaticResource StatusErrorColor}" />
+        <SolidColorBrush x:Key="StatusInfoBrush" Color="{StaticResource StatusInfoColor}" />
+        <SolidColorBrush x:Key="StatusNeutralBrush" Color="{StaticResource StatusNeutralColor}" />
+        
+        <!--  Fonts  -->
+        <FontFamily x:Key="Saira">avares://RapidLaser/Assets/Fonts/SairaSemiCondensed#Saira SemiCondensed</FontFamily>
+
     </Application.Resources>
 
     <Application.DataTemplates>
@@ -50,6 +67,41 @@
             <Setter Property="Background" Value="{StaticResource MainContentColor}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
             <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+            <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+        </Style>
+
+        <!--  Global text style with Saira font  -->
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+        </Style>
+
+        <!--  Status Label Styles  -->
+        <Style Selector="TextBlock.status-text">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBlock.status-active">
+            <Setter Property="Foreground" Value="#4CAF50" />
+        </Style>
+
+        <Style Selector="TextBlock.status-warning">
+            <Setter Property="Foreground" Value="#FF9800" />
+        </Style>
+
+        <Style Selector="TextBlock.status-error">
+            <Setter Property="Foreground" Value="#F44336" />
+        </Style>
+
+        <Style Selector="TextBlock.status-info">
+            <Setter Property="Foreground" Value="#2196F3" />
+        </Style>
+
+        <Style Selector="TextBlock.status-neutral">
+            <Setter Property="Foreground" Value="#9E9E9E" />
         </Style>
 
     </Application.Styles>
