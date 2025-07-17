@@ -46,6 +46,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool _motionPaused = false;
 
     [ObservableProperty]
+    private bool _programStarted = false;
+
+    [ObservableProperty]
     private double _motionControlLoopTime = 16.0; // ms
 
     // Camera/Display Properties

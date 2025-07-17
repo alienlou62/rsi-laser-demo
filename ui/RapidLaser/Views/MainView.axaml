@@ -16,7 +16,7 @@
     </Design.DataContext>
 
 
-    <Grid Margin="12" Background="{StaticResource DarkBackgroundColor}">
+    <Grid Margin="12">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="250" />
             <ColumnDefinition Width="*" />
@@ -214,12 +214,14 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
+
                         <TextBlock
                             Grid.Column="0"
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
                             Text="RapidServer" />
+
                         <materialIcons:MaterialIcon
                             Grid.Column="1"
                             Width="20"

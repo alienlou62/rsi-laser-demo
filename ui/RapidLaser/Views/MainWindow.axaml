@@ -2,6 +2,7 @@
     x:Class="RapidLaser.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:views="clr-namespace:RapidLaser.Views"
@@ -9,16 +10,28 @@
     Title="RapidLaser"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    Background="Transparent"
+    Background="{StaticResource DarkBackgroundColor}"
     CanResize="True"
     ExtendClientAreaChromeHints="NoChrome"
     ExtendClientAreaToDecorationsHint="True"
     Icon="/Assets/avalonia-logo.ico"
     SystemDecorations="None"
     mc:Ignorable="d">
+    <Grid>
+        <!--  Sleek dark gradient background using Actipro MeshGradientPresenter  -->
+        <actipro:MeshGradientPresenter VerticalAlignment="Stretch" CornerRadius="{StaticResource StandardCornerRadius}">
+            <actipro:MeshGradientNode Center="0%, 0%" Color="#FF121212" />
+            <actipro:MeshGradientNode Center="100%, 0%" Color="#FF1E1E1E" />
+            <actipro:MeshGradientNode Center="0%, 100%" Color="#FF1A1A1A" />
+            <actipro:MeshGradientNode Center="100%, 100%" Color="#FF232323" />
+        </actipro:MeshGradientPresenter>
 
-    <!--  Simple borderless window with corner radius  -->
-    <Border Background="{StaticResource DarkBackgroundColor}" CornerRadius="{StaticResource StandardCornerRadius}">
-        <views:MainView />
-    </Border>
+        <!--  Simple borderless window with corner radius  -->
+        <Border CornerRadius="{StaticResource StandardCornerRadius}">
+            <views:MainView />
+        </Border>
+
+        <!--  Other controls  -->
+        <actipro:WindowResizeGrip />
+    </Grid>
 </Window>
