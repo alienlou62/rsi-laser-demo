@@ -83,47 +83,22 @@ namespace RMPHelpers {
     return "UNKNOWN";
   }
 
-  // --- Safe handling of RTTask and RTTaskManager deletion ---
-  template <typename T, typename F>
-  static void SafeDeleter(T* ptr, F&& shutdown, const char* context) {
-    if (ptr) {
-      try {
-        shutdown(ptr);
-      } catch (const RsiError& e) {
-        std::cerr << "Exception in " << context << " (RsiError): " << e.what() << std::endl;
-      } catch (const std::exception& e) {
-        std::cerr << "Exception in " << context << " (std::exception): " << e.what() << std::endl;
-      } catch (...) {
-        std::cerr << "Unknown exception in " << context << std::endl;
-      }
-      delete ptr;
-    }
-  }
-
-  inline void RTTaskDeleter(RTTask* ptr) {
-    SafeDeleter(ptr, [](RTTask* t){ t->Stop(); }, "RTTaskDeleter");
-  }
-
-  inline void RTTaskManagerDeleter(RTTaskManager* ptr) {
-    SafeDeleter(ptr, [](RTTaskManager* m){ m->Shutdown(); }, "RTTaskManagerDeleter");
-  }
-
-  std::shared_ptr<RTTaskManager> CreateRTTaskManager(const std::string &userLabel)
+  RTTaskManager CreateRTTaskManager(const std::string &userLabel)
   {
     RTTaskManagerCreationParameters params;
     std::strncpy(params.RTTaskDirectory, RMP_PATH, sizeof(params.RTTaskDirectory));
     std::strncpy(params.UserLabel, userLabel.c_str(), sizeof(params.UserLabel));
     params.CpuCore = CPU_CORE;
 
-    std::shared_ptr<RTTaskManager> manager(RTTaskManager::Create(params), RTTaskManagerDeleter);
-    CheckErrors(manager.get());
+    RTTaskManager manager(RTTaskManager::Create(params));
+    CheckErrors(&manager);
     return manager;
   }
 
-  std::shared_ptr<RTTask> SubmitRTTask(std::shared_ptr<RTTaskManager> &manager, RTTaskCreationParameters &params)
+  RTTask SubmitRTTask(RTTaskManager &manager, RTTaskCreationParameters &params)
   {
-    std::shared_ptr<RTTask> task(manager->TaskSubmit(params), RTTaskDeleter);
-    CheckErrors(task.get());
+    RTTask task(manager.TaskSubmit(params));
+    CheckErrors(&task);
     return task;
   }
 } // namespace RMPHelpers

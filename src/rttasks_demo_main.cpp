@@ -2,7 +2,6 @@
 #include <cmath>
 #include <csignal>
 #include <iostream>
-#include <memory>
 
 #include <pylon/PylonIncludes.h>
 
@@ -32,17 +31,17 @@ void sigint_handler(int signal)
   g_shutdown = true;
 }
 
-void SubmitSingleShotTask(std::shared_ptr<RTTaskManager>& manager, const std::string& taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
+void SubmitSingleShotTask(RTTaskManager& manager, const std::string& taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
 {
   RTTaskCreationParameters singleShotParams(taskName.c_str());
   singleShotParams.Repeats = RTTaskCreationParameters::RepeatNone;
   singleShotParams.EnableTiming = true;
-  std::shared_ptr<RTTask> singleShotTask(RMPHelpers::SubmitRTTask(manager, singleShotParams));
-  singleShotTask->ExecutionCountAbsoluteWait(1, timeoutMs);
+  RTTask singleShotTask(RMPHelpers::SubmitRTTask(manager, singleShotParams));
+  singleShotTask.ExecutionCountAbsoluteWait(1, timeoutMs);
 }
 
-std::shared_ptr<RTTask> SubmitRepeatingTask(
-  std::shared_ptr<RTTaskManager>& manager, const std::string& taskName,
+RTTask SubmitRepeatingTask(
+  RTTaskManager& manager, const std::string& taskName,
   int32_t period = RTTaskCreationParameters::PeriodDefault,
   int32_t phase = RTTaskCreationParameters::PhaseDefault,
   TaskPriority priority = RTTaskCreationParameters::PriorityDefault,
@@ -55,17 +54,17 @@ std::shared_ptr<RTTask> SubmitRepeatingTask(
   repeatingParams.Phase = phase;
   repeatingParams.Priority = priority;
   repeatingParams.EnableTiming = true;
-  std::shared_ptr<RTTask> repeatingTask(RMPHelpers::SubmitRTTask(manager, repeatingParams));
-  repeatingTask->ExecutionCountAbsoluteWait(1, timeoutMs);
-  repeatingTask->TimingReset(); // Reset timing stats for the task after the first run
+  RTTask repeatingTask(RMPHelpers::SubmitRTTask(manager, repeatingParams));
+  repeatingTask.ExecutionCountAbsoluteWait(1, timeoutMs);
+  repeatingTask.TimingReset(); // Reset timing stats for the task after the first run
   return repeatingTask;
 }
 
-void PrintTaskTiming(std::shared_ptr<RTTask> task, const std::string& taskName)
+void PrintTaskTiming(RTTask& task, const std::string& taskName)
 {
   if (!task) return;
 
-  RTTaskStatus status = task->StatusGet();
+  RTTaskStatus status = task.StatusGet();
   // Lambda to convert nanoseconds to milliseconds
   auto nsToMs = [](uint64_t ns) { return static_cast<double>(ns) / 1e6; };
   std::cout << "Task: " << taskName << std::endl;
@@ -89,13 +88,13 @@ void SetupCamera()
   camera.DestroyDevice();
 }
 
-bool CheckRTTaskStatus(const std::shared_ptr<RTTask>& task, const std::string& taskName)
+bool CheckRTTaskStatus(const RTTask& task, const std::string& taskName)
 {
   if (!task) return false;
 
   try
   {
-    RTTaskStatus status = task->StatusGet();
+    RTTaskStatus status = task.StatusGet();
     if (status.ErrorMessage[0] != '\0')
     {
       std::cerr << "Error in " << taskName << ": " << status.ErrorMessage << std::endl;
@@ -136,37 +135,37 @@ int main()
 
   try
   {
-    std::shared_ptr<RTTaskManager> manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
+    RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
     //std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
     SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
-    FirmwareValue cameraReady = manager->GlobalValueGet("cameraReady");
+    FirmwareValue cameraReady = manager.GlobalValueGet("cameraReady");
     if (!cameraReady.Bool)
     {
       std::cerr << "Error: Camera is not ready." << std::endl;
       return -1;
     }
 
-    FirmwareValue multiAxisReady = manager->GlobalValueGet("multiAxisReady");
+    FirmwareValue multiAxisReady = manager.GlobalValueGet("multiAxisReady");
     if (!multiAxisReady.Bool)
     {
       std::cerr << "Error: MultiAxis is not ready." << std::endl;
       return -1;
     }
 
-    std::shared_ptr<RTTask> ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0, TaskPriority::Low);
-    std::shared_ptr<RTTask> motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1, TaskPriority::High);
-    manager->GlobalValueSet("motionEnabled", true);
+    RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0, TaskPriority::Low);
+    RTTask motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1, TaskPriority::High);
+    manager.GlobalValueSet("motionEnabled", true);
 
     // --- Main Loop ---
     while (!g_shutdown)
     {
       RateLimiter rateLimiter(LOOP_INTERVAL);
 
-      FirmwareValue targetX = manager->GlobalValueGet("targetX");
+      FirmwareValue targetX = manager.GlobalValueGet("targetX");
       std::cout << "Target X: " << targetX.Double << std::endl;
 
-      FirmwareValue targetY = manager->GlobalValueGet("targetY");
+      FirmwareValue targetY = manager.GlobalValueGet("targetY");
       std::cout << "Target Y: " << targetY.Double << std::endl;
 
       if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))
