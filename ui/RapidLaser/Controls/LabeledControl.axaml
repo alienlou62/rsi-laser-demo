@@ -1,0 +1,35 @@
+<ResourceDictionary
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:RapidLaser.Controls">
+
+    <Design.PreviewWith>
+        <controls:LabeledControl />
+    </Design.PreviewWith>
+
+    <ControlTheme x:Key="{x:Type controls:LabeledControl}" TargetType="controls:LabeledControl">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--  Label on the left  -->
+                    <TextBlock
+                        Grid.Column="0"
+                        MinWidth="{TemplateBinding LabelWidth}"
+                        Margin="0,0,10,0"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Text="{TemplateBinding Label}" />
+
+                    <!--  Content on the right  -->
+                    <ContentPresenter Grid.Column="1" Content="{TemplateBinding Content}" />
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+
+</ResourceDictionary>

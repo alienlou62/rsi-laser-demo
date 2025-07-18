@@ -13,6 +13,7 @@ global using System.Collections.ObjectModel;
 
 // avalonia
 global using Avalonia;
+global using Avalonia.Input;
 global using Avalonia.Data.Converters;
 global using Avalonia.Markup.Xaml;
 global using Avalonia.Media;
@@ -21,6 +22,7 @@ global using Avalonia.Platform;
 global using Avalonia.Threading;
 global using Avalonia.Controls;
 global using Avalonia.Controls.Templates;
+global using Avalonia.Controls.Primitives;
 
 // third parties
 global using CommunityToolkit.Mvvm.ComponentModel;
@@ -33,3 +35,4 @@ global using Grpc.Net.Client;
 // project  
 global using RapidLaser.Services;
 global using RapidLaser.ViewModels;
+global using RapidLaser.Controls;

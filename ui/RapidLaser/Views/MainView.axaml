@@ -3,12 +3,12 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
-    xmlns:controls="clr-namespace:RapidLaser.Controls"
-    xmlns:converters="clr-namespace:RapidLaser.Converters"
+    xmlns:controls="using:RapidLaser.Controls"
+    xmlns:converters="using:RapidLaser.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:icons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+    xmlns:icons="using:Material.Icons.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="clr-namespace:RapidLaser.ViewModels"
+    xmlns:vm="using:RapidLaser.ViewModels"
     d:DesignHeight="1000"
     d:DesignWidth="1500"
     x:DataType="vm:MainViewModel"
@@ -94,7 +94,7 @@
                         Spacing="12">
                         <!--  System Status Indicator  -->
                         <TextBlock
-                            Classes="status-text status-active" 
+                            Classes="status-text status-active"
                             FontWeight="SemiBold"
                             Text="{Binding SystemStatus}" />
 
@@ -195,6 +195,7 @@
                     Background="{StaticResource SidebarBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1"
+                    ClipToBounds="True"
                     CornerRadius="{StaticResource StandardCornerRadius}">
                     <Border.Effect>
                         <DropShadowEffect
@@ -204,98 +205,108 @@
                             Opacity="0.3"
                             Color="Black" />
                     </Border.Effect>
-                    <StackPanel>
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
 
-                            <TextBlock
-                                Grid.Column="0"
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="RapidServer" />
+                    <Grid>
+                        <!--  Subtle gradient overlay  -->
+                        <actipro:MeshGradientPresenter Margin="-12" IsVisible="{Binding IsConnected}">
+                            <actipro:MeshGradientNode Center="100%, 0%" Color="#304CAF50" />
+                            <actipro:MeshGradientNode Center="0%, 100%" Color="#00000000" />
+                        </actipro:MeshGradientPresenter>
 
-                            <icons:MaterialIcon
-                                Grid.Column="1"
-                                Width="20"
-                                Height="20"
-                                VerticalAlignment="Center">
-                                <icons:MaterialIcon.Styles>
-                                    <Style Selector="ContentControl.is-connected icons|MaterialIcon">
-                                        <Setter Property="Kind" Value="LanCheck" />
-                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-                                    </Style>
-                                    <Style Selector="ContentControl:not(.is-connected) icons|MaterialIcon">
-                                        <Setter Property="Kind" Value="LanDisconnect" />
-                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-                                    </Style>
-                                </icons:MaterialIcon.Styles>
-                            </icons:MaterialIcon>
-                        </Grid>
+                        <actipro:MeshGradientPresenter Margin="-12" IsVisible="{Binding !IsConnected}">
+                            <actipro:MeshGradientNode Center="100%, 0%" Color="#30F44336" />
+                            <actipro:MeshGradientNode Center="0%, 100%" Color="#00000000" />
+                        </actipro:MeshGradientPresenter>
 
-                        <!--  Mock Service Toggle  -->
-                        <StackPanel
-                            Margin="0,0,0,8"
-                            IsVisible="{Binding !IsConnected}"
-                            Orientation="Horizontal"
-                            Spacing="4">
-                            <CheckBox
-                                Classes="size-xs"
-                                Content="Use mock server"
-                                IsChecked="{Binding UseMockService}" />
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="11"
-                                Text="(for testing)" />
-                        </StackPanel>
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
 
-                        <!--  Server Configuration (disabled when using mock or when connected)  -->
-                        <StackPanel IsEnabled="{Binding ConnectionInputsEnabled}" Spacing="8">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextBrush}"
+                                    Text="RapidServer" />
 
-                            <!--  IP Address  -->
-                            <TextBox
-                                IsEnabled="{Binding ConnectionInputsEnabled}"
-                                Text="{Binding IpAddress}"
-                                UseFloatingWatermark="True"
-                                Watermark="IP Address" />
+                                <icons:MaterialIcon
+                                    Grid.Column="1"
+                                    Width="20"
+                                    Height="20"
+                                    VerticalAlignment="Center">
+                                    <icons:MaterialIcon.Styles>
+                                        <Style Selector="ContentControl.is-connected icons|MaterialIcon">
+                                            <Setter Property="Kind" Value="LanCheck" />
+                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                        </Style>
+                                        <Style Selector="ContentControl:not(.is-connected) icons|MaterialIcon">
+                                            <Setter Property="Kind" Value="LanDisconnect" />
+                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                        </Style>
+                                    </icons:MaterialIcon.Styles>
+                                </icons:MaterialIcon>
+                            </Grid>
 
-                            <!--  Port  -->
-                            <TextBox
-                                IsEnabled="{Binding ConnectionInputsEnabled}"
-                                Text="{Binding Port}"
-                                UseFloatingWatermark="True"
-                                Watermark="Port" />
+                            <!--  Server Configuration (disabled when using mock or when connected)  -->
+                            <StackPanel IsEnabled="{Binding ConnectionInputsEnabled}" Spacing="8">
 
-                            <!--  Connection Buttons  -->
+                                <!--  IP Address  -->
+                                <controls:LabeledControl Label="IP Address" LabelWidth="60">
+                                    <TextBox
+                                        HorizontalAlignment="Stretch"
+                                        IsEnabled="{Binding ConnectionInputsEnabled}"
+                                        Text="{Binding IpAddress}"
+                                        ToolTip.Tip="IP Address" />
+                                </controls:LabeledControl>
+
+                                <!--  Port  -->
+                                <controls:LabeledControl Label="Port" LabelWidth="60">
+                                    <TextBox
+                                        HorizontalAlignment="Stretch"
+                                        IsEnabled="{Binding ConnectionInputsEnabled}"
+                                        Text="{Binding Port}"
+                                        ToolTip.Tip="Port" />
+                                </controls:LabeledControl>
+
+                                <!--  Connection Buttons  -->
+                                <Button
+                                    Classes="theme-solid success"
+                                    HorizontalAlignment="Stretch"
+                                    Command="{Binding ConnectCommand}"
+                                    Content="Connect"
+                                    IsEnabled="{Binding !IsConnecting}"
+                                    IsVisible="{Binding !IsConnected}" />
+
+                                <!--  Mock Service Toggle  -->
+                                <controls:LabeledControl
+                                    IsVisible="False"
+                                    Label="Use Mock Server"
+                                    LabelWidth="45">
+                                    <CheckBox Classes="size-xs" IsChecked="{Binding UseMockService}" />
+                                </controls:LabeledControl>
+                            </StackPanel>
+
                             <Button
-                                Classes="theme-solid success"
+                                Classes="theme-subtle danger"
+                                Margin="0,8,0,0"
                                 HorizontalAlignment="Stretch"
-                                Command="{Binding ConnectCommand}"
-                                Content="Connect"
-                                IsEnabled="{Binding !IsConnecting}"
-                                IsVisible="{Binding !IsConnected}" />
+                                Command="{Binding DisconnectCommand}"
+                                Content="Disconnect"
+                                IsVisible="{Binding IsConnected}" />
 
+
+                            <!--  Error Display  -->
+                            <TextBlock
+                                Margin="0,8,0,0"
+                                Foreground="#F44336"
+                                IsVisible="{Binding LastError, Converter={x:Static converters:BoolConverters.StringNotEmptyToBoolConverter}}"
+                                Text="{Binding LastError}"
+                                TextWrapping="Wrap" />
                         </StackPanel>
-
-                        <Button
-                            Classes="theme-subtle danger"
-                            Margin="0,8,0,0"
-                            HorizontalAlignment="Stretch"
-                            Command="{Binding DisconnectCommand}"
-                            Content="Disconnect"
-                            IsVisible="{Binding IsConnected}" />
-
-                        <!--  Error Display  -->
-                        <TextBlock
-                            Margin="0,8,0,0"
-                            Foreground="#F44336"
-                            IsVisible="{Binding LastError, Converter={x:Static converters:BoolConverters.StringNotEmptyToBoolConverter}}"
-                            Text="{Binding LastError}"
-                            TextWrapping="Wrap" />
-                    </StackPanel>
+                    </Grid>
                 </Border>
 
                 <!--  Actions Card  -->
@@ -393,18 +404,14 @@
                             Foreground="{StaticResource TextBrush}"
                             Text="Task Status" />
                         <StackPanel Spacing="8">
-                            <controls:StatusLabel 
-                                Title="RT Task Manager" 
-                                Value="Running" 
-                                IsActive="True" />
-                            <controls:StatusLabel 
-                                Title="Ball Detection Task" 
-                                Value="Active" 
-                                IsActive="True" />
-                            <controls:StatusLabel 
-                                Title="Motion Task" 
-                                Value="Active" 
-                                IsActive="True" />
+                            <controls:StatusLabel
+                                Title="RT Task Manager"
+                                IsActive="True"
+                                Value="Running" />
+                            <controls:StatusLabel
+                                Title="Ball Detection Task"
+                                IsActive="True"
+                                Value="Active" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -495,14 +502,14 @@
                                             FontSize="10"
                                             Foreground="{StaticResource TextBrush}"
                                             Text="{Binding DetectionConfidence, StringFormat=Confidence: {0:F0}%}" />
-                                        
+
                                         <!--  Simulation Toggle  -->
                                         <CheckBox
                                             Margin="0,4,0,0"
+                                            Content="Simulate Position"
                                             FontSize="9"
                                             Foreground="{StaticResource TextBrush}"
-                                            IsChecked="{Binding IsSimulatingBallPosition}"
-                                            Content="Simulate Position" />
+                                            IsChecked="{Binding IsSimulatingBallPosition}" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -558,31 +565,29 @@
                 </Border>
             </Grid>
 
-            <!--  Right sidebar card  -->
-            <Border
+            <!--  Right sidebar - stacked cards  -->
+            <StackPanel
                 Grid.Row="1"
                 Grid.Column="2"
                 Margin="0"
-                Padding="{StaticResource CardPadding}"
                 VerticalAlignment="Top"
-                Background="{StaticResource SidebarBrush}"
-                BorderBrush="{StaticResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="{StaticResource StandardCornerRadius}">
-                <Border.Effect>
-                    <DropShadowEffect
-                        BlurRadius="8"
-                        OffsetX="2"
-                        OffsetY="2"
-                        Opacity="0.3"
-                        Color="Black" />
-                </Border.Effect>
+                Spacing="12">
 
-                <StackPanel>
-                    <!--  Global Values from gRPC - temporarily commented out  -->
-                    <!-- <views:GlobalValuesView DataContext="{Binding GlobalValues}"/> -->
-
-                    <!--  RTTaskManager Status  -->
+                <!--  RTTaskManager Status Card  -->
+                <Border
+                    Padding="{StaticResource CardPadding}"
+                    Background="{StaticResource SidebarBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource StandardCornerRadius}">
+                    <Border.Effect>
+                        <DropShadowEffect
+                            BlurRadius="8"
+                            OffsetX="2"
+                            OffsetY="2"
+                            Opacity="0.3"
+                            Color="Black" />
+                    </Border.Effect>
                     <StackPanel>
                         <TextBlock
                             Margin="0,0,0,12"
@@ -591,25 +596,36 @@
                             Foreground="{StaticResource TextBrush}"
                             Text="RTTaskManager Status" />
                         <StackPanel Spacing="8">
-                            <controls:StatusLabel 
-                                Title="Manager State" 
-                                Value="{Binding ManagerState}" 
-                                IsActive="True" />
-                            <controls:StatusLabel 
-                                Title="Tasks Active" 
-                                Value="{Binding TasksActive}" 
-                                IsActive="True" />
-                            <controls:StatusLabel 
-                                Title="CPU Usage" 
-                                Value="{Binding CpuUsage, StringFormat={}{0:F0}%}" />
-                            <controls:StatusLabel 
-                                Title="Memory Usage" 
-                                Value="{Binding MemoryUsage, StringFormat={}{0:F0} MB}" />
+                            <controls:StatusLabel
+                                Title="Manager State"
+                                IsActive="True"
+                                Value="{Binding ManagerState}" />
+                            <controls:StatusLabel
+                                Title="Tasks Active"
+                                IsActive="True"
+                                Value="{Binding TasksActive}" />
+                            <controls:StatusLabel Title="CPU Usage" Value="{Binding CpuUsage, StringFormat={}{0:F0}%}" />
+                            <controls:StatusLabel Title="Memory Usage" Value="{Binding MemoryUsage, StringFormat={}{0:F0} MB}" />
                         </StackPanel>
                     </StackPanel>
+                </Border>
 
-                    <!--  Individual Task Status  -->
-                    <StackPanel Margin="0,20,0,0">
+                <!--  Task Details Card  -->
+                <Border
+                    Padding="{StaticResource CardPadding}"
+                    Background="{StaticResource SidebarBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource StandardCornerRadius}">
+                    <Border.Effect>
+                        <DropShadowEffect
+                            BlurRadius="8"
+                            OffsetX="2"
+                            OffsetY="2"
+                            Opacity="0.3"
+                            Color="Black" />
+                    </Border.Effect>
+                    <StackPanel>
                         <TextBlock
                             Margin="0,0,0,12"
                             FontSize="14"
@@ -618,45 +634,23 @@
                             Text="Task Details" />
 
                         <!--  Ball Detection Task  -->
-                        <StackPanel Spacing="8" Margin="0,0,0,12">
+                        <StackPanel Margin="0,0,0,0" Spacing="8">
                             <TextBlock
                                 FontSize="13"
                                 FontWeight="SemiBold"
                                 Foreground="{StaticResource TextBrush}"
                                 Text="Ball Detection Task" />
-                            <controls:StatusLabel 
-                                Title="Status" 
-                                Value="{Binding BallDetectionStatus}" 
-                                IsActive="True" />
-                            <controls:StatusLabel 
-                                Title="Loop Time" 
-                                Value="{Binding BallDetectionLoopTime, StringFormat={}{0:F0}ms}" />
-                            <controls:StatusLabel 
-                                Title="Iterations" 
-                                Value="{Binding BallDetectionIterations, StringFormat=N0}" />
-                        </StackPanel>
-
-                        <!--  Motion Task  -->
-                        <StackPanel Spacing="8">
-                            <TextBlock
-                                FontSize="13"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="Motion Control Task" />
-                            <controls:StatusLabel 
-                                Title="Status" 
-                                Value="{Binding MotionControlStatus}" 
-                                IsActive="True" />
-                            <controls:StatusLabel 
-                                Title="Loop Time" 
-                                Value="{Binding MotionControlLoopTime, StringFormat={}{0:F0}ms}" />
-                            <controls:StatusLabel 
-                                Title="Motion Paused" 
-                                Value="{Binding IsProgramPausedDisplay}" />
+                            <controls:StatusLabel
+                                Title="Status"
+                                IsActive="True"
+                                Value="{Binding BallDetectionStatus}" />
+                            <controls:StatusLabel Title="Loop Time" Value="{Binding BallDetectionLoopTime, StringFormat={}{0:F0}ms}" />
+                            <controls:StatusLabel Title="Iterations" Value="{Binding BallDetectionIterations, StringFormat=N0}" />
                         </StackPanel>
                     </StackPanel>
-                </StackPanel>
-            </Border>
+                </Border>
+
+            </StackPanel>
         </Grid>
 
     </ContentControl>

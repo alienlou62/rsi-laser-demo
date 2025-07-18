@@ -1,5 +1,3 @@
-using Avalonia.Input;
-
 namespace RapidLaser.Views;
 
 public partial class MainView : UserControl
