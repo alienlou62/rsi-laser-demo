@@ -53,15 +53,9 @@ RSI_TASK(Initialize)
   }
 
   // Setup the multi-axis
-  RTAxisGet(0)->Abort();
-  RTAxisGet(0)->ClearFaults();
-  RTMultiAxisGet(0)->AxisAdd(RTAxisGet(0));
-  RTAxisGet(1)->Abort();
-  RTAxisGet(1)->ClearFaults();
-  RTMultiAxisGet(0)->AxisAdd(RTAxisGet(1));
-  RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
   RTMultiAxisGet(0)->Abort();
   RTMultiAxisGet(0)->ClearFaults();
+  RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
   RTMultiAxisGet(0)->AmpEnableSet(true);
 
   data->multiAxisReady = true;

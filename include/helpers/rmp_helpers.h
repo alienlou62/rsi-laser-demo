@@ -2,7 +2,6 @@
 #define RMP_HELPERS_H
 
 #include <source_location>
-#include <memory>
 #include <string>
 #include <chrono>
 
@@ -30,11 +29,11 @@ namespace RMPHelpers {
   std::string RSIStateToString(const RSI::RapidCode::RSIState& state);
 
   // Create a RTTaskManager with a safe shared pointer that will automatically shutdown and delete the manager
-  std::shared_ptr<RSI::RapidCode::RealTimeTasks::RTTaskManager> CreateRTTaskManager (const std::string& userLabel = "");
+  RSI::RapidCode::RealTimeTasks::RTTaskManager CreateRTTaskManager (const std::string& userLabel = "");
 
   // Submit an RTTask with a safe shared pointer that will automatically stop and delete the task
-  std::shared_ptr<RSI::RapidCode::RealTimeTasks::RTTask> SubmitRTTask(
-    std::shared_ptr<RSI::RapidCode::RealTimeTasks::RTTaskManager>& manager, 
+  RSI::RapidCode::RealTimeTasks::RTTask SubmitRTTask(
+    RSI::RapidCode::RealTimeTasks::RTTaskManager& manager,
     RSI::RapidCode::RealTimeTasks::RTTaskCreationParameters& params);
 }
 
