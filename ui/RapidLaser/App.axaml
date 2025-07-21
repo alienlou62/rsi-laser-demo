@@ -72,6 +72,7 @@
 
         <!--  Custom TextBox style  -->
         <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="2" />
             <Setter Property="Background" Value="{StaticResource MainContentColor}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
             <Setter Property="Foreground" Value="{StaticResource TextColor}" />
@@ -83,7 +84,7 @@
         <Style Selector="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
         </Style>
-        <Style Selector="Label">
+        <Style Selector="Label, Button">
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
         </Style>
 
@@ -129,10 +130,17 @@
         </Style>
 
         <!--  Add subtle shadow to all buttons using standard Avalonia DropShadow  -->
-        <Style Selector="Button">     
+        <Style Selector="Button">
             <Setter Property="FontSize" Value="12" />
+            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="TextBlock.LetterSpacing" Value="0.5" />
             <Setter Property="Effect">
-                <DropShadowEffect BlurRadius="4" OffsetX="1" OffsetY="1" Opacity="0.2" Color="Black" />
+                <DropShadowEffect
+                    BlurRadius="6"
+                    OffsetX="0"
+                    OffsetY="0"
+                    Opacity="0"
+                    Color="#000" />
             </Setter>
         </Style>
 

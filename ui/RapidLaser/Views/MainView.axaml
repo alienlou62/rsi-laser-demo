@@ -114,11 +114,11 @@
                             <!--  Minimize Button  -->
                             <Button
                                 Name="MinimizeButton"
-                                Classes="theme-subtle"
                                 Width="32"
                                 Height="32"
                                 Padding="6"
                                 VerticalAlignment="Center"
+                                Classes="theme-subtle shadowless"
                                 Command="{Binding MinimizeWindowCommand}"
                                 Foreground="{StaticResource SubtleTextBrush}">
                                 <Button.Content>
@@ -134,11 +134,11 @@
                             <!--  Maximize/Restore Button  -->
                             <Button
                                 Name="MaximizeButton"
-                                Classes="theme-subtle"
                                 Width="32"
                                 Height="32"
                                 Padding="6"
                                 VerticalAlignment="Center"
+                                Classes="theme-subtle shadowless"
                                 Command="{Binding MaximizeWindowCommand}"
                                 Foreground="{StaticResource SubtleTextBrush}">
                                 <Button.Content>
@@ -155,11 +155,11 @@
                             <!--  Close Button  -->
                             <Button
                                 Name="CloseButton"
-                                Classes="theme-subtle"
                                 Width="32"
                                 Height="32"
                                 Padding="6"
                                 VerticalAlignment="Center"
+                                Classes="theme-subtle shadowless"
                                 Command="{Binding CloseWindowCommand}"
                                 Foreground="{StaticResource SubtleTextBrush}">
                                 <Button.Content>
@@ -311,8 +311,9 @@
 
                                 <!--  Connection Buttons  -->
                                 <Button
-                                    Classes="theme-solid success"
-                                    HorizontalAlignment="Stretch"
+                                    Margin="0,6,0,0"
+                                    HorizontalAlignment="Right"
+                                    Classes="theme-soft success"
                                     Command="{Binding ConnectCommand}"
                                     Content="Connect"
                                     IsEnabled="{Binding !IsConnecting}"
@@ -328,18 +329,13 @@
                             </StackPanel>
 
                             <Button
+                                Margin="0,14,0,0"
+                                HorizontalAlignment="Right"
                                 Classes="theme-soft danger"
-                                Margin="0,14,0,0" FontSize="12"
-                                HorizontalAlignment="Stretch" 
                                 Command="{Binding DisconnectCommand}"
-                                IsVisible="{Binding IsConnected}" >
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock Text="Disconnect" VerticalAlignment="Center" />
-                                    <icons:MaterialIcon
-                                        VerticalAlignment="Center" IsVisible="False"
-                                        Kind="LanDisconnect" />
-                                </StackPanel>
-                            </Button>
+                                Content="Disconnect"
+                                FontSize="12"
+                                IsVisible="{Binding IsConnected}" />
 
 
                             <!--  Error Display  -->
@@ -435,8 +431,8 @@
 
                                 <!--  start  -->
                                 <Button
-                                    Classes="theme-solid success"
                                     HorizontalAlignment="Stretch"
+                                    Classes="theme-soft success"
                                     Command="{Binding StartTasksCommand}"
                                     IsVisible="{Binding !IsProgramRunning}">
                                     <icons:MaterialIcon Kind="Play" />
@@ -444,8 +440,8 @@
 
                                 <!--  kill  -->
                                 <Button
-                                    Classes="theme-solid danger"
                                     HorizontalAlignment="Stretch"
+                                    Classes="theme-soft danger"
                                     Command="{Binding ShutdownTasksCommand}"
                                     IsVisible="{Binding IsProgramRunning}">
                                     <icons:MaterialIcon Kind="Skull" />
@@ -455,8 +451,8 @@
 
                                     <!--  pause  -->
                                     <Button
-                                        Classes="theme-soft accent"
                                         HorizontalAlignment="Stretch"
+                                        Classes="theme-soft accent"
                                         Command="{Binding ToggleMotionPauseCommand}"
                                         IsVisible="{Binding !IsProgramPaused}">
                                         <icons:MaterialIcon Kind="Pause" />
@@ -464,8 +460,8 @@
 
                                     <!--  resume  -->
                                     <Button
-                                        Classes="theme-soft success"
                                         HorizontalAlignment="Stretch"
+                                        Classes="theme-soft success"
                                         Command="{Binding ToggleMotionPauseCommand}"
                                         IsVisible="{Binding IsProgramPaused}">
                                         <icons:MaterialIcon Kind="PlayOutline" />
@@ -513,15 +509,12 @@
 
                             <!--  Execute Button  -->
                             <Button
-                                Classes="theme-soft"
                                 Grid.Column="1"
                                 HorizontalAlignment="Stretch"
+                                Classes="theme-soft"
                                 Command="{Binding RunSshCommandCommand}"
                                 IsEnabled="{Binding !IsSshCommandRunning}">
-                                <icons:MaterialIcon
-                                    Width="16"
-                                    Height="16"
-                                    Kind="Terminal" />
+                                <icons:MaterialIcon Kind="Terminal" />
                             </Button>
                         </Grid>
 
@@ -551,10 +544,10 @@
 
                                     <!--  Clear Button  -->
                                     <Button
-                                        Classes="theme-subtle"
                                         Grid.Column="1"
                                         Margin="-4"
                                         Padding="4,2,4,1"
+                                        Classes="theme-subtle"
                                         Command="{Binding ClearSshOutputCommand}"
                                         IsEnabled="{Binding IsConnected}"
                                         Opacity="0.5">
@@ -630,137 +623,168 @@
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="2"
                     CornerRadius="{StaticResource StandardCornerRadius}">
-                    <Grid ColumnDefinitions="* *">
-                        <!--  Camera feed placeholder (620x480 aspect ratio)  -->
-                        <Border Grid.Column="0" Margin="8">
-                            <Grid>
-                                <!--  Simulated camera feed background  -->
-                                <Rectangle
-                                    Width="620"
-                                    Height="480"
-                                    Fill="#2A2A2A" />
 
-                                <!--  Ball detection circle overlay  -->
-                                <Canvas Width="620" Height="480">
-                                    <!--  Detected ball circle - bound to actual ball position  -->
-                                    <Ellipse
-                                        Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
-                                        Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}}"
-                                        Width="40"
-                                        Height="40"
-                                        Fill="Transparent"
-                                        Stroke="#00FF00"
-                                        StrokeThickness="3" />
+                    <Grid>
+                        <!--  Disconnected State Message  -->
+                        <StackPanel
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            IsVisible="{Binding !IsConnected}">
+                            <icons:MaterialIcon
+                                Width="36"
+                                Height="36"
+                                Margin="0,-40,0,4"
+                                Foreground="{StaticResource SubtleTextBrush}"
+                                IsVisible="False"
+                                Kind="LanDisconnect"
+                                Opacity="0.45" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                Classes="danger"
+                                FontSize="18"
+                                FontWeight="SemiBold"
+                                Text="Connection Required" />
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                FontSize="14"
+                                Foreground="{StaticResource SubtleTextBrush}"
+                                Opacity="0.7"
+                                Text="Connect to the demo's RapidServer to view camera feeds" />
+                        </StackPanel>
 
-                                    <!--  Center crosshair  -->
-                                    <Line
-                                        Stroke="#333333"
-                                        StrokeDashArray="5,5"
-                                        StrokeThickness="1"
-                                        StartPoint="0,240"
-                                        EndPoint="620,240" />
-                                    <Line
-                                        Stroke="#333333"
-                                        StrokeDashArray="5,5"
-                                        StrokeThickness="1"
-                                        StartPoint="310,0"
-                                        EndPoint="310,480" />
-                                </Canvas>
+                        <!--  Connected State - Camera Feeds  -->
+                        <Grid ColumnDefinitions="* *" IsVisible="{Binding IsConnected}">
+                            <!--  Camera feed placeholder (620x480 aspect ratio)  -->
+                            <Border Grid.Column="0" Margin="8">
+                                <Grid>
+                                    <!--  Simulated camera feed background  -->
+                                    <Rectangle
+                                        Width="620"
+                                        Height="480"
+                                        Fill="#2A2A2A" />
 
-                                <!--  Overlay info  -->
-                                <Border
-                                    Margin="12"
-                                    Padding="8"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Top"
-                                    Background="#80000000">
-                                    <StackPanel>
-                                        <TextBlock
-                                            FontSize="12"
-                                            FontWeight="Bold"
-                                            Foreground="#00FF00"
-                                            Text="CAMERA FEED" />
-                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <!--  Ball detection circle overlay  -->
+                                    <Canvas Width="620" Height="480">
+                                        <!--  Detected ball circle - bound to actual ball position  -->
+                                        <Ellipse
+                                            Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
+                                            Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}}"
+                                            Width="40"
+                                            Height="40"
+                                            Fill="Transparent"
+                                            Stroke="#00FF00"
+                                            StrokeThickness="3" />
+
+                                        <!--  Center crosshair  -->
+                                        <Line
+                                            Stroke="#333333"
+                                            StrokeDashArray="5,5"
+                                            StrokeThickness="1"
+                                            StartPoint="0,240"
+                                            EndPoint="620,240" />
+                                        <Line
+                                            Stroke="#333333"
+                                            StrokeDashArray="5,5"
+                                            StrokeThickness="1"
+                                            StartPoint="310,0"
+                                            EndPoint="310,480" />
+                                    </Canvas>
+
+                                    <!--  Overlay info  -->
+                                    <Border
+                                        Margin="12"
+                                        Padding="8"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Background="#80000000">
+                                        <StackPanel>
+                                            <TextBlock
+                                                FontSize="12"
+                                                FontWeight="Bold"
+                                                Foreground="#00FF00"
+                                                Text="CAMERA FEED" />
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock
+                                                    FontSize="10"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="Ball Detected: X=" />
+                                                <TextBlock
+                                                    FontSize="10"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="{Binding BallXPosition, StringFormat={}{0:F0}}" />
+                                                <TextBlock
+                                                    FontSize="10"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text=", Y=" />
+                                                <TextBlock
+                                                    FontSize="10"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="{Binding BallYPosition, StringFormat={}{0:F0}}" />
+                                            </StackPanel>
                                             <TextBlock
                                                 FontSize="10"
                                                 Foreground="{StaticResource TextBrush}"
-                                                Text="Ball Detected: X=" />
-                                            <TextBlock
-                                                FontSize="10"
+                                                Text="{Binding DetectionConfidence, StringFormat=Confidence: {0:F0}%}" />
+
+                                            <!--  Simulation Toggle  -->
+                                            <CheckBox
+                                                Margin="0,4,0,0"
+                                                Content="Simulate Position"
+                                                FontSize="9"
                                                 Foreground="{StaticResource TextBrush}"
-                                                Text="{Binding BallXPosition, StringFormat={}{0:F0}}" />
-                                            <TextBlock
-                                                FontSize="10"
-                                                Foreground="{StaticResource TextBrush}"
-                                                Text=", Y=" />
-                                            <TextBlock
-                                                FontSize="10"
-                                                Foreground="{StaticResource TextBrush}"
-                                                Text="{Binding BallYPosition, StringFormat={}{0:F0}}" />
+                                                IsChecked="{Binding IsSimulatingBallPosition}" />
                                         </StackPanel>
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{StaticResource TextBrush}"
-                                            Text="{Binding DetectionConfidence, StringFormat=Confidence: {0:F0}%}" />
+                                    </Border>
+                                </Grid>
+                            </Border>
 
-                                        <!--  Simulation Toggle  -->
-                                        <CheckBox
-                                            Margin="0,4,0,0"
-                                            Content="Simulate Position"
-                                            FontSize="9"
-                                            Foreground="{StaticResource TextBrush}"
-                                            IsChecked="{Binding IsSimulatingBallPosition}" />
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-                        </Border>
+                            <!--  Image mask placeholder (620x480 aspect ratio, black and white)  -->
+                            <Border Grid.Column="1" Margin="0,8,8,8">
+                                <Grid>
+                                    <!--  Simulated image mask  -->
+                                    <Rectangle
+                                        Width="620"
+                                        Height="480"
+                                        Fill="#000000" />
 
-                        <!--  Image mask placeholder (620x480 aspect ratio, black and white)  -->
-                        <Border Grid.Column="1" Margin="0,8,8,8">
-                            <Grid>
-                                <!--  Simulated image mask  -->
-                                <Rectangle
-                                    Width="620"
-                                    Height="480"
-                                    Fill="#000000" />
+                                    <!--  White regions representing detected areas  -->
+                                    <Canvas Width="620" Height="480">
+                                        <!--  Ball mask region - bound to actual ball position  -->
+                                        <Ellipse
+                                            Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
+                                            Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}}"
+                                            Width="40"
+                                            Height="40"
+                                            Fill="#FFFFFF" />
+                                    </Canvas>
 
-                                <!--  White regions representing detected areas  -->
-                                <Canvas Width="620" Height="480">
-                                    <!--  Ball mask region - bound to actual ball position  -->
-                                    <Ellipse
-                                        Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
-                                        Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}}"
-                                        Width="40"
-                                        Height="40"
-                                        Fill="#FFFFFF" />
-                                </Canvas>
+                                    <!--  Overlay info  -->
+                                    <Border
+                                        Margin="12"
+                                        Padding="8"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Top"
+                                        Background="#80000000">
+                                        <StackPanel>
+                                            <TextBlock
+                                                FontSize="12"
+                                                FontWeight="Bold"
+                                                Foreground="#FFFFFF"
+                                                Text="IMAGE MASK" />
+                                            <TextBlock
+                                                FontSize="10"
+                                                Foreground="{StaticResource TextBrush}"
+                                                Text="{Binding BinaryThreshold, StringFormat=Binary Threshold: {0}}" />
+                                            <TextBlock
+                                                FontSize="10"
+                                                Foreground="{StaticResource TextBrush}"
+                                                Text="{Binding ObjectsDetected, StringFormat=Objects: {0}}" />
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </Border>
 
-                                <!--  Overlay info  -->
-                                <Border
-                                    Margin="12"
-                                    Padding="8"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Top"
-                                    Background="#80000000">
-                                    <StackPanel>
-                                        <TextBlock
-                                            FontSize="12"
-                                            FontWeight="Bold"
-                                            Foreground="#FFFFFF"
-                                            Text="IMAGE MASK" />
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{StaticResource TextBrush}"
-                                            Text="{Binding BinaryThreshold, StringFormat=Binary Threshold: {0}}" />
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{StaticResource TextBrush}"
-                                            Text="{Binding ObjectsDetected, StringFormat=Objects: {0}}" />
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-                        </Border>
-
+                        </Grid>
                     </Grid>
                 </Border>
             </Grid>
