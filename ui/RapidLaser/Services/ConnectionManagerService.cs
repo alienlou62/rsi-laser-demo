@@ -3,33 +3,26 @@ namespace RapidLaser.Services;
 public interface IConnectionManagerService
 {
     bool IsConnected { get; }
+    bool UseMockService { get; set; }
+
     IRmpGrpcService GrpcService { get; }
 
-    Task<bool> ConnectAsync();
+    // grpc
+    Task<bool> ConnectAsync(string ipAddress, int port);
     Task DisconnectAsync();
     void SetMockMode(bool useMock);
-    Task<string> RunSshCommandAsync(string command);
-    string IpAddress { get; set; }
-    int Port { get; set; }
-    bool UseMockService { get; set; }
+    // ssh
+    Task<string> RunSshCommandAsync(string command, string sshUser, string sshPass);
 }
 
 public partial class ConnectionManagerService : ObservableObject, IConnectionManagerService
 {
     // connection
-    public string SshUser = "rsi";
-    public string SshPass = "admin";
-
-    [ObservableProperty]
-    private string _ipAddress = "localhost";
-
-    [ObservableProperty]
-    private int _port = 50061;
+    private string _latestIpAddress = string.Empty;
+    private int _latestPort;
 
     [ObservableProperty]
     private bool _useMockService = false;
-
-    public string ServerAddress => $"{IpAddress}:{Port}";
 
     //
     [ObservableProperty]
@@ -41,6 +34,8 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
     private readonly RmpGrpcService _realService;
     private readonly RmpGrpcService_Mock _mockService;
 
+
+    // CONSTRUCTOR
     public ConnectionManagerService()
     {
         _realService = new RmpGrpcService();
@@ -48,8 +43,13 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
         _grpcService = _mockService; // Start with mock service
     }
 
-    public async Task<bool> ConnectAsync()
+
+    // METHODS
+    public async Task<bool> ConnectAsync(string ip, int port)
     {
+        _latestIpAddress = ip;
+        _latestPort = port;
+
         try
         {
             if (UseMockService)
@@ -60,7 +60,8 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
             }
             else
             {
-                var connected = await _realService.ConnectAsync(ServerAddress);
+                var serverAddress = $"{_latestIpAddress}:{_latestPort}";
+                var connected = await _realService.ConnectAsync(serverAddress);
                 if (connected)
                 {
                     GrpcService = _realService;
@@ -96,8 +97,8 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
         }
     }
 
-    // SSH
-    public async Task<string> RunSshCommandAsync(string command)
+    /// ssh
+    public async Task<string> RunSshCommandAsync(string command, string sshUser, string sshPass)
     {
         if (!IsConnected)
         {
@@ -111,7 +112,7 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
 
         try
         {
-            using var client = new SshClient(IpAddress, SshUser, SshPass);
+            using var client = new SshClient(_latestIpAddress, sshUser, sshPass);
 
             // Set connection timeout
             client.ConnectionInfo.Timeout = TimeSpan.FromSeconds(30);
@@ -126,8 +127,9 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
             var sshCommand = client.CreateCommand(command);
             sshCommand.CommandTimeout = TimeSpan.FromSeconds(30);
 
-            var result = await Task.Run(sshCommand.Execute);
-
+            //make sure this returns error stirng if an error occurs
+            // var result = await Task.Run(sshCommand.Execute);
+            var result = sshCommand.Execute();
             client.Disconnect();
 
             return result;

@@ -516,7 +516,7 @@
                                 IsEnabled="{Binding IsConnected}"
                                 Label="Username"
                                 LabelWidth="60">
-                                <TextBox HorizontalAlignment="Stretch" />
+                                <TextBox HorizontalAlignment="Stretch" Text="{Binding SshUser}" />
                             </controls:LabeledControl>
 
                             <!--  password  -->
@@ -524,7 +524,7 @@
                                 IsEnabled="{Binding IsConnected}"
                                 Label="Password"
                                 LabelWidth="60">
-                                <TextBox HorizontalAlignment="Stretch" />
+                                <TextBox HorizontalAlignment="Stretch" Text="{Binding SshPassword}" />
                             </controls:LabeledControl>
 
                             <controls:LabeledControl IsEnabled="{Binding IsConnected}" Label="Command" />
@@ -583,6 +583,7 @@
                                         Text="{Binding SshStatus}"
                                         TextWrapping="Wrap" />
 
+
                                     <!--  Clear Button  -->
                                     <Button
                                         Grid.Column="1"
@@ -599,6 +600,8 @@
 
                                 <!--  Output  -->
                                 <TextBox
+                                    MaxHeight="280"
+                                    Margin="0,0,-12,0"
                                     Padding="0"
                                     AcceptsReturn="True"
                                     Background="Transparent"

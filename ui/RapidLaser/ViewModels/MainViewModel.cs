@@ -16,8 +16,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     // FIELDS
     /// updater/polling
+    private double _updateIntervalMs = 100;
     private readonly System.Timers.Timer _updateTimer;
-    private readonly Random _random = new Random();
+    private readonly Random _random = new();
 
     /// globals
     [ObservableProperty]
@@ -72,10 +73,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     // Connection Properties
     [ObservableProperty]
-    private string _ipAddress = "localhost";
+    private string _ipAddress;
+    partial void OnIpAddressChanged(string value)
+    {
+        SaveSettingsToConfig();
+    }
 
     [ObservableProperty]
-    private int _port = 50061;
+    private int _port;
+    partial void OnPortChanged(int value)
+    {
+        SaveSettingsToConfig();
+    }
 
     [ObservableProperty]
     private bool _isConnected = false;
@@ -92,6 +101,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _lastError = string.Empty;
 
+    //
     [ObservableProperty]
     private string _managerState = "Stopped";
 
@@ -112,9 +122,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private bool _isSimulatingBallPosition = false;
 
-    // SSH Command Properties
+    // SSH
     [ObservableProperty]
-    private string _sshCommand = "ls -la";
+    private string _sshUser = "";
+
+    [ObservableProperty]
+    private string _sshPassword = "";
+
+    [ObservableProperty]
+    private string _sshCommand = "whoami";
 
     [ObservableProperty]
     private string _sshOutput = string.Empty;
@@ -172,6 +188,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task ConnectAsync()
     {
+        // verify ip address is valid 
+        if (!IsValidIpAddress(IpAddress))
+        {
+            LastError = "Invalid IP address.";
+            ConnectionStatus = "Connection Failed";
+            return;
+        }
+
+        // verify port is valid
+        if (Port <= 0)
+        {
+            LastError = "Invalid port.";
+            ConnectionStatus = "Connection Failed";
+            return;
+        }
+
         if (IsConnecting) return;
 
         try
@@ -180,11 +212,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             LastError = string.Empty;
 
             // Update connection manager settings
-            _connectionManager.IpAddress = IpAddress;
-            _connectionManager.Port = Port;
             _connectionManager.UseMockService = UseMockService;
 
-            var success = await _connectionManager.ConnectAsync();
+            var success = await _connectionManager.ConnectAsync(IpAddress, Port);
 
             if (success)
             {
@@ -212,6 +242,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             IsConnecting = false;
         }
+    }
+
+    private static bool IsValidIpAddress(string ipAddress)
+    {
+        if (string.IsNullOrWhiteSpace(ipAddress))
+            return false;
+
+        // Allow localhost
+        if (string.Equals(ipAddress, "localhost", StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // Allow standard IP address formats
+        return System.Net.IPAddress.TryParse(ipAddress, out _);
     }
 
     [RelayCommand]
@@ -248,24 +291,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         SaveSettingsToConfig();
     }
 
-    partial void OnIpAddressChanged(string value)
-    {
-        if (_connectionManager != null)
-        {
-            _connectionManager.IpAddress = value;
-        }
-        SaveSettingsToConfig();
-    }
-
-    partial void OnPortChanged(int value)
-    {
-        if (_connectionManager != null)
-        {
-            _connectionManager.Port = value;
-        }
-        SaveSettingsToConfig();
-    }
-
     // SSH Commands
     [RelayCommand]
     private async Task RunSshCommandAsync()
@@ -284,13 +309,19 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(SshUser) || string.IsNullOrWhiteSpace(SshPassword))
+        {
+            SshStatus = "Please enter SSH username and password";
+            return;
+        }
+
         try
         {
             IsSshCommandRunning = true;
             SshStatus = "Running command...";
             SshOutput = string.Empty;
 
-            var result = await _connectionManager.RunSshCommandAsync(SshCommand);
+            var result = await _connectionManager.RunSshCommandAsync(SshCommand, SshUser, SshPassword);
 
             SshOutput = result;
             SshStatus = "Command completed";
@@ -361,8 +392,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _imageProcessingService = new SimulatedImageProcessingService();
 
         // Initialize connection settings
-        IpAddress = _connectionManager.IpAddress;
-        Port = _connectionManager.Port;
         UseMockService = _connectionManager.UseMockService;
         IsConnected = _connectionManager.IsConnected;
 
@@ -380,25 +409,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void LoadSettingsFromConfig()
     {
         // Load settings from configuration with fallback defaults
-        IpAddress = _settings["ipAddress"] ?? "127.0.0.1";
+        IpAddress = _settings["ipAddress"] ?? "localhost";
+        Port = int.TryParse(_settings["port"], out var port) ? port : 50061;
+        _updateIntervalMs = int.TryParse(_settings["pollingIntervalMs"], out var pollingInterval) ? pollingInterval : 100;
+        SshUser = _settings["sshUsername"] ?? "";
+        SshPassword = _settings["sshPassword"] ?? "";
 
-        if (int.TryParse(_settings["port"], out var port))
-            Port = port;
-        else
-            Port = 50051;
-
-        if (bool.TryParse(_settings["autoReconnect"], out var autoReconnect))
-        {
-            // Store autoReconnect setting if needed
-        }
-
-        if (int.TryParse(_settings["pollingIntervalMs"], out var pollingInterval))
-        {
-            // Polling interval is used in constructor for timer setup
-        }
-        // Load SSH settings
-        var sshUsername = _settings["sshUsername"] ?? "";
-        var sshPassword = _settings["sshPassword"] ?? "";
+        // autoReconnect can be stored if needed later
+        // var autoReconnect = bool.TryParse(_settings["autoReconnect"], out var reconnect) && reconnect;
     }
 
     private void SaveSettingsToConfig()
