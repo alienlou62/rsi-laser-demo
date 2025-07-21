@@ -13,6 +13,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="RapidLaser.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
 		<Protobuf Include="C:\RSI\10.6.8\protos\rapidcode.proto" GrpcServices="Client">
 			<Link>Assets\protos\rapidcode.proto</Link>
 		</Protobuf>
@@ -42,6 +48,8 @@
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Material.Icons.Avalonia" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="SSH.NET" />
   </ItemGroup>
 

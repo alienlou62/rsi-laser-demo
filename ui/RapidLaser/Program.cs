@@ -1,5 +1,3 @@
-using Avalonia;
-
 namespace RapidLaser;
 
 sealed class Program

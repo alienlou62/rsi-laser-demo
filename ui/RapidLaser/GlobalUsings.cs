@@ -10,6 +10,7 @@ global using System.Threading.Tasks;
 global using System.Diagnostics;
 global using System.Timers;
 global using System.Collections.ObjectModel;
+global using System.Text.Json;
 
 // avalonia
 global using Avalonia;
@@ -28,6 +29,7 @@ global using Avalonia.Controls.Primitives;
 global using CommunityToolkit.Mvvm.ComponentModel;
 global using CommunityToolkit.Mvvm.Input;
 global using Renci.SshNet;
+global using Microsoft.Extensions.Configuration;
 
 // gRPC
 global using Grpc.Net.Client;

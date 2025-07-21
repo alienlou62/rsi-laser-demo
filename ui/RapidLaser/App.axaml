@@ -96,7 +96,6 @@
         </Style>
 
         <!--  Status Label Styles  -->
-
         <Style Selector="TextBlock:disabled">
             <Setter Property="Opacity" Value="0.5" />
         </Style>

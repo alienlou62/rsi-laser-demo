@@ -286,6 +286,11 @@
 
                             <!--  Server Configuration (disabled when using mock or when connected)  -->
                             <StackPanel Spacing="8">
+                                <!-- <StackPanel.Styles>
+                                    <Style Selector="ContentControl.is-connected controls|LabeledControl TextPresenter">
+                                        <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccessPressed}" />
+                                    </Style>
+                                </StackPanel.Styles>-->
 
                                 <!--  IP Address  -->
                                 <controls:LabeledControl
@@ -491,32 +496,68 @@
                             Color="Black" />
                     </Border.Effect>
 
-                    <StackPanel Spacing="12">
+                    <StackPanel Spacing="8">
                         <TextBlock
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="SSH Commands" />
+                            Text="SSH" />
 
-                        <Grid ColumnDefinitions="* auto" ColumnSpacing="4">
+
+                        <StackPanel Spacing="8">
+                            <!-- <StackPanel.Styles>
+                                    <Style Selector="ContentControl.is-connected controls|LabeledControl TextPresenter">
+                                        <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccessPressed}" />
+                                    </Style>
+                                </StackPanel.Styles>-->
+
+                            <!--  usernmae  -->
+                            <controls:LabeledControl
+                                IsEnabled="{Binding IsConnected}"
+                                Label="Username"
+                                LabelWidth="60">
+                                <TextBox HorizontalAlignment="Stretch" />
+                            </controls:LabeledControl>
+
+                            <!--  password  -->
+                            <controls:LabeledControl
+                                IsEnabled="{Binding IsConnected}"
+                                Label="Password"
+                                LabelWidth="60">
+                                <TextBox HorizontalAlignment="Stretch" />
+                            </controls:LabeledControl>
+
+                            <controls:LabeledControl IsEnabled="{Binding IsConnected}" Label="Command" />
+
                             <!--  Command Input  -->
                             <TextBox
+                                Margin="0,-4,0,0"
                                 HorizontalAlignment="Stretch"
                                 IsEnabled="{Binding !IsSshCommandRunning}"
                                 Text="{Binding SshCommand}"
-                                ToolTip.Tip="SSH command to execute on the server"
-                                Watermark="Enter SSH command..." />
-
-                            <!--  Execute Button  -->
-                            <Button
-                                Grid.Column="1"
-                                HorizontalAlignment="Stretch"
-                                Classes="theme-soft"
-                                Command="{Binding RunSshCommandCommand}"
-                                IsEnabled="{Binding !IsSshCommandRunning}">
-                                <icons:MaterialIcon Kind="Terminal" />
-                            </Button>
-                        </Grid>
+                                TextWrapping="Wrap"
+                                ToolTip.ShowDelay="0"
+                                ToolTip.Tip="Send SSH command"
+                                Watermark="Enter SSH command..">
+                                <TextBox.KeyBindings>
+                                    <KeyBinding Command="{Binding RunSshCommandCommand}" Gesture="Enter" />
+                                </TextBox.KeyBindings>
+                                <TextBox.InnerRightContent>
+                                    <!--  Execute Button  -->
+                                    <Button
+                                        Grid.Column="1"
+                                        Margin="4,4,4,0"
+                                        Padding="4,2"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Top"
+                                        Classes="theme-soft"
+                                        Command="{Binding RunSshCommandCommand}"
+                                        IsEnabled="{Binding !IsSshCommandRunning}">
+                                        <icons:MaterialIcon Kind="Terminal" />
+                                    </Button>
+                                </TextBox.InnerRightContent>
+                            </TextBox>
+                        </StackPanel>
 
                         <!--  Grouped Card  -->
                         <Border
@@ -524,7 +565,7 @@
                             Background="{StaticResource BorderColor}"
                             BorderBrush="{StaticResource BorderBrush}"
                             BorderThickness="0"
-                            CornerRadius="{StaticResource StandardCornerRadius}">
+                            CornerRadius="2">
 
                             <StackPanel Spacing="8">
                                 <!--  Status and Clear Button Row  -->
@@ -545,19 +586,19 @@
                                     <!--  Clear Button  -->
                                     <Button
                                         Grid.Column="1"
-                                        Margin="-4"
+                                        Margin="-8,-4"
                                         Padding="4,2,4,1"
                                         Classes="theme-subtle"
                                         Command="{Binding ClearSshOutputCommand}"
                                         IsEnabled="{Binding IsConnected}"
-                                        Opacity="0.5">
-                                        <icons:MaterialIcon Kind="Clear" />
+                                        Opacity="0.5"
+                                        ToolTip.Tip="Clear output">
+                                        <icons:MaterialIcon Kind="Close" />
                                     </Button>
                                 </Grid>
 
                                 <!--  Output  -->
                                 <TextBox
-                                    MaxHeight="140"
                                     Padding="0"
                                     AcceptsReturn="True"
                                     Background="Transparent"
@@ -580,7 +621,8 @@
                     Background="{StaticResource SidebarBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1"
-                    CornerRadius="{StaticResource StandardCornerRadius}">
+                    CornerRadius="{StaticResource StandardCornerRadius}"
+                    IsVisible="False">
                     <Border.Effect>
                         <DropShadowEffect
                             BlurRadius="8"

@@ -26,5 +26,8 @@
     <PackageVersion Include="Google.Protobuf" Version="3.28.3" />
     <!-- SSH.NET for SSH command execution -->
     <PackageVersion Include="SSH.NET" Version="2024.1.0" />
+    <!-- Microsoft Configuration packages -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.1" />
   </ItemGroup>
 </Project>

@@ -4,6 +4,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 {
     private Window? _mainWindow;
 
+    // CONFIGURATION
+    private IConfigurationSection _settings;
+
     // SERVICES
     private readonly ICameraService _cameraService;
     private readonly IImageProcessingService _imageProcessingService;
@@ -103,7 +106,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     // Display Properties
     [ObservableProperty]
-    private string _isProgramPausedDisplay;
+    private string _isProgramPausedDisplay = string.Empty;
 
     // mocks
     [ObservableProperty]
@@ -242,6 +245,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         _connectionManager.SetMockMode(value);
         UpdateConnectionStatus();
+        SaveSettingsToConfig();
     }
 
     partial void OnIpAddressChanged(string value)
@@ -250,6 +254,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             _connectionManager.IpAddress = value;
         }
+        SaveSettingsToConfig();
     }
 
     partial void OnPortChanged(int value)
@@ -258,6 +263,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             _connectionManager.Port = value;
         }
+        SaveSettingsToConfig();
     }
 
     // SSH Commands
@@ -338,26 +344,94 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // ===== CONSTRUCTOR ===== 
     public MainViewModel()
     {
+        // Load configuration from JSON file
+        _settings = new ConfigurationBuilder()
+            .AddJsonFile("RapidLaser.json")
+            .Build()
+            .GetSection("Settings");
+
+        // Load settings and apply them
+        LoadSettingsFromConfig();
+
         // Initialize connection manager
         _connectionManager = new ConnectionManagerService();
-
 
         // Initialize services (in real app, use DI)
         _cameraService = new SimulatedCameraService();
         _imageProcessingService = new SimulatedImageProcessingService();
 
         // Initialize connection settings
-        IpAddress      = _connectionManager.IpAddress;
-        Port           = _connectionManager.Port;
+        IpAddress = _connectionManager.IpAddress;
+        Port = _connectionManager.Port;
         UseMockService = _connectionManager.UseMockService;
-        IsConnected    = _connectionManager.IsConnected;
+        IsConnected = _connectionManager.IsConnected;
 
         UpdateConnectionStatus();
 
         // Setup UI update timer
-        _updateTimer = new System.Timers.Timer(100); // Update UI every 100ms
+        var updateInterval = int.Parse(_settings["pollingIntervalMs"] ?? "100");
+        _updateTimer = new System.Timers.Timer(updateInterval); // Update UI every 100ms by default
         _updateTimer.Elapsed += OnUpdateTimerElapsed;
         _updateTimer.Start();
+    }
+
+
+    // ===== CONFIGURATION METHODS =====
+    private void LoadSettingsFromConfig()
+    {
+        // Load settings from configuration with fallback defaults
+        IpAddress = _settings["ipAddress"] ?? "127.0.0.1";
+
+        if (int.TryParse(_settings["port"], out var port))
+            Port = port;
+        else
+            Port = 50051;
+
+        if (bool.TryParse(_settings["autoReconnect"], out var autoReconnect))
+        {
+            // Store autoReconnect setting if needed
+        }
+
+        if (int.TryParse(_settings["pollingIntervalMs"], out var pollingInterval))
+        {
+            // Polling interval is used in constructor for timer setup
+        }
+        // Load SSH settings
+        var sshUsername = _settings["sshUsername"] ?? "";
+        var sshPassword = _settings["sshPassword"] ?? "";
+    }
+
+    private void SaveSettingsToConfig()
+    {
+        try
+        {
+            // Create updated configuration object
+            var configData = new
+            {
+                Settings = new
+                {
+                    ipAddress = IpAddress,
+                    port = Port.ToString(),
+                    autoReconnect = true.ToString().ToLower(),
+                    pollingIntervalMs = _settings["pollingIntervalMs"] ?? "100",
+                    sshUsername = _settings["sshUsername"] ?? "",
+                    sshPassword = _settings["sshPassword"] ?? ""
+                }
+            };
+
+            // Serialize to JSON with proper formatting
+            var json = JsonSerializer.Serialize(configData, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+
+            // Write to file
+            File.WriteAllText("RapidLaser.json", json);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Failed to save configuration: {ex.Message}");
+        }
     }
 
 
