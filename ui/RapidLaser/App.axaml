@@ -95,6 +95,11 @@
         </Style>
 
         <!--  Status Label Styles  -->
+
+        <Style Selector="TextBlock:disabled">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+
         <Style Selector="TextBlock.status-text">
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="SemiBold" />
@@ -121,6 +126,19 @@
 
         <Style Selector="TextBlock.status-neutral">
             <Setter Property="Foreground" Value="#9E9E9E" />
+        </Style>
+
+        <!--  Add subtle shadow to all buttons using standard Avalonia DropShadow  -->
+        <Style Selector="Button">     
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Effect">
+                <DropShadowEffect BlurRadius="4" OffsetX="1" OffsetY="1" Opacity="0.2" Color="Black" />
+            </Setter>
+        </Style>
+
+        <!--  Remove shadow for specific buttons (like window controls)  -->
+        <Style Selector="Button.shadowless">
+            <Setter Property="Effect" Value="{x:Null}" />
         </Style>
 
     </Application.Styles>

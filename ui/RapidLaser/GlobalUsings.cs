@@ -27,6 +27,7 @@ global using Avalonia.Controls.Primitives;
 // third parties
 global using CommunityToolkit.Mvvm.ComponentModel;
 global using CommunityToolkit.Mvvm.Input;
+global using Renci.SshNet;
 
 // gRPC
 global using Grpc.Net.Client;

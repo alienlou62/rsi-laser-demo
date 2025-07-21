@@ -102,14 +102,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private string _motionControlStatus = "Inactive";
 
     // Display Properties
-    public string IsProgramPausedDisplay => IsProgramPaused ? "Yes" : "No";
-
-    // New property to disable connection inputs when connected
-    public bool ConnectionInputsEnabled => !IsConnected;
+    [ObservableProperty]
+    private string _isProgramPausedDisplay;
 
     // mocks
     [ObservableProperty]
     private bool _isSimulatingBallPosition = false;
+
+    // SSH Command Properties
+    [ObservableProperty]
+    private string _sshCommand = "ls -la";
+
+    [ObservableProperty]
+    private string _sshOutput = string.Empty;
+
+    [ObservableProperty]
+    private bool _isSshCommandRunning = false;
+
+    [ObservableProperty]
+    private string _sshStatus = "Ready";
 
 
     // ===== COMMANDS ===== 
@@ -166,9 +177,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             LastError = string.Empty;
 
             // Update connection manager settings
-            _connectionManager.Settings.IpAddress = IpAddress;
-            _connectionManager.Settings.Port = Port;
-            _connectionManager.Settings.UseMockService = UseMockService;
+            _connectionManager.IpAddress = IpAddress;
+            _connectionManager.Port = Port;
+            _connectionManager.UseMockService = UseMockService;
 
             var success = await _connectionManager.ConnectAsync();
 
@@ -225,12 +236,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void UpdateConnectionStatus()
     {
         ConnectionStatus = IsConnected ? "Connected" : "Disconnected";
-        OnPropertyChanged(nameof(ConnectionInputsEnabled));
-    }
-
-    partial void OnIsConnectedChanged(bool value)
-    {
-        OnPropertyChanged(nameof(ConnectionInputsEnabled));
     }
 
     partial void OnUseMockServiceChanged(bool value)
@@ -241,18 +246,65 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     partial void OnIpAddressChanged(string value)
     {
-        if (_connectionManager?.Settings != null)
+        if (_connectionManager != null)
         {
-            _connectionManager.Settings.IpAddress = value;
+            _connectionManager.IpAddress = value;
         }
     }
 
     partial void OnPortChanged(int value)
     {
-        if (_connectionManager?.Settings != null)
+        if (_connectionManager != null)
         {
-            _connectionManager.Settings.Port = value;
+            _connectionManager.Port = value;
         }
+    }
+
+    // SSH Commands
+    [RelayCommand]
+    private async Task RunSshCommandAsync()
+    {
+        if (IsSshCommandRunning) return;
+
+        if (!IsConnected)
+        {
+            SshStatus = "Not connected to server";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(SshCommand))
+        {
+            SshStatus = "Please enter a command";
+            return;
+        }
+
+        try
+        {
+            IsSshCommandRunning = true;
+            SshStatus = "Running command...";
+            SshOutput = string.Empty;
+
+            var result = await _connectionManager.RunSshCommandAsync(SshCommand);
+
+            SshOutput = result;
+            SshStatus = "Command completed";
+        }
+        catch (Exception ex)
+        {
+            SshOutput = $"Error: {ex.Message}";
+            SshStatus = "Command failed";
+        }
+        finally
+        {
+            IsSshCommandRunning = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ClearSshOutput()
+    {
+        SshOutput = string.Empty;
+        SshStatus = "Ready";
     }
 
     // window
@@ -295,10 +347,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _imageProcessingService = new SimulatedImageProcessingService();
 
         // Initialize connection settings
-        IpAddress = _connectionManager.Settings.IpAddress;
-        Port = _connectionManager.Settings.Port;
-        UseMockService = _connectionManager.Settings.UseMockService;
-        IsConnected = _connectionManager.IsConnected;
+        IpAddress      = _connectionManager.IpAddress;
+        Port           = _connectionManager.Port;
+        UseMockService = _connectionManager.UseMockService;
+        IsConnected    = _connectionManager.IsConnected;
 
         UpdateConnectionStatus();
 

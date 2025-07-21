@@ -42,6 +42,7 @@
     <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Material.Icons.Avalonia" />
+    <PackageReference Include="SSH.NET" />
   </ItemGroup>
 
   <ItemGroup>

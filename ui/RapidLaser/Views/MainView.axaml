@@ -209,11 +209,45 @@
                     <Grid>
                         <!--  Subtle gradient overlay  -->
                         <actipro:MeshGradientPresenter Margin="-12" IsVisible="{Binding IsConnected}">
+                            <actipro:MeshGradientPresenter.Styles>
+                                <Style Selector="actipro|MeshGradientPresenter">
+                                    <Style.Animations>
+                                        <Animation IterationCount="INFINITE" Duration="0:0:3">
+                                            <KeyFrame Cue="0%">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </KeyFrame>
+                                            <KeyFrame Cue="50%">
+                                                <Setter Property="Opacity" Value="0.3" />
+                                            </KeyFrame>
+                                            <KeyFrame Cue="100%">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </KeyFrame>
+                                        </Animation>
+                                    </Style.Animations>
+                                </Style>
+                            </actipro:MeshGradientPresenter.Styles>
                             <actipro:MeshGradientNode Center="100%, 0%" Color="#304CAF50" />
                             <actipro:MeshGradientNode Center="0%, 100%" Color="#00000000" />
                         </actipro:MeshGradientPresenter>
 
                         <actipro:MeshGradientPresenter Margin="-12" IsVisible="{Binding !IsConnected}">
+                            <actipro:MeshGradientPresenter.Styles>
+                                <Style Selector="actipro|MeshGradientPresenter">
+                                    <Style.Animations>
+                                        <Animation IterationCount="INFINITE" Duration="0:0:3">
+                                            <KeyFrame Cue="0%">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </KeyFrame>
+                                            <KeyFrame Cue="50%">
+                                                <Setter Property="Opacity" Value="0.3" />
+                                            </KeyFrame>
+                                            <KeyFrame Cue="100%">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </KeyFrame>
+                                        </Animation>
+                                    </Style.Animations>
+                                </Style>
+                            </actipro:MeshGradientPresenter.Styles>
                             <actipro:MeshGradientNode Center="100%, 0%" Color="#30F44336" />
                             <actipro:MeshGradientNode Center="0%, 100%" Color="#00000000" />
                         </actipro:MeshGradientPresenter>
@@ -251,22 +285,26 @@
                             </Grid>
 
                             <!--  Server Configuration (disabled when using mock or when connected)  -->
-                            <StackPanel IsEnabled="{Binding ConnectionInputsEnabled}" Spacing="8">
+                            <StackPanel Spacing="8">
 
                                 <!--  IP Address  -->
-                                <controls:LabeledControl Label="IP Address" LabelWidth="60">
+                                <controls:LabeledControl
+                                    IsEnabled="{Binding !IsConnected}"
+                                    Label="IP Address"
+                                    LabelWidth="60">
                                     <TextBox
                                         HorizontalAlignment="Stretch"
-                                        IsEnabled="{Binding ConnectionInputsEnabled}"
                                         Text="{Binding IpAddress}"
                                         ToolTip.Tip="IP Address" />
                                 </controls:LabeledControl>
 
                                 <!--  Port  -->
-                                <controls:LabeledControl Label="Port" LabelWidth="60">
+                                <controls:LabeledControl
+                                    IsEnabled="{Binding !IsConnected}"
+                                    Label="Port"
+                                    LabelWidth="60">
                                     <TextBox
                                         HorizontalAlignment="Stretch"
-                                        IsEnabled="{Binding ConnectionInputsEnabled}"
                                         Text="{Binding Port}"
                                         ToolTip.Tip="Port" />
                                 </controls:LabeledControl>
@@ -290,12 +328,18 @@
                             </StackPanel>
 
                             <Button
-                                Classes="theme-subtle danger"
-                                Margin="0,8,0,0"
-                                HorizontalAlignment="Stretch"
+                                Classes="theme-soft danger"
+                                Margin="0,14,0,0" FontSize="12"
+                                HorizontalAlignment="Stretch" 
                                 Command="{Binding DisconnectCommand}"
-                                Content="Disconnect"
-                                IsVisible="{Binding IsConnected}" />
+                                IsVisible="{Binding IsConnected}" >
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="Disconnect" VerticalAlignment="Center" />
+                                    <icons:MaterialIcon
+                                        VerticalAlignment="Center" IsVisible="False"
+                                        Kind="LanDisconnect" />
+                                </StackPanel>
+                            </Button>
 
 
                             <!--  Error Display  -->
@@ -315,6 +359,7 @@
                     Background="{StaticResource SidebarBrush}"
                     BorderBrush="{StaticResource BorderBrush}"
                     BorderThickness="1"
+                    ClipToBounds="True"
                     CornerRadius="{StaticResource StandardCornerRadius}"
                     IsEnabled="{Binding IsConnected}">
                     <Border.Effect>
@@ -325,15 +370,67 @@
                             Opacity="0.3"
                             Color="Black" />
                     </Border.Effect>
-                    <StackPanel Spacing="16">
-                        <!--  Cemo Control  -->
-                        <StackPanel>
-                            <TextBlock
-                                Margin="0,0,0,8"
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="Program (RT Task)" />
+
+                    <Grid>
+                        <!--  Mesh gradient overlay for program running state  -->
+                        <actipro:MeshGradientPresenter Margin="-12" IsVisible="{Binding IsProgramRunning}">
+                            <actipro:MeshGradientNode Center="100%, 0%" Color="#304CAF50" />
+                            <actipro:MeshGradientNode Center="0%, 100%" Color="#00000000" />
+                        </actipro:MeshGradientPresenter>
+
+                        <StackPanel Spacing="8">
+                            <!--  Program Control Header with Progress Ring  -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock
+                                    Grid.Column="0"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextBrush}"
+                                    Text="Program (RT Task)" />
+
+                                <!--  Spinning icon when program is running  -->
+                                <Border
+                                    Grid.Column="1"
+                                    Width="20"
+                                    Height="20"
+                                    Background="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}"
+                                    CornerRadius="10"
+                                    IsVisible="{Binding IsProgramRunning}">
+                                    <Border.Child>
+                                        <icons:MaterialIcon
+                                            Width="12"
+                                            Height="12"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Foreground="White"
+                                            Kind="Sync" />
+                                    </Border.Child>
+                                    <Border.Styles>
+                                        <Style Selector="Border">
+                                            <Style.Animations>
+                                                <Animation IterationCount="INFINITE" Duration="0:0:1">
+                                                    <KeyFrame Cue="0%">
+                                                        <Setter Property="Opacity" Value="0.3" />
+                                                    </KeyFrame>
+                                                    <KeyFrame Cue="50%">
+                                                        <Setter Property="Opacity" Value="1.0" />
+                                                    </KeyFrame>
+                                                    <KeyFrame Cue="100%">
+                                                        <Setter Property="Opacity" Value="0.3" />
+                                                    </KeyFrame>
+                                                </Animation>
+                                            </Style.Animations>
+                                        </Style>
+                                    </Border.Styles>
+                                </Border>
+                            </Grid>
+
+                            <!--  Control Buttons  -->
                             <UniformGrid ColumnSpacing="8" Columns="3">
 
                                 <!--  start  -->
@@ -378,6 +475,109 @@
 
                             </UniformGrid>
                         </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!--  SSH Commands Card  -->
+                <Border
+                    Padding="{StaticResource CardPadding}"
+                    Background="{StaticResource SidebarBrush}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource StandardCornerRadius}"
+                    IsEnabled="{Binding IsConnected}">
+                    <Border.Effect>
+                        <DropShadowEffect
+                            BlurRadius="8"
+                            OffsetX="2"
+                            OffsetY="2"
+                            Opacity="0.3"
+                            Color="Black" />
+                    </Border.Effect>
+
+                    <StackPanel Spacing="12">
+                        <TextBlock
+                            FontSize="14"
+                            FontWeight="SemiBold"
+                            Foreground="{StaticResource TextBrush}"
+                            Text="SSH Commands" />
+
+                        <Grid ColumnDefinitions="* auto" ColumnSpacing="4">
+                            <!--  Command Input  -->
+                            <TextBox
+                                HorizontalAlignment="Stretch"
+                                IsEnabled="{Binding !IsSshCommandRunning}"
+                                Text="{Binding SshCommand}"
+                                ToolTip.Tip="SSH command to execute on the server"
+                                Watermark="Enter SSH command..." />
+
+                            <!--  Execute Button  -->
+                            <Button
+                                Classes="theme-soft"
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                Command="{Binding RunSshCommandCommand}"
+                                IsEnabled="{Binding !IsSshCommandRunning}">
+                                <icons:MaterialIcon
+                                    Width="16"
+                                    Height="16"
+                                    Kind="Terminal" />
+                            </Button>
+                        </Grid>
+
+                        <!--  Grouped Card  -->
+                        <Border
+                            Padding="{StaticResource CardPadding}"
+                            Background="{StaticResource BorderColor}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0"
+                            CornerRadius="{StaticResource StandardCornerRadius}">
+
+                            <StackPanel Spacing="8">
+                                <!--  Status and Clear Button Row  -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <!--  Status  -->
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        FontSize="12"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="{Binding SshStatus}"
+                                        TextWrapping="Wrap" />
+
+                                    <!--  Clear Button  -->
+                                    <Button
+                                        Classes="theme-subtle"
+                                        Grid.Column="1"
+                                        Margin="-4"
+                                        Padding="4,2,4,1"
+                                        Command="{Binding ClearSshOutputCommand}"
+                                        IsEnabled="{Binding IsConnected}"
+                                        Opacity="0.5">
+                                        <icons:MaterialIcon Kind="Clear" />
+                                    </Button>
+                                </Grid>
+
+                                <!--  Output  -->
+                                <TextBox
+                                    MaxHeight="140"
+                                    Padding="0"
+                                    AcceptsReturn="True"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontFamily="Consolas, 'Courier New', monospace"
+                                    FontSize="11"
+                                    IsReadOnly="True"
+                                    Text="{Binding SshOutput}"
+                                    TextWrapping="WrapWithOverflow"
+                                    Watermark="Command output will appear here..." />
+                            </StackPanel>
+                        </Border>
+
                     </StackPanel>
                 </Border>
 
