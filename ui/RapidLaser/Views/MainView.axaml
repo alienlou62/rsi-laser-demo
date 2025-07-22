@@ -254,8 +254,8 @@
 
                                 <icons:MaterialIcon
                                     Grid.Column="1"
-                                    Width="20"
-                                    Height="20"
+                                    Width="18"
+                                    Height="18"
                                     VerticalAlignment="Center">
                                     <icons:MaterialIcon.Styles>
                                         <Style Selector="ContentControl.is-connected icons|MaterialIcon">
@@ -366,7 +366,7 @@
                                     FontSize="14"
                                     FontWeight="SemiBold"
                                     Foreground="{StaticResource TextBrush}"
-                                    Text="Program (RT Task)" />
+                                    Text="Program" />
 
                                 <!--  Spinning icon when program is running  -->
                                 <Border
@@ -632,9 +632,9 @@
                                 Opacity="0.45" />
                             <TextBlock
                                 HorizontalAlignment="Center"
-                                Classes="danger"
                                 FontSize="18"
                                 FontWeight="SemiBold"
+                                Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
                                 Text="Connection Required" />
                             <TextBlock
                                 HorizontalAlignment="Center"
@@ -791,16 +791,18 @@
 
                 <!--  Server Card  -->
                 <Border Classes="card">
-                    <StackPanel>
+                    <StackPanel IsEnabled="{Binding IsConnected}">
 
                         <TextBlock
-                            Margin="0,0,0,12"
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="Server" />
+                            Text="Server Status" />
 
-                        <StackPanel Spacing="8">
+                        <StackPanel
+                            Margin="0,12,0,0"
+                            IsVisible="{Binding IsConnected}"
+                            Spacing="8">
                             <controls:StatusLabel
                                 Title="Controller"
                                 IsActive="True"
@@ -821,17 +823,19 @@
                 </Border>
 
                 <!--  Program Card  -->
-                <Border Classes="card">
+                <Border Classes="card" IsEnabled="{Binding IsConnected}">
                     <StackPanel>
 
                         <TextBlock
-                            Margin="0,0,0,12"
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="Program" />
+                            Text="Program Status" />
 
-                        <StackPanel Spacing="8">
+                        <StackPanel
+                            Margin="0,12,0,0"
+                            IsVisible="{Binding IsConnected}"
+                            Spacing="8">
                             <controls:StatusLabel
                                 Title="RtTask Function"
                                 IsActive="True"

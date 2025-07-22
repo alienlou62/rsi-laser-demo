@@ -74,8 +74,6 @@ public class RmpGrpcService : IRmpGrpcService
         _isConnected = false;
     }
 
-    //controller
-
     //globals
     public async Task<Dictionary<string, object>> GetGlobalValuesAsync()
     {

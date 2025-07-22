@@ -78,6 +78,7 @@
             <Setter Property="Foreground" Value="{StaticResource TextColor}" />
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
             <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="8,4" />
         </Style>
 
         <!--  Label style with Saira font and positioning  -->
