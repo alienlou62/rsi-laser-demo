@@ -2,25 +2,27 @@
 
 public partial class MainViewModel : ViewModelBase, IDisposable
 {
+    /** UI **/
     private Window? _mainWindow;
 
-    // CONFIGURATION
-    private IConfigurationSection _settings;
 
-    // SERVICES
+    /** SERVICES **/
     private readonly ICameraService _cameraService;
     private readonly IImageProcessingService _imageProcessingService;
     private readonly IConnectionManagerService _connectionManager;
     private IRmpGrpcService? _rmp = null;
 
 
-    // FIELDS
-    /// updater/polling
+    /** FIELDS **/
+    //polling
     private double _updateIntervalMs = 100;
     private readonly System.Timers.Timer _updateTimer;
     private readonly Random _random = new();
 
-    /// globals
+    //storage
+    private IConfigurationSection _settings;
+
+    //globals
     [ObservableProperty]
     private double _ballXPosition = 320;
 
@@ -48,7 +50,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private long _ballDetectionIterations = 45123;
 
-    /// program
+    //program
     [ObservableProperty]
     private bool _isProgramPaused = false;
 
@@ -58,7 +60,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private double _motionControlLoopTime = 16.0; // ms
 
-    /// Camera/Display Properties
+    //camera
     [ObservableProperty]
     private double _frameRate = 30.0;
 
@@ -71,7 +73,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private int _objectsDetected = 1;
 
-    // server
+    //server
     [ObservableProperty]
     private string _ipAddress = string.Empty;
 
@@ -88,12 +90,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool _isConnecting = false;
 
     [ObservableProperty]
-    private string _connectionStatus = "Disconnected";
-
-    [ObservableProperty]
     private string _lastError = string.Empty;
 
-    // state
+    //state
     [ObservableProperty]
     private string _managerState = "Stopped";
 
@@ -106,15 +105,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _motionControlStatus = "Inactive";
 
-    // display
+    //display
     [ObservableProperty]
     private string _isProgramPausedDisplay = string.Empty;
 
-    // mocks
+    //mocks
     [ObservableProperty]
     private bool _isSimulatingBallPosition = false;
 
-    // ssh
+    //ssh
     [ObservableProperty]
     private string _sshUser = "";
 
@@ -134,8 +133,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private string _sshStatus = "Ready";
 
 
-    // ===== COMMANDS ===== 
-    // tasks
+    /** COMMANDS **/
     [RelayCommand]
     private async Task StartTasks()
     {
@@ -176,7 +174,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         _ = _rmp.SetGlobalValueAsync("IsProgramPaused", IsProgramPaused);
     }
 
-    // connection
+    //connection
     [RelayCommand]
     private async Task ConnectAsync()
     {
@@ -184,7 +182,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (!IsValidIpAddress(IpAddress))
         {
             LastError = "Invalid IP address.";
-            ConnectionStatus = "Connection Failed";
             return;
         }
 
@@ -192,7 +189,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (Port <= 0)
         {
             LastError = "Invalid port.";
-            ConnectionStatus = "Connection Failed";
             return;
         }
 
@@ -214,21 +210,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
                 // rmp service
                 _rmp = _connectionManager.GrpcService;
-
-                UpdateConnectionStatus();
             }
             else
             {
                 // rmp service
                 _rmp = null;
                 LastError = "Failed to connect to server";
-                ConnectionStatus = "Connection Failed";
             }
         }
         catch (Exception ex)
         {
             LastError = ex.Message;
-            ConnectionStatus = "Connection Error";
         }
         finally
         {
@@ -256,7 +248,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             await _connectionManager.DisconnectAsync();
             IsConnected = false;
-            UpdateConnectionStatus();
         }
         catch (Exception ex)
         {
@@ -268,21 +259,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private void ToggleMockService()
     {
         _connectionManager.SetMockMode(UseMockService);
-        UpdateConnectionStatus();
-    }
-
-    private void UpdateConnectionStatus()
-    {
-        ConnectionStatus = IsConnected ? "Connected" : "Disconnected";
     }
 
     partial void OnUseMockServiceChanged(bool value)
     {
         _connectionManager.SetMockMode(value);
-        UpdateConnectionStatus();
     }
 
-    // SSH Commands
+    //ssh
     [RelayCommand]
     private async Task RunSshCommandAsync()
     {
@@ -335,7 +319,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         SshStatus = "Ready";
     }
 
-    // window
+    //window
     [RelayCommand]
     private void MinimizeWindow()
     {
@@ -363,90 +347,34 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
 
-    // ===== CONSTRUCTOR ===== 
+    /** CONSTRUCTOR **/
     public MainViewModel()
     {
-        // Load configuration from JSON file
+        //storage
         _settings = new ConfigurationBuilder()
             .AddJsonFile("RapidLaser.json")
             .Build()
             .GetSection("Settings");
 
-        // Load settings and apply them
-        LoadSettingsFromConfig();
+        StorageLoad();
 
-        // Initialize connection manager
-        _connectionManager = new ConnectionManagerService();
-
-        // Initialize services (in real app, use DI)
-        _cameraService = new SimulatedCameraService();
+        //services
+        _connectionManager      = new ConnectionManagerService();
+        _cameraService          = new SimulatedCameraService();
         _imageProcessingService = new SimulatedImageProcessingService();
 
-        // Initialize connection settings
+        //connection
         UseMockService = _connectionManager.UseMockService;
-        IsConnected = _connectionManager.IsConnected;
+        IsConnected    = _connectionManager.IsConnected;
 
-        UpdateConnectionStatus();
-
-        // Setup UI update timer
-        var updateInterval = int.Parse(_settings["pollingIntervalMs"] ?? "100");
-        _updateTimer = new System.Timers.Timer(updateInterval); // Update UI every 100ms by default
+        //polling
+        _updateTimer = new System.Timers.Timer(_updateIntervalMs);
         _updateTimer.Elapsed += OnUpdateTimerElapsed;
         _updateTimer.Start();
     }
 
 
-    // ===== CONFIGURATION METHODS =====
-    private void LoadSettingsFromConfig()
-    {
-        // server
-        IpAddress         = _settings["server_IpAddress"] ?? "localhost";
-        Port              = int.TryParse(_settings["server_port"], out var port) ? port : 50061;
-        var autoReconnect = bool.TryParse(_settings["server_AutoReconnect"], out var reconnect) && reconnect;
-
-        // polling
-        _updateIntervalMs = int.TryParse(_settings["polling_IntervalMs"], out var pollingInterval) ? pollingInterval : 100;
-
-        // ssh
-        SshUser           = _settings["ssh_Username"] ?? "";
-        SshPassword       = _settings["ssh_Password"] ?? "";
-    }
-
-    private void SaveSettingsToConfig()
-    {
-        try
-        {
-            // Create updated configuration object
-            var configData = new
-            {
-                Settings = new
-                {
-                    server_ipAddress = IpAddress,
-                    server_port = Port.ToString(),
-                    //server_autoReconnect = AutoReconnect,
-                    polling_IntervalMs = _updateIntervalMs,
-                    ssh_Username = SshUser,
-                    ssh_Password = SshPassword
-                }
-            };
-
-            // Serialize to JSON with proper formatting
-            var json = JsonSerializer.Serialize(configData, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-
-            // Write to file
-            File.WriteAllText("RapidLaser.json", json);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to save configuration: {ex.Message}");
-        }
-    }
-
-
-    // ===== POLL =====
+    /** POLLING **/
     private async void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
     {
         if (!IsConnected)
@@ -489,17 +417,73 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
 
-    // ===== METHODS ===== 
+    /** METHODS **/
+    //storage
+    private void StorageLoad()
+    {
+        //server
+        IpAddress         = _settings["server_IpAddress"] ?? "localhost";
+        Port              = int.TryParse(_settings["server_Port"], out var port) ? port : 50061;
+        var autoReconnect = bool.TryParse(_settings["server_AutoReconnect"], out var reconnect) && reconnect;
+
+        //polling
+        _updateIntervalMs = int.TryParse(_settings["polling_IntervalMs"], out var pollingInterval) ? pollingInterval : 100;
+
+        //ssh
+        SshUser           = _settings["ssh_Username"] ?? "";
+        SshPassword       = _settings["ssh_Password"] ?? "";
+    }
+
+    private void StorageSave()
+    {
+        try
+        {
+            // Create updated configuration object
+            var configData = new
+            {
+                Settings = new
+                {
+                    server_ipAddress = IpAddress,
+                    server_port = Port.ToString(),
+                    //server_autoReconnect = AutoReconnect,
+                    polling_IntervalMs = _updateIntervalMs,
+                    ssh_Username = SshUser,
+                    ssh_Password = SshPassword
+                }
+            };
+
+            // Serialize to JSON with proper formatting
+            var json = JsonSerializer.Serialize(configData, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+
+            // Write to file
+            File.WriteAllText("RapidLaser.json", json);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Failed to save configuration: {ex.Message}");
+        }
+    }
+
+    //window 
     public void Dispose()
     {
         _updateTimer?.Stop();
         _updateTimer?.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 
     public void SetMainWindow(Window window)
     {
         _mainWindow = window;
-        _mainWindow.Closed += (s, e) => SaveSettingsToConfig();
+        _mainWindow.Closed += (s, e) =>
+        {
+            StorageSave();
+            Dispose();
+        };
     }
 
 }
