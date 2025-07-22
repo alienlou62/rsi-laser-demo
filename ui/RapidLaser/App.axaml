@@ -83,7 +83,8 @@
 
         <!--  TextBox focus state with highlighted border  -->
         <Style Selector="TextBox:focus">
-            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+            <!-- <Setter Property="BorderBrush" Value="{DynamicResource ActiproThemeControlBackgroundBrushSoftSuccess}" /> -->
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
         </Style>
 
         <!--  Label style with Saira font and positioning  -->
