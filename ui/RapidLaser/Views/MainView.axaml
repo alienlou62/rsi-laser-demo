@@ -355,7 +355,7 @@
 
                         <StackPanel Spacing="8">
                             <!--  Program Control Header with Progress Ring  -->
-                            <Grid Margin="0,0,0,8">
+                            <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
@@ -406,7 +406,11 @@
                             </Grid>
 
                             <!--  Control Buttons  -->
-                            <UniformGrid ColumnSpacing="8" Columns="3">
+                            <UniformGrid
+                                Margin="0,8,0,0"
+                                ColumnSpacing="8"
+                                Columns="3"
+                                IsVisible="{Binding IsConnected}">
 
                                 <!--  start  -->
                                 <Button
@@ -453,7 +457,7 @@
                     </Grid>
                 </Border>
 
-                <!--  SSH Commands Card  -->
+                <!--  SSH Card  -->
                 <Border Classes="card" IsEnabled="{Binding IsConnected}">
 
                     <StackPanel Spacing="8">
@@ -464,7 +468,7 @@
                             Text="SSH" />
 
 
-                        <StackPanel Spacing="8">
+                        <StackPanel IsVisible="{Binding IsConnected}" Spacing="8">
                             <!-- <StackPanel.Styles>
                                     <Style Selector="ContentControl.is-connected controls|LabeledControl TextPresenter">
                                         <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccessPressed}" />
@@ -517,58 +521,60 @@
                                     </Button>
                                 </TextBox.InnerRightContent>
                             </TextBox>
+
+
+                            <!--  Grouped Card  -->
+                            <Border Classes="grouped-card">
+
+                                <StackPanel Spacing="8">
+                                    <!--  Status and Clear Button Row  -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!--  Status  -->
+                                        <TextBlock
+                                            Grid.Column="0"
+                                            FontSize="12"
+                                            Foreground="{StaticResource TextBrush}"
+                                            Text="{Binding SshStatus}"
+                                            TextWrapping="Wrap" />
+
+
+                                        <!--  Clear Button  -->
+                                        <Button
+                                            Grid.Column="1"
+                                            Margin="-8,-4"
+                                            Padding="4,2,4,1"
+                                            Classes="theme-subtle"
+                                            Command="{Binding ClearSshOutputCommand}"
+                                            IsEnabled="{Binding IsConnected}"
+                                            Opacity="0.5"
+                                            ToolTip.Tip="Clear output">
+                                            <icons:MaterialIcon Kind="Close" />
+                                        </Button>
+                                    </Grid>
+
+                                    <!--  Output  -->
+                                    <TextBox
+                                        MaxHeight="280"
+                                        Margin="0,0,-12,0"
+                                        Padding="0"
+                                        AcceptsReturn="True"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        FontFamily="Consolas, 'Courier New', monospace"
+                                        FontSize="11"
+                                        IsReadOnly="True"
+                                        Text="{Binding SshOutput}"
+                                        TextWrapping="WrapWithOverflow"
+                                        Watermark="Command output will appear here..." />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
 
-                        <!--  Grouped Card  -->
-                        <Border Classes="grouped-card">
-
-                            <StackPanel Spacing="8">
-                                <!--  Status and Clear Button Row  -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <!--  Status  -->
-                                    <TextBlock
-                                        Grid.Column="0"
-                                        FontSize="12"
-                                        Foreground="{StaticResource TextBrush}"
-                                        Text="{Binding SshStatus}"
-                                        TextWrapping="Wrap" />
-
-
-                                    <!--  Clear Button  -->
-                                    <Button
-                                        Grid.Column="1"
-                                        Margin="-8,-4"
-                                        Padding="4,2,4,1"
-                                        Classes="theme-subtle"
-                                        Command="{Binding ClearSshOutputCommand}"
-                                        IsEnabled="{Binding IsConnected}"
-                                        Opacity="0.5"
-                                        ToolTip.Tip="Clear output">
-                                        <icons:MaterialIcon Kind="Close" />
-                                    </Button>
-                                </Grid>
-
-                                <!--  Output  -->
-                                <TextBox
-                                    MaxHeight="280"
-                                    Margin="0,0,-12,0"
-                                    Padding="0"
-                                    AcceptsReturn="True"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    FontFamily="Consolas, 'Courier New', monospace"
-                                    FontSize="11"
-                                    IsReadOnly="True"
-                                    Text="{Binding SshOutput}"
-                                    TextWrapping="WrapWithOverflow"
-                                    Watermark="Command output will appear here..." />
-                            </StackPanel>
-                        </Border>
 
                     </StackPanel>
                 </Border>
