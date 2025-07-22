@@ -1,3 +1,4 @@
+
 namespace RapidLaser.Services;
 
 public interface IRmpGrpcService
@@ -20,6 +21,7 @@ public interface IRmpGrpcService
     //status
     Task<MotionControllerStatus> GetControllerStatusAsync();
     Task<NetworkStatus> GetNetworkStatusAsync();
+    Task<RTTaskManagerStatus> GetTaskManagerStatusAsync(int index = 0);
 }
 
 public class RmpGrpcService : IRmpGrpcService
@@ -31,7 +33,9 @@ public class RmpGrpcService : IRmpGrpcService
     private RMPService.RMPServiceClient? _rmpClient;
     private ServerControlServiceClient? _serverClient;
 
-    RequestHeader statusOptimizationHeader = new() { Optimization = new() { SkipConfig = true, SkipInfo = true } };
+    RequestHeader statusOptimizationHeader = new() { Optimization = new() { SkipConfig = true, SkipInfo = true, SkipStatus = false } };
+    RequestHeader infoOptimizationHeader = new() { Optimization = new() { SkipConfig = true, SkipInfo = false, SkipStatus = true } };
+
 
     //public
     public bool IsConnected => _isConnected;
@@ -165,6 +169,36 @@ public class RmpGrpcService : IRmpGrpcService
             throw new InvalidOperationException("Not connected to gRPC server");
 
         NetworkResponse response = await _rmpClient.NetworkAsync(new() { Header = statusOptimizationHeader });
+        var status = response.Status;
+        return status;
+    }
+
+    private int? _lastTaskManagerIndex;
+    public async Task<RTTaskManagerStatus> GetTaskManagerStatusAsync(int index = 0)
+    {
+        if (!_isConnected)
+            throw new InvalidOperationException("Not connected to gRPC server");
+
+        RTTaskManagerResponse response;
+
+        if (_lastTaskManagerIndex == null)
+        {
+            response = await _rmpClient.RTTaskManagerAsync(new()
+            {
+                Header = infoOptimizationHeader,
+                Action = new RTTaskManagerAction { Discover = new() }
+            });
+            _lastTaskManagerIndex = response.Action.Discover.ManagerIds[0];
+        }
+
+        if (_lastTaskManagerIndex is null)
+            throw new InvalidOperationException("No task manager index available.");
+
+        response = await _rmpClient.RTTaskManagerAsync(new()
+        {
+            Id = _lastTaskManagerIndex.Value,
+            Header = new()
+        });
         var status = response.Status;
         return status;
     }
@@ -339,6 +373,11 @@ public class RmpGrpcService_Mock : IRmpGrpcService
     }
 
     public Task<NetworkStatus> GetNetworkStatusAsync()
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<RTTaskManagerStatus> GetTaskManagerStatusAsync(int index = 0)
     {
         throw new NotImplementedException();
     }

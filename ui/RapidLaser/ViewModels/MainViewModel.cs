@@ -29,6 +29,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private NetworkStatus? _networkStatus;
 
+    [ObservableProperty]
+    private RTTaskManagerStatus? _taskManagerStatus;
+
     //globals
     [ObservableProperty]
     private double _ballXPosition = 320;
@@ -390,9 +393,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             //rmp status
-            ControllerStatus = await _rmp.GetControllerStatusAsync();
-            NetworkStatus = await _rmp.GetNetworkStatusAsync();
-
+            ControllerStatus  = await _rmp.GetControllerStatusAsync();
+            NetworkStatus     = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
+            TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
 
             //globals
             if (!IsSimulatingBallPosition)
@@ -426,7 +429,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
             // Add more global values as needed
         }
-        catch { }
+        catch
+        {
+        }
     }
 
 

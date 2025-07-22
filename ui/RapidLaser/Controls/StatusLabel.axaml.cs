@@ -14,6 +14,9 @@ public class StatusLabel : TemplatedControl
     public static readonly StyledProperty<bool> IsValueVisibleProperty =
         AvaloniaProperty.Register<StatusLabel, bool>(nameof(IsValueVisible), true);
 
+    public static readonly StyledProperty<double> TitleOpacityProperty =
+        AvaloniaProperty.Register<StatusLabel, double>(nameof(TitleOpacity), 0.6);
+
     public string Title
     {
         get => GetValue(TitleProperty);
@@ -36,5 +39,11 @@ public class StatusLabel : TemplatedControl
     {
         get => GetValue(IsValueVisibleProperty);
         set => SetValue(IsValueVisibleProperty, value);
+    }
+
+    public double TitleOpacity
+    {
+        get => GetValue(TitleOpacityProperty);
+        set => SetValue(TitleOpacityProperty, value);
     }
 }

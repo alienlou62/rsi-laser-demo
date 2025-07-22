@@ -797,15 +797,18 @@
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="Server Status" />
+                            Text="RMP Status" />
 
                         <StackPanel
                             Margin="0,12,0,0"
                             IsVisible="{Binding IsConnected}"
-                            Spacing="8">
+                            Spacing="12">
 
                             <!--  controller  -->
-                            <controls:StatusLabel Title="Controller" IsActive="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <controls:StatusLabel
+                                Title="Controller"
+                                IsActive="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                TitleOpacity="1">
                                 <controls:StatusLabel.Styles>
                                     <Style Selector="controls|StatusLabel[IsActive=true]">
                                         <Setter Property="Value" Value="Created" />
@@ -818,29 +821,48 @@
 
                             <controls:StatusLabel
                                 Title="Counter"
-                                Margin="0,-8,0,0"
+                                Margin="0,-10,0,0"
                                 IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                Value="{Binding ControllerStatus.SampleCounter}" />
+                                Value="{Binding ControllerStatus.SampleCounter, FallbackValue='-'}" />
 
                             <!--  network  -->
                             <controls:StatusLabel
                                 Title="EtherCAT Network"
-                                IsActive="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational'}}"
+                                IsActive="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                 IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                Value="{Binding NetworkStatus.State}" />
+                                TitleOpacity="1"
+                                Value="{Binding NetworkStatus.State, FallbackValue='-'}" />
 
                             <controls:StatusLabel
                                 Title="Counter"
-                                Margin="0,-8,0,0"
+                                Margin="0,-10,0,0"
                                 IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
-                                Value="{Binding NetworkStatus.Counter}" />
+                                IsValueVisible="{Binding $self.IsEnabled}"
+                                Value="{Binding NetworkStatus.Counter, FallbackValue='-'}" />
 
-                            <!--  RtTask  -->
-                            <controls:StatusLabel Title="TaskManagers" Value="1" />
+                            <!--  taskmanager  -->
+                            <controls:StatusLabel
+                                Title="TaskManager"
+                                IsActive="{Binding TaskManagerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                IsValueVisible="{Binding $self.IsEnabled}"
+                                TitleOpacity="1"
+                                Value="{Binding TaskManagerStatus.State, FallbackValue='-'}" />
 
-                            <controls:StatusLabel Title="Tasks" Value="2" />
+                            <controls:StatusLabel
+                                Title="Globals"
+                                Margin="0,-10,0,0"
+                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                IsValueVisible="{Binding $self.IsEnabled}"
+                                Value="{Binding TaskManagerStatus.GlobalValues, FallbackValue='-'}" />
 
-                            <controls:StatusLabel Title="Globals" Value="[x,y,z]" />
+                            <controls:StatusLabel
+                                Title="Tasks"
+                                Margin="0,-10,0,0"
+                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                IsValueVisible="{Binding $self.IsEnabled}"
+                                Value="{Binding TaskManagerStatus.TaskSubmissionCount, FallbackValue='-'}" />
+
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -862,14 +884,14 @@
                             <controls:StatusLabel
                                 Title="RtTask Function"
                                 IsActive="True"
-                                Value="BallDetectionStatus" />
+                                Value="" />
 
                             <controls:StatusLabel
                                 Title="Status"
                                 IsActive="True"
-                                Value="Running" />
+                                Value="" />
 
-                            <controls:StatusLabel Title="Iterations" Value="{Binding BallDetectionIterations, StringFormat=N0}" />
+                            <controls:StatusLabel Title="Iterations" Value="" />
 
                         </StackPanel>
                     </StackPanel>
