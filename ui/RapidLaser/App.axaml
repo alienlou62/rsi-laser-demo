@@ -81,6 +81,11 @@
             <Setter Property="Padding" Value="8,4" />
         </Style>
 
+        <!--  TextBox focus state with highlighted border  -->
+        <Style Selector="TextBox:focus">
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+        </Style>
+
         <!--  Label style with Saira font and positioning  -->
         <Style Selector="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
@@ -152,7 +157,12 @@
         <!--  Card style for consistent card appearance throughout the app  -->
         <Style Selector="Border.card">
             <Setter Property="Padding" Value="{StaticResource CardPadding}" />
-            <Setter Property="Background" Value="{StaticResource SidebarBrush}" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Offset="0" Color="#1F1F1F" />
+                    <GradientStop Offset="1" Color="#1A1A1A" />
+                </LinearGradientBrush>
+            </Setter>
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="{StaticResource StandardCornerRadius}" />
