@@ -789,53 +789,61 @@
                 VerticalAlignment="Top"
                 Spacing="12">
 
-                <!--  RTTaskManager Status Card  -->
+                <!--  Server Card  -->
                 <Border Classes="card">
                     <StackPanel>
+
                         <TextBlock
                             Margin="0,0,0,12"
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="RTTaskManager Status" />
+                            Text="Server" />
+
                         <StackPanel Spacing="8">
                             <controls:StatusLabel
-                                Title="Manager State"
+                                Title="Controller"
                                 IsActive="True"
-                                Value="{Binding ManagerState}" />
+                                Value="Started" />
+
                             <controls:StatusLabel
-                                Title="Tasks Active"
+                                Title="Network"
                                 IsActive="True"
-                                Value="{Binding TasksActive}" />
-                            <controls:StatusLabel Title="CPU Usage" Value="{Binding CpuUsage, StringFormat={}{0:F0}%}" />
-                            <controls:StatusLabel Title="Memory Usage" Value="{Binding MemoryUsage, StringFormat={}{0:F0} MB}" />
+                                Value="Operational" />
+
+                            <controls:StatusLabel Title="TaskManagers" Value="1" />
+
+                            <controls:StatusLabel Title="Tasks" Value="2" />
+
+                            <controls:StatusLabel Title="Globals" Value="[x,y,z]" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
 
-                <!--  Task Details Card  -->
+                <!--  Program Card  -->
                 <Border Classes="card">
                     <StackPanel>
+
                         <TextBlock
                             Margin="0,0,0,12"
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="Task Details" />
+                            Text="Program" />
 
-                        <!--  Ball Detection Task  -->
-                        <StackPanel Margin="0,0,0,0" Spacing="8">
-                            <TextBlock
-                                FontSize="13"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="Ball Detection Task" />
+                        <StackPanel Spacing="8">
+                            <controls:StatusLabel
+                                Title="RtTask Function"
+                                IsActive="True"
+                                Value="BallDetectionStatus" />
+
                             <controls:StatusLabel
                                 Title="Status"
                                 IsActive="True"
-                                Value="{Binding BallDetectionStatus}" />
-                            <controls:StatusLabel Title="Loop Time" Value="{Binding BallDetectionLoopTime, StringFormat={}{0:F0}ms}" />
+                                Value="Running" />
+
                             <controls:StatusLabel Title="Iterations" Value="{Binding BallDetectionIterations, StringFormat=N0}" />
+
                         </StackPanel>
                     </StackPanel>
                 </Border>

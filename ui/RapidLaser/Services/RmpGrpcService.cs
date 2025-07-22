@@ -23,19 +23,19 @@ public interface IRmpGrpcService
 
 public class RmpGrpcService : IRmpGrpcService
 {
-    // FIELDS
-    /// private
+    /** FIELDS **/
+    //private
     private GrpcChannel? _channel;
     private bool _isConnected = false;
     private RMPService.RMPServiceClient? _rmpClient;
     private ServerControlServiceClient? _serverClient;
 
-    /// public
+    //public
     public bool IsConnected => _isConnected;
 
 
-    // METHODS
-    /// network
+    /** METHODS **/
+    //network
     public async Task<bool> ConnectAsync(string serverAddress)
     {
         try
@@ -74,7 +74,9 @@ public class RmpGrpcService : IRmpGrpcService
         _isConnected = false;
     }
 
-    /// globals
+    //controller
+
+    //globals
     public async Task<Dictionary<string, object>> GetGlobalValuesAsync()
     {
         if (!_isConnected)
@@ -124,7 +126,7 @@ public class RmpGrpcService : IRmpGrpcService
         return true;
     }
 
-    /// motion
+    //motion
     public async Task<bool> StartMotionAsync()
     {
         if (!_isConnected)
@@ -145,7 +147,7 @@ public class RmpGrpcService : IRmpGrpcService
         return true;
     }
 
-    /// status
+    //status
     public async Task<Dictionary<string, double>> GetAxisPositionsAsync()
     {
         if (!_isConnected)
