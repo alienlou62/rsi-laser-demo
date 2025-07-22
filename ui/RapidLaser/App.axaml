@@ -29,7 +29,7 @@
             <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
 
             <!--  Corner radius resource  -->
-            <CornerRadius x:Key="StandardCornerRadius">4</CornerRadius>
+            <CornerRadius x:Key="StandardCornerRadius">1</CornerRadius>
 
             <!--  Card padding resource  -->
             <Thickness x:Key="CardPadding">12</Thickness>
@@ -72,7 +72,7 @@
 
         <!--  Custom TextBox style  -->
         <Style Selector="TextBox">
-            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="CornerRadius" Value="0" />
             <Setter Property="Background" Value="{StaticResource MainContentColor}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
             <Setter Property="Foreground" Value="{StaticResource TextColor}" />
@@ -139,6 +139,7 @@
             <Setter Property="FontSize" Value="12" />
             <Setter Property="CornerRadius" Value="2" />
             <Setter Property="TextBlock.LetterSpacing" Value="0.5" />
+            <Setter Property="Padding" Value="8,4" />
             <Setter Property="Effect">
                 <DropShadowEffect
                     BlurRadius="6"
