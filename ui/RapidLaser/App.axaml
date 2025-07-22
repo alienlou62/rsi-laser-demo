@@ -1,0 +1,191 @@
+<Application
+    x:Class="RapidLaser.App"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+    xmlns:icons="using:Material.Icons.Avalonia"
+    xmlns:local="using:RapidLaser"
+    RequestedThemeVariant="Default">
+
+    <Application.Resources>
+        <ResourceDictionary>
+
+            <!--  Dark theme colors  -->
+            <Color x:Key="DarkBackgroundColor">#121212</Color>
+            <Color x:Key="SidebarColor">#1E1E1E</Color>
+            <Color x:Key="TopBarColor">#1E1E1E</Color>
+            <Color x:Key="MainContentColor">#121212</Color>
+            <Color x:Key="AccentColor">#0078D4</Color>
+            <Color x:Key="TextColor">#FFFFFF</Color>
+            <Color x:Key="SubtleTextColor">#CCCCCC</Color>
+            <Color x:Key="BorderColor">#2D2D2D</Color>
+
+            <SolidColorBrush x:Key="SidebarBrush" Color="{StaticResource SidebarColor}" />
+            <SolidColorBrush x:Key="TopBarBrush" Color="{StaticResource TopBarColor}" />
+            <SolidColorBrush x:Key="MainContentBrush" Color="{StaticResource MainContentColor}" />
+            <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+            <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
+            <SolidColorBrush x:Key="SubtleTextBrush" Color="{StaticResource SubtleTextColor}" />
+            <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}" />
+
+            <!--  Corner radius resource  -->
+            <CornerRadius x:Key="StandardCornerRadius">1</CornerRadius>
+
+            <!--  Card padding resource  -->
+            <Thickness x:Key="CardPadding">12</Thickness>
+
+            <!--  Status label colors  -->
+            <Color x:Key="StatusActiveColor">#4CAF50</Color>
+            <Color x:Key="StatusWarningColor">#FF9800</Color>
+            <Color x:Key="StatusErrorColor">#F44336</Color>
+            <Color x:Key="StatusInfoColor">#2196F3</Color>
+            <Color x:Key="StatusNeutralColor">#9E9E9E</Color>
+
+            <SolidColorBrush x:Key="StatusActiveBrush" Color="{StaticResource StatusActiveColor}" />
+            <SolidColorBrush x:Key="StatusWarningBrush" Color="{StaticResource StatusWarningColor}" />
+            <SolidColorBrush x:Key="StatusErrorBrush" Color="{StaticResource StatusErrorColor}" />
+            <SolidColorBrush x:Key="StatusInfoBrush" Color="{StaticResource StatusInfoColor}" />
+            <SolidColorBrush x:Key="StatusNeutralBrush" Color="{StaticResource StatusNeutralColor}" />
+
+            <!--  Fonts  -->
+            <FontFamily x:Key="Saira">avares://RapidLaser/Assets/Fonts/SairaSemiCondensed#Saira SemiCondensed</FontFamily>
+
+            <!--  Control Resources  -->
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://RapidLaser/Controls/LabeledControl.axaml" />
+                <ResourceInclude Source="avares://RapidLaser/Controls/StatusLabel.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.DataTemplates>
+        <local:ViewLocator />
+    </Application.DataTemplates>
+
+    <Application.Styles>
+        <FluentTheme />
+        <actipro:ModernTheme />
+
+        <!--  Material Icons  -->
+        <icons:MaterialIconStyles />
+
+        <!--  Custom TextBox style  -->
+        <Style Selector="TextBox">
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="Background" Value="{StaticResource MainContentColor}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
+            <Setter Property="Foreground" Value="{StaticResource TextColor}" />
+            <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="8,4" />
+        </Style>
+
+        <!--  TextBox focus state with highlighted border  -->
+        <Style Selector="TextBox:focus">
+            <!-- <Setter Property="BorderBrush" Value="{DynamicResource ActiproThemeControlBackgroundBrushSoftSuccess}" /> -->
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Style>
+
+        <!--  Label style with Saira font and positioning  -->
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+        </Style>
+        <Style Selector="Label, Button">
+            <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+        </Style>
+
+        <!--  we need to adjust the baselineoffset of the Saira font  -->
+        <Style Selector="Label, TextBlock, TextBox /template/ TextPresenter, Button /template/ TextPresenter, CheckBox /template/ TextPresenter, RadioButton /template/ TextPresenter">
+            <Setter Property="RenderTransform">
+                <TranslateTransform Y="1" />
+            </Setter>
+        </Style>
+
+        <!--  Status Label Styles  -->
+        <Style Selector="TextBlock:disabled">
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+
+        <Style Selector="TextBlock.status-text">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBlock.status-active">
+            <Setter Property="Foreground" Value="#4CAF50" />
+        </Style>
+
+        <Style Selector="TextBlock.status-warning">
+            <Setter Property="Foreground" Value="#FF9800" />
+        </Style>
+
+        <Style Selector="TextBlock.status-error">
+            <Setter Property="Foreground" Value="#F44336" />
+        </Style>
+
+        <Style Selector="TextBlock.status-info">
+            <Setter Property="Foreground" Value="#2196F3" />
+        </Style>
+
+        <Style Selector="TextBlock.status-neutral">
+            <Setter Property="Foreground" Value="#9E9E9E" />
+        </Style>
+
+        <!--  Add subtle shadow to all buttons using standard Avalonia DropShadow  -->
+        <Style Selector="Button">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="TextBlock.LetterSpacing" Value="0.5" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="Effect">
+                <DropShadowEffect
+                    BlurRadius="6"
+                    OffsetX="0"
+                    OffsetY="0"
+                    Opacity="0"
+                    Color="#000" />
+            </Setter>
+        </Style>
+
+        <!--  Remove shadow for specific buttons (like window controls)  -->
+        <Style Selector="Button.shadowless">
+            <Setter Property="Effect" Value="{x:Null}" />
+        </Style>
+
+        <!--  Card style for consistent card appearance throughout the app  -->
+        <Style Selector="Border.card">
+            <Setter Property="Padding" Value="{StaticResource CardPadding}" />
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Offset="0" Color="#1F1F1F" />
+                    <GradientStop Offset="1" Color="#1A1A1A" />
+                </LinearGradientBrush>
+            </Setter>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource StandardCornerRadius}" />
+            <Setter Property="Effect">
+                <DropShadowEffect
+                    BlurRadius="8"
+                    OffsetX="2"
+                    OffsetY="2"
+                    Opacity="0.3"
+                    Color="Black" />
+            </Setter>
+        </Style>
+
+        <!--  Grouped/nested card style for cards within cards  -->
+        <Style Selector="Border.grouped-card">
+            <Setter Property="Padding" Value="{StaticResource CardPadding}" />
+            <Setter Property="Background" Value="{StaticResource BorderColor}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="2" />
+        </Style>
+
+    </Application.Styles>
+</Application>

@@ -1,0 +1,41 @@
+<ResourceDictionary
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:RapidLaser.Controls"
+    xmlns:converters="using:RapidLaser.Converters">
+
+    <Design.PreviewWith>
+        <controls:StatusLabel />
+    </Design.PreviewWith>
+
+    <ControlTheme x:Key="{x:Type controls:StatusLabel}" TargetType="controls:StatusLabel">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{StaticResource TextBrush}"
+                        Opacity="{TemplateBinding TitleOpacity}"
+                        Text="{TemplateBinding Title}" />
+
+                    <TextBlock
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        FontWeight="Medium"
+                        Foreground="{TemplateBinding IsActive, Converter={x:Static converters:BoolConverters.StatusColorConverter}}"
+                        IsVisible="{TemplateBinding IsValueVisible}"
+                        Text="{TemplateBinding Value}" />
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+
+</ResourceDictionary>
