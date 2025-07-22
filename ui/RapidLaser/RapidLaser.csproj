@@ -14,7 +14,7 @@
 
   <ItemGroup>
     <None Include="RapidLaser.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

@@ -190,21 +190,7 @@
                 Spacing="12">
 
                 <!--  gRPC Connection Card  -->
-                <Border
-                    Padding="{StaticResource CardPadding}"
-                    Background="{StaticResource SidebarBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1"
-                    ClipToBounds="True"
-                    CornerRadius="{StaticResource StandardCornerRadius}">
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="8"
-                            OffsetX="2"
-                            OffsetY="2"
-                            Opacity="0.3"
-                            Color="Black" />
-                    </Border.Effect>
+                <Border Classes="card" ClipToBounds="True">
 
                     <Grid>
                         <!--  Subtle gradient overlay  -->
@@ -356,21 +342,9 @@
 
                 <!--  Actions Card  -->
                 <Border
-                    Padding="{StaticResource CardPadding}"
-                    Background="{StaticResource SidebarBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1"
+                    Classes="card"
                     ClipToBounds="True"
-                    CornerRadius="{StaticResource StandardCornerRadius}"
                     IsEnabled="{Binding IsConnected}">
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="8"
-                            OffsetX="2"
-                            OffsetY="2"
-                            Opacity="0.3"
-                            Color="Black" />
-                    </Border.Effect>
 
                     <Grid>
                         <!--  Mesh gradient overlay for program running state  -->
@@ -480,21 +454,7 @@
                 </Border>
 
                 <!--  SSH Commands Card  -->
-                <Border
-                    Padding="{StaticResource CardPadding}"
-                    Background="{StaticResource SidebarBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{StaticResource StandardCornerRadius}"
-                    IsEnabled="{Binding IsConnected}">
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="8"
-                            OffsetX="2"
-                            OffsetY="2"
-                            Opacity="0.3"
-                            Color="Black" />
-                    </Border.Effect>
+                <Border Classes="card" IsEnabled="{Binding IsConnected}">
 
                     <StackPanel Spacing="8">
                         <TextBlock
@@ -560,12 +520,7 @@
                         </StackPanel>
 
                         <!--  Grouped Card  -->
-                        <Border
-                            Padding="{StaticResource CardPadding}"
-                            Background="{StaticResource BorderColor}"
-                            BorderBrush="{StaticResource BorderBrush}"
-                            BorderThickness="0"
-                            CornerRadius="2">
+                        <Border Classes="grouped-card">
 
                             <StackPanel Spacing="8">
                                 <!--  Status and Clear Button Row  -->
@@ -619,21 +574,7 @@
                 </Border>
 
                 <!--  Status Card  -->
-                <Border
-                    Padding="{StaticResource CardPadding}"
-                    Background="{StaticResource SidebarBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{StaticResource StandardCornerRadius}"
-                    IsVisible="False">
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="8"
-                            OffsetX="2"
-                            OffsetY="2"
-                            Opacity="0.3"
-                            Color="Black" />
-                    </Border.Effect>
+                <Border Classes="card" IsVisible="False">
                     <StackPanel>
                         <TextBlock
                             Margin="0,0,0,12"
@@ -843,20 +784,7 @@
                 Spacing="12">
 
                 <!--  RTTaskManager Status Card  -->
-                <Border
-                    Padding="{StaticResource CardPadding}"
-                    Background="{StaticResource SidebarBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{StaticResource StandardCornerRadius}">
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="8"
-                            OffsetX="2"
-                            OffsetY="2"
-                            Opacity="0.3"
-                            Color="Black" />
-                    </Border.Effect>
+                <Border Classes="card">
                     <StackPanel>
                         <TextBlock
                             Margin="0,0,0,12"
@@ -880,20 +808,7 @@
                 </Border>
 
                 <!--  Task Details Card  -->
-                <Border
-                    Padding="{StaticResource CardPadding}"
-                    Background="{StaticResource SidebarBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="{StaticResource StandardCornerRadius}">
-                    <Border.Effect>
-                        <DropShadowEffect
-                            BlurRadius="8"
-                            OffsetX="2"
-                            OffsetY="2"
-                            Opacity="0.3"
-                            Color="Black" />
-                    </Border.Effect>
+                <Border Classes="card">
                     <StackPanel>
                         <TextBlock
                             Margin="0,0,0,12"

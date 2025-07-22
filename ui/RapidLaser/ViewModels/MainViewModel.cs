@@ -71,20 +71,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private int _objectsDetected = 1;
 
-    // Connection Properties
+    // server
     [ObservableProperty]
-    private string _ipAddress;
-    partial void OnIpAddressChanged(string value)
-    {
-        SaveSettingsToConfig();
-    }
+    private string _ipAddress = string.Empty;
 
     [ObservableProperty]
     private int _port;
-    partial void OnPortChanged(int value)
-    {
-        SaveSettingsToConfig();
-    }
 
     [ObservableProperty]
     private bool _isConnected = false;
@@ -101,7 +93,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _lastError = string.Empty;
 
-    //
+    // state
     [ObservableProperty]
     private string _managerState = "Stopped";
 
@@ -114,7 +106,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _motionControlStatus = "Inactive";
 
-    // Display Properties
+    // display
     [ObservableProperty]
     private string _isProgramPausedDisplay = string.Empty;
 
@@ -122,7 +114,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private bool _isSimulatingBallPosition = false;
 
-    // SSH
+    // ssh
     [ObservableProperty]
     private string _sshUser = "";
 
@@ -288,7 +280,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         _connectionManager.SetMockMode(value);
         UpdateConnectionStatus();
-        SaveSettingsToConfig();
     }
 
     // SSH Commands
@@ -408,15 +399,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     // ===== CONFIGURATION METHODS =====
     private void LoadSettingsFromConfig()
     {
-        // Load settings from configuration with fallback defaults
-        IpAddress = _settings["ipAddress"] ?? "localhost";
-        Port = int.TryParse(_settings["port"], out var port) ? port : 50061;
-        _updateIntervalMs = int.TryParse(_settings["pollingIntervalMs"], out var pollingInterval) ? pollingInterval : 100;
-        SshUser = _settings["sshUsername"] ?? "";
-        SshPassword = _settings["sshPassword"] ?? "";
+        // server
+        IpAddress         = _settings["server_IpAddress"] ?? "localhost";
+        Port              = int.TryParse(_settings["server_port"], out var port) ? port : 50061;
+        var autoReconnect = bool.TryParse(_settings["server_AutoReconnect"], out var reconnect) && reconnect;
 
-        // autoReconnect can be stored if needed later
-        // var autoReconnect = bool.TryParse(_settings["autoReconnect"], out var reconnect) && reconnect;
+        // polling
+        _updateIntervalMs = int.TryParse(_settings["polling_IntervalMs"], out var pollingInterval) ? pollingInterval : 100;
+
+        // ssh
+        SshUser           = _settings["ssh_Username"] ?? "";
+        SshPassword       = _settings["ssh_Password"] ?? "";
     }
 
     private void SaveSettingsToConfig()
@@ -428,12 +421,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 Settings = new
                 {
-                    ipAddress = IpAddress,
-                    port = Port.ToString(),
-                    autoReconnect = true.ToString().ToLower(),
-                    pollingIntervalMs = _settings["pollingIntervalMs"] ?? "100",
-                    sshUsername = _settings["sshUsername"] ?? "",
-                    sshPassword = _settings["sshPassword"] ?? ""
+                    server_ipAddress = IpAddress,
+                    server_port = Port.ToString(),
+                    //server_autoReconnect = AutoReconnect,
+                    polling_IntervalMs = _updateIntervalMs,
+                    ssh_Username = SshUser,
+                    ssh_Password = SshPassword
                 }
             };
 
@@ -506,6 +499,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     public void SetMainWindow(Window window)
     {
         _mainWindow = window;
+        _mainWindow.Closed += (s, e) => SaveSettingsToConfig();
     }
 
 }

@@ -148,5 +148,31 @@
             <Setter Property="Effect" Value="{x:Null}" />
         </Style>
 
+        <!--  Card style for consistent card appearance throughout the app  -->
+        <Style Selector="Border.card">
+            <Setter Property="Padding" Value="{StaticResource CardPadding}" />
+            <Setter Property="Background" Value="{StaticResource SidebarBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="{StaticResource StandardCornerRadius}" />
+            <Setter Property="Effect">
+                <DropShadowEffect
+                    BlurRadius="8"
+                    OffsetX="2"
+                    OffsetY="2"
+                    Opacity="0.3"
+                    Color="Black" />
+            </Setter>
+        </Style>
+
+        <!--  Grouped/nested card style for cards within cards  -->
+        <Style Selector="Border.grouped-card">
+            <Setter Property="Padding" Value="{StaticResource CardPadding}" />
+            <Setter Property="Background" Value="{StaticResource BorderColor}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="2" />
+        </Style>
+
     </Application.Styles>
 </Application>

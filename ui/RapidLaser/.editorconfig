@@ -1,0 +1,3 @@
+[*.cs]
+dotnet_style_operator_placement_when_wrapping = ignore
+csharp_space_around_binary_operators = ignore
