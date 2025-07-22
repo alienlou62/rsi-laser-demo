@@ -90,6 +90,18 @@ public static class BoolConverters
             false => new SolidColorBrush(Color.FromRgb(244, 67, 54)),  // Red for inactive/false
             null => new SolidColorBrush(Color.FromRgb(255, 255, 255))  // White for neutral/null
         });
+
+    /// <summary>
+    /// Converts a value to boolean by comparing with a parameter string
+    /// Returns true if the value equals the parameter, false otherwise
+    /// Usage: {Binding SomeProperty, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter=ExpectedValue}
+    /// </summary>
+    public static readonly IValueConverter StringEqualsParameterConverter = new FuncValueConverter<object?, object?, bool>((value, parameter) =>
+    {
+        string? valueStr = value?.ToString();
+        string? parameterStr = parameter?.ToString();
+        return string.Equals(valueStr, parameterStr, StringComparison.OrdinalIgnoreCase);
+    });
 }
 
 public static class StringConverters

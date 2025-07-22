@@ -25,6 +25,11 @@ global using Avalonia.Controls;
 global using Avalonia.Controls.Templates;
 global using Avalonia.Controls.Primitives;
 
+// rsi
+global using RSI.RapidServer;
+global using RSI.RapidCodeRemote;
+global using static RSI.RapidServer.ServerControlService;
+
 // third parties
 global using CommunityToolkit.Mvvm.ComponentModel;
 global using CommunityToolkit.Mvvm.Input;
@@ -33,7 +38,7 @@ global using Microsoft.Extensions.Configuration;
 
 // gRPC
 global using Grpc.Net.Client;
-// global using Google.Protobuf;
+global using Grpc.Core;
 
 // project  
 global using RapidLaser.Services;

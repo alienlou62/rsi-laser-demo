@@ -22,6 +22,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     //storage
     private IConfigurationSection _settings;
 
+    //rmp
+    [ObservableProperty]
+    private MotionControllerStatus? _controllerStatus;
+
+    [ObservableProperty]
+    private NetworkStatus? _networkStatus;
+
     //globals
     [ObservableProperty]
     private double _ballXPosition = 320;
@@ -382,6 +389,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
+            //rmp status
+            ControllerStatus = await _rmp.GetControllerStatusAsync();
+            NetworkStatus = await _rmp.GetNetworkStatusAsync();
+
+
+            //globals
             if (!IsSimulatingBallPosition)
             {
                 var globals = await _rmp.GetGlobalValuesAsync();

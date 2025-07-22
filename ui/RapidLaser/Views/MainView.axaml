@@ -803,16 +803,39 @@
                             Margin="0,12,0,0"
                             IsVisible="{Binding IsConnected}"
                             Spacing="8">
-                            <controls:StatusLabel
-                                Title="Controller"
-                                IsActive="True"
-                                Value="Started" />
+
+                            <!--  controller  -->
+                            <controls:StatusLabel Title="Controller" IsActive="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                <controls:StatusLabel.Styles>
+                                    <Style Selector="controls|StatusLabel[IsActive=true]">
+                                        <Setter Property="Value" Value="Created" />
+                                    </Style>
+                                    <Style Selector="controls|StatusLabel[IsActive=false]">
+                                        <Setter Property="Value" Value="Not created" />
+                                    </Style>
+                                </controls:StatusLabel.Styles>
+                            </controls:StatusLabel>
 
                             <controls:StatusLabel
-                                Title="Network"
-                                IsActive="True"
-                                Value="Operational" />
+                                Title="Counter"
+                                Margin="0,-8,0,0"
+                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                Value="{Binding ControllerStatus.SampleCounter}" />
 
+                            <!--  network  -->
+                            <controls:StatusLabel
+                                Title="EtherCAT Network"
+                                IsActive="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational'}}"
+                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                Value="{Binding NetworkStatus.State}" />
+
+                            <controls:StatusLabel
+                                Title="Counter"
+                                Margin="0,-8,0,0"
+                                IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                Value="{Binding NetworkStatus.Counter}" />
+
+                            <!--  RtTask  -->
                             <controls:StatusLabel Title="TaskManagers" Value="1" />
 
                             <controls:StatusLabel Title="Tasks" Value="2" />
