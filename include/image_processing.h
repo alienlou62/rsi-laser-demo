@@ -12,7 +12,7 @@ namespace ImageProcessing
   inline constexpr unsigned int PIXEL_THRESHOLD = 10; 
 
   // Constants for image processing
-  inline static constexpr double RED_THRESHOLD = 155; // Threshold for red channel (v) in YUYV format
+  inline static constexpr double RED_THRESHOLD = 150; // Threshold for red channel (v) in YUYV format
   inline static constexpr double MAX_CIRCLE_FIT_ERROR = 200; // Maximum error allowed for circle fitting to consider a contour as a valid ball
   inline static constexpr double MIN_CONTOUR_AREA = 100; // Minimum area for a contour to be considered valid
 

@@ -19,8 +19,8 @@ using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
 constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
-constexpr int32_t TASK_WAIT_TIMEOUT = 1000; // 1 seconds, for task execution wait
-constexpr int32_t INIT_TIMEOUT = 15000; // 15 seconds, initialization can take a while
+constexpr int32_t TASK_WAIT_TIMEOUT = 1000;            // 1 seconds, for task execution wait
+constexpr int32_t INIT_TIMEOUT = 15000;                // 15 seconds, initialization can take a while
 constexpr int32_t DETECTION_TASK_PERIOD = 3;
 constexpr int32_t MOVE_TASK_PERIOD = 3;
 
@@ -31,7 +31,7 @@ void sigint_handler(int signal)
   g_shutdown = true;
 }
 
-void SubmitSingleShotTask(RTTaskManager& manager, const std::string& taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
+void SubmitSingleShotTask(RTTaskManager &manager, const std::string &taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
 {
   RTTaskCreationParameters singleShotParams(taskName.c_str());
   singleShotParams.Repeats = RTTaskCreationParameters::RepeatNone;
@@ -41,12 +41,11 @@ void SubmitSingleShotTask(RTTaskManager& manager, const std::string& taskName, i
 }
 
 RTTask SubmitRepeatingTask(
-  RTTaskManager& manager, const std::string& taskName,
-  int32_t period = RTTaskCreationParameters::PeriodDefault,
-  int32_t phase = RTTaskCreationParameters::PhaseDefault,
-  TaskPriority priority = RTTaskCreationParameters::PriorityDefault,
-  int32_t timeoutMs = TASK_WAIT_TIMEOUT
-  )
+    RTTaskManager &manager, const std::string &taskName,
+    int32_t period = RTTaskCreationParameters::PeriodDefault,
+    int32_t phase = RTTaskCreationParameters::PhaseDefault,
+    TaskPriority priority = RTTaskCreationParameters::PriorityDefault,
+    int32_t timeoutMs = TASK_WAIT_TIMEOUT)
 {
   RTTaskCreationParameters repeatingParams(taskName.c_str());
   repeatingParams.Repeats = RTTaskCreationParameters::RepeatForever;
@@ -60,13 +59,12 @@ RTTask SubmitRepeatingTask(
   return repeatingTask;
 }
 
-void PrintTaskTiming(RTTask& task, const std::string& taskName)
+void PrintTaskTiming(RTTask &task, const std::string &taskName)
 {
-  if (!task) return;
-
   RTTaskStatus status = task.StatusGet();
   // Lambda to convert nanoseconds to milliseconds
-  auto nsToMs = [](uint64_t ns) { return static_cast<double>(ns) / 1e6; };
+  auto nsToMs = [](uint64_t ns)
+  { return static_cast<double>(ns) / 1e6; };
   std::cout << "Task: " << taskName << std::endl;
   std::cout << "Execution count: " << status.ExecutionCount << std::endl;
   std::cout << "Last execution time: " << nsToMs(status.ExecutionTimeLast) << " ms" << std::endl;
@@ -74,7 +72,8 @@ void PrintTaskTiming(RTTask& task, const std::string& taskName)
   std::cout << "Average execution time: " << nsToMs(status.ExecutionTimeMean) << " ms" << std::endl;
   std::cout << "Last start time delta: " << nsToMs(status.StartTimeDeltaLast) << " ms" << std::endl;
   std::cout << "Maximum start time delta: " << nsToMs(status.StartTimeDeltaMax) << " ms" << std::endl;
-  std::cout << "Average start time delta: " << nsToMs(status.StartTimeDeltaMean) << " ms" << std::endl << std::endl;
+  std::cout << "Average start time delta: " << nsToMs(status.StartTimeDeltaMean) << " ms" << std::endl
+            << std::endl;
 }
 
 void SetupCamera()
@@ -88,10 +87,8 @@ void SetupCamera()
   camera.DestroyDevice();
 }
 
-bool CheckRTTaskStatus(const RTTask& task, const std::string& taskName)
+bool CheckRTTaskStatus(RTTask &task, const std::string &taskName)
 {
-  if (!task) return false;
-
   try
   {
     RTTaskStatus status = task.StatusGet();
@@ -107,11 +104,11 @@ bool CheckRTTaskStatus(const RTTask& task, const std::string& taskName)
       return false;
     }
   }
-  catch (const RsiError& e)
+  catch (const RsiError &e)
   {
     std::cerr << "Failed to get status of " << taskName << ": " << e.what() << std::endl;
   }
-  catch (const std::exception& e)
+  catch (const std::exception &e)
   {
     std::cerr << "Unexpected error while getting " << taskName << " status: " << e.what() << std::endl;
   }
@@ -130,13 +127,13 @@ int main()
   // SetupCamera();
 
   // --- RMP Initialization ---
-  MotionController* controller = RMPHelpers::GetController();
-  MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
+  MotionController *controller = RMPHelpers::GetController();
+  MultiAxis *multiAxis = RMPHelpers::CreateMultiAxis(controller);
 
   try
   {
     RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
-    //std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
+    // std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
     SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
     FirmwareValue cameraReady = manager.GlobalValueGet("cameraReady");
@@ -155,7 +152,8 @@ int main()
 
     RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0, TaskPriority::Low);
     RTTask motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1, TaskPriority::High);
-    manager.GlobalValueSet("motionEnabled", true);
+    FirmwareValue motionEnabled = {.Bool = true};
+    manager.GlobalValueSet(motionEnabled, "motionEnabled");
 
     // --- Main Loop ---
     while (!g_shutdown)
@@ -185,7 +183,7 @@ int main()
       {
         RMPHelpers::CheckErrors(multiAxis);
       }
-      catch(const std::exception& e)
+      catch (const std::exception &e)
       {
         std::cerr << e.what() << '\n';
       }
@@ -215,7 +213,7 @@ int main()
     std::cerr << e.what() << std::endl;
     exitCode = 1;
   }
-  catch (...) 
+  catch (...)
   {
     std::cerr << "Unknown exception occurred." << std::endl;
     exitCode = 1;
