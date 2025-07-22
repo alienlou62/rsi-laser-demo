@@ -510,13 +510,23 @@
                                     <!--  Execute Button  -->
                                     <Button
                                         Grid.Column="1"
-                                        Margin="4,4,4,0"
-                                        Padding="4,2"
+                                        Margin="4,3,3,0"
+                                        Padding="2"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
-                                        Classes="theme-soft"
+                                        Classes="theme-subtle"
                                         Command="{Binding RunSshCommandCommand}"
                                         IsEnabled="{Binding !IsSshCommandRunning}">
+                                        <Button.Styles>
+                                            <!--  Default faded state  -->
+                                            <Style Selector="Button">
+                                                <Setter Property="Opacity" Value="0.5" />
+                                            </Style>
+                                            <!--  Show when parent TextBox is focused  -->
+                                            <Style Selector="TextBox:focus Button, TextBox:pointerover Button, Button:pointerover">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </Style>
+                                        </Button.Styles>
                                         <icons:MaterialIcon Kind="Terminal" />
                                     </Button>
                                 </TextBox.InnerRightContent>

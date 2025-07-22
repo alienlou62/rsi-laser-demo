@@ -197,7 +197,7 @@ public class RmpGrpcService : IRmpGrpcService
         response = await _rmpClient.RTTaskManagerAsync(new()
         {
             Id = _lastTaskManagerIndex.Value,
-            Header = new()
+            Header = statusOptimizationHeader,
         });
         var status = response.Status;
         return status;

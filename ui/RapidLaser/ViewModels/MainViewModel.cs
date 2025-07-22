@@ -427,7 +427,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 BallVelocityY = (_random.NextDouble() - 0.5) * 25; // Random velocity between -12.5 and 12.5
                 DetectionConfidence = 85 + _random.NextDouble() * 15; // Random confidence between 85-100%
             }
-            // Add more global values as needed
         }
         catch
         {
