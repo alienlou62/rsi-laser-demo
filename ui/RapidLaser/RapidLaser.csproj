@@ -18,14 +18,19 @@
     </None>
   </ItemGroup>
 
+  <PropertyGroup>
+    <RSIProtoPath Condition="'$(OS)' == 'Windows_NT'">C:\RSI\10.6.8\protos</RSIProtoPath>
+    <RSIProtoPath Condition="'$(OS)' != 'Windows_NT'">/rsi/protos</RSIProtoPath>
+  </PropertyGroup>
+
   <ItemGroup>
-		<Protobuf Include="C:\RSI\10.6.8\protos\rapidcode.proto" GrpcServices="Client">
+		<Protobuf Include="$(RSIProtoPath)\rapidcode.proto" GrpcServices="Client">
 			<Link>Assets\protos\rapidcode.proto</Link>
 		</Protobuf>
-		<Protobuf Include="C:\RSI\10.6.8\protos\rapidgrpc.proto" GrpcServices="Client">
+		<Protobuf Include="$(RSIProtoPath)\rapidgrpc.proto" GrpcServices="Client">
 			<Link>Assets\protos\rapidgrpc.proto</Link>
 		</Protobuf>
-		<Protobuf Include="C:\RSI\10.6.8\protos\rsienums.proto" GrpcServices="Client">
+		<Protobuf Include="$(RSIProtoPath)\rsienums.proto" GrpcServices="Client">
 			<Link>Assets\protos\rsienums.proto</Link>
 		</Protobuf>
 	</ItemGroup>
