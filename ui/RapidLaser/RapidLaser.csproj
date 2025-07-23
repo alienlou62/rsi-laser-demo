@@ -13,9 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="RapidLaser.json">
+    <Content Include="RapidLaser.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
   <PropertyGroup>

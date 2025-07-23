@@ -1,16 +1,49 @@
-# RSI Laser Demo
+# RapidLaser (RealTimeTasks + Vision Demo)
 
-A mechanical demonstration showcasing the precision of the RMP system at Robotics Systems Integration (RSI).
-This two-axis gimbal mechanism uses Basler's Pylon SDK, OpenCV, and RMP motion control to track a colored ball
-and dynamically position a laser to center it in real time.
+RapidLaser is a mechanical demonstration designed to showcase the precision of RSI's RMP motion control system, specifically its [**RealTimeTasks**](https://support.roboticsys.com/rmp/rttasks.html) feature which allows you to execute deterministic user logic, motion control, and I/O operations without specialized real-time programming expertise.  
 
-## Features
+It features a two-axis gimbal mechanism that uses Basler's Pylon SDK and OpenCV to track a colored ball in real time, dynamically positioning a laser to keep the ball centered.
+
+## 🚀 Features
 
 - Real-time tracking using OpenCV & Pylon SDK
 - Two-axis gimbal system
-- Dynamic motor control using RSI's RMP
+- Dynamic motor control using RSI's [RMP EtherCAT Motion Controller](https://www.roboticsys.com/rmp-ethercat-motion-controller)
 
-### Timing Metrics Initial Run
+## 📁 Project Structure
+
+- `src/` - Core source code and libraries
+- `ui/` - Main desktop demo UI/app (RapidLaser.Desktop)
+- `scripts/` - Utility scripts for running the UI, and more
+
+## 📦 Prerequisites
+
+- Windows or Linux PC
+- RMP SDK
+- .NET 9.0 SDK
+- Basler camera (with Pylon SDK)
+- OpenCV
+
+## 🏁 Quick Start
+
+### 🖥️ Run the UI
+
+Navigate to the `scripts/` folder and run the appropriate script for your platform:
+
+**Windows**  
+
+1. Open a Unix-style shell like (Git Bash)
+2. Run command: `./run_rapidlaser_desktop.sh`  
+
+**Linux**  
+
+1. Open terminal
+2. Make file executable: `chmod +x run_rapidlaser_desktop.sh`
+3. Run command: `./run_rapidlaser_desktop.sh` 
+
+## ⏱️ Performance Metrics
+
+### 1️⃣ Timing Metrics Initial Run
 
 | Category   | Min (ms) | Max (ms) | Average (ms) |
 |------------|----------|----------|--------------|
@@ -19,7 +52,7 @@ and dynamically position a laser to center it in real time.
 | Processing | 14       | 245      | 48.2302      |
 | Motion     | 2        | 29       | 5.09524      |
 
-### Timing Metrics Second Run
+### 2️⃣ Timing Metrics Second Run
 
 | Category   | Min (ms) | Max (ms) | Last (ms) | Average (ms) |
 |------------|----------|----------|-----------|---------------|
@@ -28,3 +61,6 @@ and dynamically position a laser to center it in real time.
 | Processing | 4        | 71       | 9         | 7.72252       |
 | Motion     | 0        | 12       | 4         | 2.45086       |
 
+## 📄 License
+
+TO DETERMINE
