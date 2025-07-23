@@ -822,7 +822,8 @@
                                 Title="Counter"
                                 Margin="0,-10,0,0"
                                 IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                Value="{Binding ControllerStatus.SampleCounter, FallbackValue='-'}" />
+                                IsMonoFont="True"
+                                Value="{Binding ControllerStatus.SampleCounter, FallbackValue='-', StringFormat=N0}" />
 
                             <!--  network  -->
                             <controls:StatusLabel
@@ -836,8 +837,9 @@
                                 Title="Counter"
                                 Margin="0,-10,0,0"
                                 IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                IsMonoFont="True"
                                 IsValueVisible="{Binding $self.IsEnabled}"
-                                Value="{Binding NetworkStatus.Counter, FallbackValue='-'}" />
+                                Value="{Binding NetworkStatus.Counter, FallbackValue='-', StringFormat=N0}" />
 
                             <!--  taskmanager  -->
                             <controls:StatusLabel

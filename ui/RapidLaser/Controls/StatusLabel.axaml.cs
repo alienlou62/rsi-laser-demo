@@ -17,6 +17,9 @@ public class StatusLabel : TemplatedControl
     public static readonly StyledProperty<double> TitleOpacityProperty =
         AvaloniaProperty.Register<StatusLabel, double>(nameof(TitleOpacity), 0.6);
 
+    public static readonly StyledProperty<bool> IsMonoFontProperty =
+        AvaloniaProperty.Register<StatusLabel, bool>(nameof(IsMonoFont), false);
+
     public string Title
     {
         get => GetValue(TitleProperty);
@@ -45,5 +48,11 @@ public class StatusLabel : TemplatedControl
     {
         get => GetValue(TitleOpacityProperty);
         set => SetValue(TitleOpacityProperty, value);
+    }
+
+    public bool IsMonoFont
+    {
+        get => GetValue(IsMonoFontProperty);
+        set => SetValue(IsMonoFontProperty, value);
     }
 }

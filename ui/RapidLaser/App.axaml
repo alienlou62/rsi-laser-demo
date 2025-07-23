@@ -49,6 +49,7 @@
 
             <!--  Fonts  -->
             <FontFamily x:Key="Saira">avares://RapidLaser/Assets/Fonts/SairaSemiCondensed#Saira SemiCondensed</FontFamily>
+            <FontFamily x:Key="ShareTechMono">avares://RapidLaser/Assets/Fonts/ShareTechMono#Share Tech Mono</FontFamily>
 
             <!--  Control Resources  -->
             <ResourceDictionary.MergedDictionaries>

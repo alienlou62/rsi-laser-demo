@@ -26,6 +26,7 @@
                         Text="{TemplateBinding Title}" />
 
                     <TextBlock
+                        Name="ValueTextBlock"
                         Grid.Column="1"
                         VerticalAlignment="Center"
                         FontSize="12"
@@ -36,6 +37,12 @@
                 </Grid>
             </ControlTemplate>
         </Setter>
+
+        <Style Selector="^[IsMonoFont=True] /template/ TextBlock#ValueTextBlock">
+            <Setter Property="FontFamily" Value="{DynamicResource ShareTechMono}" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextBlock.LetterSpacing" Value="0" />
+        </Style>
     </ControlTheme>
 
 </ResourceDictionary>
