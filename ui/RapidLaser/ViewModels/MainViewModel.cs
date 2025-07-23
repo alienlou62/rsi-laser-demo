@@ -422,26 +422,30 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             //globals
             if (!IsSimulatingBallPosition)
             {
-                if (_rmp != null)
+                if (TaskManagerStatus?.GlobalValues != null)
                 {
-                    var globals = await _rmp.GetGlobalValuesAsync();
-
-                    // Handle user-selected target globals first
+                    // Ball X
                     if (!string.IsNullOrEmpty(UserSelectedGlobalTargetX) &&
-                        globals.TryGetValue(UserSelectedGlobalTargetX, out var targetX) && targetX is double)
-                        BallXPosition = (double)targetX;
+                        TaskManagerStatus.GlobalValues.TryGetValue(UserSelectedGlobalTargetX, out var targetX) &&
+                        targetX.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
+                        BallXPosition = targetX.DoubleValue;
 
+                    // Ball Y
                     if (!string.IsNullOrEmpty(UserSelectedGlobalTargetY) &&
-                        globals.TryGetValue(UserSelectedGlobalTargetY, out var targetY) && targetY is double)
-                        BallYPosition = (double)targetY;
+                        TaskManagerStatus.GlobalValues.TryGetValue(UserSelectedGlobalTargetY, out var targetY) &&
+                        targetY.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
+                        BallYPosition = targetY.DoubleValue;
 
                     // Handle other globals
-                    // if (globals.TryGetValue("BallVelocityX", out var velX) && velX is double)
-                    //     BallVelocityX = (double)velX;
-                    // if (globals.TryGetValue("BallVelocityY", out var velY) && velY is double)
-                    //     BallVelocityY = (double)velY;
-                    // if (globals.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
-                    //     DetectionConfidence = (double)confidence;
+                    // if (TaskManagerStatus.GlobalValues.TryGetValue("BallVelocityX", out var velX) &&
+                    //     velX.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
+                    //     BallVelocityX = velX.DoubleValue;
+                    // if (TaskManagerStatus.GlobalValues.TryGetValue("BallVelocityY", out var velY) &&
+                    //     velY.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
+                    //     BallVelocityY = velY.DoubleValue;
+                    // if (TaskManagerStatus.GlobalValues.TryGetValue("DetectionConfidence", out var confidence) &&
+                    //     confidence.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
+                    //     DetectionConfidence = confidence.DoubleValue;
                 }
             }
             else

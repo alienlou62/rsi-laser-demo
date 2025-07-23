@@ -9,11 +9,6 @@ public interface IRmpGrpcService
     Task<bool> ConnectAsync(string serverAddress);
     Task DisconnectAsync();
 
-    //globals
-    Task<Dictionary<string, object>> GetGlobalValuesAsync();
-    Task<T> GetGlobalValueAsync<T>(string name);
-    Task<bool> SetGlobalValueAsync<T>(string name, T value);
-
     //program
     Task<bool> StopMotionAsync();
 
@@ -78,56 +73,6 @@ public class RmpGrpcService : IRmpGrpcService
         }
 
         _isConnected = false;
-    }
-
-    //globals
-    public async Task<Dictionary<string, object>> GetGlobalValuesAsync()
-    {
-        if (!_isConnected)
-            throw new InvalidOperationException("Not connected to gRPC server");
-
-        // TODO: Implement with actual proto service calls
-        // Example:
-        // var request = new GetGlobalValuesRequest();
-        // var response = await _rapidGrpcClient.GetGlobalValuesAsync(request);
-        // return response.Values.ToDictionary(kv => kv.Key, kv => (object)kv.Value);
-
-        await Task.Delay(100); // Simulate network call
-        return new Dictionary<string, object>();
-    }
-
-    public async Task<T> GetGlobalValueAsync<T>(string name)
-    {
-        if (!_isConnected)
-            throw new InvalidOperationException("Not connected to gRPC server");
-
-        // TODO: Implement with actual proto service calls
-        // Example:
-        // var request = new GetGlobalValueRequest { Name = name };
-        // var response = await _rapidGrpcClient.GetGlobalValueAsync(request);
-        // return (T)Convert.ChangeType(response.Value, typeof(T));
-
-        await Task.Delay(50); // Simulate network call
-        return default(T)!;
-    }
-
-    public async Task<bool> SetGlobalValueAsync<T>(string name, T value)
-    {
-        if (!_isConnected)
-            throw new InvalidOperationException("Not connected to gRPC server");
-
-        // TODO: Implement with actual proto service calls
-        // Example:
-        // var request = new SetGlobalValueRequest 
-        // { 
-        //     Name = name, 
-        //     Value = value?.ToString() ?? string.Empty 
-        // };
-        // var response = await _rapidGrpcClient.SetGlobalValueAsync(request);
-        // return response.Success;
-
-        await Task.Delay(50); // Simulate network call
-        return true;
     }
 
     //motion
@@ -250,83 +195,6 @@ public class RmpGrpcService_Mock : IRmpGrpcService
     {
         IsConnected = false;
         return Task.CompletedTask;
-    }
-
-    //globals
-    public async Task<Dictionary<string, object>> GetGlobalValuesAsync()
-    {
-        // Simulate network delay
-        await Task.Delay(50);
-
-        // Update some values to simulate live data
-        _mockGlobalValues["Temperature"] = 25.0 + (_random.NextDouble() - 0.5) * 2.0;
-        _mockGlobalValues["Pressure"] = 1013.25 + (_random.NextDouble() - 0.5) * 10.0;
-        _mockGlobalValues["LastUpdateTime"] = DateTime.Now;
-
-        // Simulate ball movement (bouncing ball physics)
-        var currentX = (double)_mockGlobalValues["BallX"];
-        var currentY = (double)_mockGlobalValues["BallY"];
-        var velocityX = (double)_mockGlobalValues["BallVelocityX"];
-        var velocityY = (double)_mockGlobalValues["BallVelocityY"];
-
-        // Update position
-        var newX = currentX + velocityX * 0.1; // Scale down movement speed
-        var newY = currentY + velocityY * 0.1;
-
-        // Bounce off walls (camera bounds are 640x480)
-        if (newX <= 20 || newX >= 620) // Account for ball radius
-        {
-            velocityX = -velocityX;
-            newX = Math.Clamp(newX, 20, 620);
-        }
-        if (newY <= 20 || newY >= 460) // Account for ball radius
-        {
-            velocityY = -velocityY;
-            newY = Math.Clamp(newY, 20, 460);
-        }
-
-        // Update values
-        _mockGlobalValues["BallX"] = newX;
-        _mockGlobalValues["BallY"] = newY;
-        _mockGlobalValues["BallVelocityX"] = velocityX;
-        _mockGlobalValues["BallVelocityY"] = velocityY;
-
-        // Simulate varying detection confidence
-        _mockGlobalValues["DetectionConfidence"] = 90.0 + _random.NextDouble() * 10.0;
-
-        return new Dictionary<string, object>(_mockGlobalValues);
-    }
-
-    public async Task<T> GetGlobalValueAsync<T>(string name)
-    {
-        // Simulate network delay
-        await Task.Delay(25);
-
-        if (_mockGlobalValues.TryGetValue(name, out var value))
-        {
-            if (value is T directValue)
-                return directValue;
-
-            try
-            {
-                return (T)Convert.ChangeType(value, typeof(T));
-            }
-            catch
-            {
-                return default(T)!;
-            }
-        }
-
-        return default(T)!;
-    }
-
-    public async Task<bool> SetGlobalValueAsync<T>(string name, T value)
-    {
-        // Simulate network delay
-        await Task.Delay(25);
-
-        _mockGlobalValues[name] = value!;
-        return true;
     }
 
     //motion
