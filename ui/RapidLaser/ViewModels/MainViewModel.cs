@@ -391,36 +391,36 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
-            //rmp status
-            if (_rmp != null)
-            {
-                ControllerStatus  = await _rmp.GetControllerStatusAsync();
-                NetworkStatus     = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
-                TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
-
-                // Update global value names collection
-                if (TaskManagerStatus?.GlobalValues != null)
-                {
-                    var globalNames = TaskManagerStatus.GlobalValues.Select(kv => kv.Key).ToList();
-
-                    // Update the collection on UI thread if names have changed
-                    if (!GlobalValueNames.SequenceEqual(globalNames))
-                    {
-                        await Dispatcher.UIThread.InvokeAsync(() =>
-                        {
-                            GlobalValueNames.Clear();
-                            foreach (var name in globalNames)
-                            {
-                                GlobalValueNames.Add(name);
-                            }
-                        });
-                    }
-                }
-            }
-
             //globals
             if (!IsSimulatingBallPosition)
             {
+                //rmp status
+                if (_rmp != null)
+                {
+                    ControllerStatus  = await _rmp.GetControllerStatusAsync();
+                    NetworkStatus     = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
+                    TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+
+                    // Update global value names collection
+                    if (TaskManagerStatus?.GlobalValues != null)
+                    {
+                        var globalNames = TaskManagerStatus.GlobalValues.Select(kv => kv.Key).ToList();
+
+                        // Update the collection on UI thread if names have changed
+                        if (!GlobalValueNames.SequenceEqual(globalNames))
+                        {
+                            await Dispatcher.UIThread.InvokeAsync(() =>
+                            {
+                                GlobalValueNames.Clear();
+                                foreach (var name in globalNames)
+                                {
+                                    GlobalValueNames.Add(name);
+                                }
+                            });
+                        }
+                    }
+                }
+
                 if (TaskManagerStatus?.GlobalValues != null)
                 {
                     // Ball X
