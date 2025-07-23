@@ -34,6 +34,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     //globals
     [ObservableProperty]
+    private ObservableCollection<string> _globalValueNames = new();
+
+    [ObservableProperty]
+    private string _userSelectedGlobalTargetX = string.Empty;
+
+    [ObservableProperty]
+    private string _userSelectedGlobalTargetY = string.Empty;
+
+    [ObservableProperty]
     private double _ballXPosition = 320;
 
     [ObservableProperty]
@@ -389,6 +398,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 ControllerStatus  = await _rmp.GetControllerStatusAsync();
                 NetworkStatus     = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
                 TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+                
+                // Update global value names collection
+                if (TaskManagerStatus?.GlobalValues != null)
+                {
+                    var globalNames = TaskManagerStatus.GlobalValues.Select(kv => kv.Key).ToList();
+                    
+                    // Update the collection on UI thread if names have changed
+                    if (!GlobalValueNames.SequenceEqual(globalNames))
+                    {
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            GlobalValueNames.Clear();
+                            foreach (var name in globalNames)
+                            {
+                                GlobalValueNames.Add(name);
+                            }
+                        });
+                    }
+                }
             }
 
             //globals
@@ -397,10 +425,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 if (_rmp != null)
                 {
                     var globals = await _rmp.GetGlobalValuesAsync();
-                    if (globals.TryGetValue("BallX", out var ballX) && ballX is double)
+                    
+                    // Handle user-selected target globals first
+                    if (!string.IsNullOrEmpty(UserSelectedGlobalTargetX) && 
+                        globals.TryGetValue(UserSelectedGlobalTargetX, out var targetX) && targetX is double)
+                        BallXPosition = (double)targetX;
+                    else if (globals.TryGetValue("BallX", out var ballX) && ballX is double)
                         BallXPosition = (double)ballX;
-                    if (globals.TryGetValue("BallY", out var ballY) && ballY is double)
+                    
+                    if (!string.IsNullOrEmpty(UserSelectedGlobalTargetY) && 
+                        globals.TryGetValue(UserSelectedGlobalTargetY, out var targetY) && targetY is double)
+                        BallYPosition = (double)targetY;
+                    else if (globals.TryGetValue("BallY", out var ballY) && ballY is double)
                         BallYPosition = (double)ballY;
+                    
+                    // Handle other globals
                     if (globals.TryGetValue("BallVelocityX", out var velX) && velX is double)
                         BallVelocityX = (double)velX;
                     if (globals.TryGetValue("BallVelocityY", out var velY) && velY is double)

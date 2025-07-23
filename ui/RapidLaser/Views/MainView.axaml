@@ -904,11 +904,14 @@
                                     Width="14"
                                     Height="14"
                                     Kind="Link" />
-                                <ComboBox
-                                    MinWidth="60"
-                                    Padding="0"
+                                <AutoCompleteBox
+                                    MinWidth="100"
+                                    Padding="4,2"
                                     Background="Transparent"
-                                    Classes="theme-soft" />
+                                    Classes="theme-soft"
+                                    ItemsSource="{Binding GlobalValueNames}"
+                                    SelectedItem="{Binding UserSelectedGlobalTargetX}"
+                                    Watermark="Select global.." />
                             </StackPanel>
 
                             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -917,11 +920,14 @@
                                     Width="14"
                                     Height="14"
                                     Kind="Link" />
-                                <ComboBox
-                                    MinWidth="60"
-                                    Padding="0"
+                                <AutoCompleteBox
+                                    MinWidth="100"
+                                    Padding="4,2"
                                     Background="Transparent"
-                                    Classes="theme-soft" />
+                                    Classes="theme-soft"
+                                    ItemsSource="{Binding GlobalValueNames}"
+                                    SelectedItem="{Binding UserSelectedGlobalTargetY}"
+                                    Watermark="Select global.." />
                             </StackPanel>
 
                             <controls:StatusLabel Title="Radius" Value="" />
