@@ -30,7 +30,7 @@
                         Grid.Column="1"
                         VerticalAlignment="Center"
                         FontSize="12"
-                        FontWeight="Medium"
+                        FontWeight="SemiBold"
                         Foreground="{TemplateBinding IsActive, Converter={x:Static converters:BoolConverters.StatusColorConverter}}"
                         IsVisible="{TemplateBinding IsValueVisible}"
                         Text="{TemplateBinding Value}" />
@@ -40,7 +40,8 @@
 
         <Style Selector="^[IsMonoFont=True] /template/ TextBlock#ValueTextBlock">
             <Setter Property="FontFamily" Value="{DynamicResource ShareTechMono}" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="Normal" />
             <Setter Property="TextBlock.LetterSpacing" Value="0" />
         </Style>
     </ControlTheme>
