@@ -615,6 +615,7 @@
                 <Border
                     Grid.Column="0"
                     Background="#000000"
+                    BorderThickness="2"
                     Classes="card">
 
                     <!-- <Border

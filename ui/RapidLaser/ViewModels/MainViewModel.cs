@@ -218,7 +218,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         // Example: Toggle a global value for motion pause
         IsProgramPaused = !IsProgramPaused;
-        _ = _rmp?.SetGlobalValueAsync("IsProgramPaused", IsProgramPaused);
     }
 
     //connection
