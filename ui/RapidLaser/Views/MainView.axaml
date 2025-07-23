@@ -406,7 +406,8 @@
                                     HorizontalAlignment="Stretch"
                                     Classes="theme-soft success"
                                     Command="{Binding StartTasksCommand}"
-                                    IsVisible="{Binding !IsProgramRunning}">
+                                    IsVisible="{Binding !IsProgramRunning}"
+                                    ToolTip.Tip="{Binding SshRunCommand}">
                                     <icons:MaterialIcon Kind="Play" />
                                 </Button>
 

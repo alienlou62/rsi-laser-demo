@@ -134,6 +134,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private string _sshCommand = "whoami";
 
     [ObservableProperty]
+    private string _sshRunCommand = "";
+
+    [ObservableProperty]
     private string _sshOutput = string.Empty;
 
     [ObservableProperty]
@@ -147,12 +150,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task StartTasks()
     {
-        // Example: Start motion via RMP
         try
         {
-            var result = await _rmp.StartMotionAsync();
-            IsProgramRunning = result;
-            SystemStatus = IsProgramRunning ? "TASKS STARTING" : "START ERROR";
+            var sshResult = await ExecuteSshCommandAsync(SshRunCommand, updateSshOutput: false);
+            if (sshResult != null)
+            {
+                IsProgramRunning = true;
+                SystemStatus = "TASKS STARTING VIA SSH";
+            }
+            else
+            {
+                SystemStatus = "SSH START ERROR";
+            }
         }
         catch (Exception ex)
         {
@@ -166,9 +175,28 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         // Example: Stop motion via RMP
         try
         {
-            var result = await _rmp.StopMotionAsync();
-            IsProgramRunning = !result;
-            SystemStatus = IsProgramRunning ? "TASKS STOPPED" : "SHUTDOWN ERROR";
+            if (_rmp != null)
+            {
+                var result = await _rmp.StopMotionAsync();
+                IsProgramRunning = !result;
+                SystemStatus = IsProgramRunning ? "SHUTDOWN ERROR" : "TASKS STOPPED";
+            }
+            else
+            {
+                SystemStatus = "RMP service not available";
+            }
+
+            // Alternative: Use SSH command execution
+            // var sshResult = await ExecuteSshCommandAsync("sudo systemctl stop rapidcode-demo", updateSshOutput: false);
+            // if (sshResult != null)
+            // {
+            //     IsProgramRunning = false;
+            //     SystemStatus = "TASKS STOPPED VIA SSH";
+            // }
+            // else
+            // {
+            //     SystemStatus = "SSH SHUTDOWN ERROR";
+            // }
         }
         catch (Exception ex)
         {
@@ -181,7 +209,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         // Example: Toggle a global value for motion pause
         IsProgramPaused = !IsProgramPaused;
-        _ = _rmp.SetGlobalValueAsync("IsProgramPaused", IsProgramPaused);
+        _ = _rmp?.SetGlobalValueAsync("IsProgramPaused", IsProgramPaused);
     }
 
     //connection
@@ -282,44 +310,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (IsSshCommandRunning) return;
 
-        if (!IsConnected)
-        {
-            SshStatus = "Not connected to server";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(SshCommand))
-        {
-            SshStatus = "Please enter a command";
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(SshUser) || string.IsNullOrWhiteSpace(SshPassword))
-        {
-            SshStatus = "Please enter SSH username and password";
-            return;
-        }
-
-        try
-        {
-            IsSshCommandRunning = true;
-            SshStatus = "Running command...";
-            SshOutput = string.Empty;
-
-            var result = await _connectionManager.RunSshCommandAsync(SshCommand, SshUser, SshPassword);
-
-            SshOutput = result;
-            SshStatus = "Command completed";
-        }
-        catch (Exception ex)
-        {
-            SshOutput = $"Error: {ex.Message}";
-            SshStatus = "Command failed";
-        }
-        finally
-        {
-            IsSshCommandRunning = false;
-        }
+        await ExecuteSshCommandAsync(SshCommand);
     }
 
     [RelayCommand]
@@ -393,24 +384,30 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             //rmp status
-            ControllerStatus  = await _rmp.GetControllerStatusAsync();
-            NetworkStatus     = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
-            TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+            if (_rmp != null)
+            {
+                ControllerStatus  = await _rmp.GetControllerStatusAsync();
+                NetworkStatus     = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
+                TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+            }
 
             //globals
             if (!IsSimulatingBallPosition)
             {
-                var globals = await _rmp.GetGlobalValuesAsync();
-                if (globals.TryGetValue("BallX", out var ballX) && ballX is double)
-                    BallXPosition = (double)ballX;
-                if (globals.TryGetValue("BallY", out var ballY) && ballY is double)
-                    BallYPosition = (double)ballY;
-                if (globals.TryGetValue("BallVelocityX", out var velX) && velX is double)
-                    BallVelocityX = (double)velX;
-                if (globals.TryGetValue("BallVelocityY", out var velY) && velY is double)
-                    BallVelocityY = (double)velY;
-                if (globals.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
-                    DetectionConfidence = (double)confidence;
+                if (_rmp != null)
+                {
+                    var globals = await _rmp.GetGlobalValuesAsync();
+                    if (globals.TryGetValue("BallX", out var ballX) && ballX is double)
+                        BallXPosition = (double)ballX;
+                    if (globals.TryGetValue("BallY", out var ballY) && ballY is double)
+                        BallYPosition = (double)ballY;
+                    if (globals.TryGetValue("BallVelocityX", out var velX) && velX is double)
+                        BallVelocityX = (double)velX;
+                    if (globals.TryGetValue("BallVelocityY", out var velY) && velY is double)
+                        BallVelocityY = (double)velY;
+                    if (globals.TryGetValue("DetectionConfidence", out var confidence) && confidence is double)
+                        DetectionConfidence = (double)confidence;
+                }
             }
             else
             {
@@ -449,6 +446,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         //ssh
         SshUser           = _settings["ssh_Username"] ?? "";
         SshPassword       = _settings["ssh_Password"] ?? "";
+        SshRunCommand     = _settings["ssh_RunCommand"] ?? "";
     }
 
     private void StorageSave()
@@ -481,6 +479,67 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         catch (Exception ex)
         {
             Debug.WriteLine($"Failed to save configuration: {ex.Message}");
+        }
+    }
+
+    //ssh
+    private async Task<string?> ExecuteSshCommandAsync(string command, bool updateSshOutput = true)
+    {
+        if (!IsConnected)
+        {
+            if (updateSshOutput) SshStatus = "Not connected to server";
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(command))
+        {
+            if (updateSshOutput)
+                SshStatus = "Please enter a command";
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(SshUser) || string.IsNullOrWhiteSpace(SshPassword))
+        {
+            if (updateSshOutput)
+                SshStatus = "Please enter SSH username and password";
+            return null;
+        }
+
+        try
+        {
+            if (updateSshOutput)
+            {
+                IsSshCommandRunning = true;
+                SshStatus = "Running command...";
+                SshOutput = string.Empty;
+            }
+
+            var result = await _connectionManager.RunSshCommandAsync(command, SshUser, SshPassword);
+
+            if (updateSshOutput)
+            {
+                SshOutput = result;
+                SshStatus = "Command completed";
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = $"Error: {ex.Message}";
+            if (updateSshOutput)
+            {
+                SshOutput = errorMessage;
+                SshStatus = "Command failed";
+            }
+            return null;
+        }
+        finally
+        {
+            if (updateSshOutput)
+            {
+                IsSshCommandRunning = false;
+            }
         }
     }
 

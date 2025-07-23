@@ -15,7 +15,6 @@ public interface IRmpGrpcService
     Task<bool> SetGlobalValueAsync<T>(string name, T value);
 
     //program
-    Task<bool> StartMotionAsync();
     Task<bool> StopMotionAsync();
 
     //status
@@ -132,16 +131,6 @@ public class RmpGrpcService : IRmpGrpcService
     }
 
     //motion
-    public async Task<bool> StartMotionAsync()
-    {
-        if (!_isConnected)
-            throw new InvalidOperationException("Not connected to gRPC server");
-
-        // TODO: Implement with actual proto service calls
-        await Task.Delay(100); // Simulate network call
-        return true;
-    }
-
     public async Task<bool> StopMotionAsync()
     {
         if (!_isConnected)
@@ -341,25 +330,6 @@ public class RmpGrpcService_Mock : IRmpGrpcService
     }
 
     //motion
-    public async Task<bool> StartMotionAsync()
-    {
-        await Task.Delay(100);
-
-        // Simulate motion by gradually changing positions
-        for (int i = 0; i < 50; i++)
-        {
-            await Task.Delay(100);
-            _mockAxisPositions["X"] += _random.NextDouble() * 0.1;
-            _mockAxisPositions["Y"] += _random.NextDouble() * 0.1;
-            // Clamp X between 0 and 620
-            _mockAxisPositions["X"] = Math.Clamp(_mockAxisPositions["X"], 0, 620);
-            // Clamp Y between 0 and 480
-            _mockAxisPositions["Y"] = Math.Clamp(_mockAxisPositions["Y"], 0, 480);
-        }
-
-        return true;
-    }
-
     public async Task<bool> StopMotionAsync()
     {
         await Task.Delay(50);
