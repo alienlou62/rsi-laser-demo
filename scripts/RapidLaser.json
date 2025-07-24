@@ -1,9 +1,0 @@
-{
-  "Settings": {
-    "server_ipAddress": "localhost",
-    "server_port": "50061",
-    "polling_IntervalMs": 160,
-    "ssh_Username": "rsi",
-    "ssh_Password": "admin"
-  }
-}
