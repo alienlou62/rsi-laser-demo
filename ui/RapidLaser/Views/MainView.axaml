@@ -678,24 +678,24 @@
                                             </Ellipse.Resources>
                                             <Ellipse.Width>
                                                 <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                    <Binding FallbackValue="10" Path="BallRadius" />
                                                 </MultiBinding>
                                             </Ellipse.Width>
                                             <Ellipse.Height>
                                                 <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                    <Binding FallbackValue="10" Path="BallRadius" />
                                                 </MultiBinding>
                                             </Ellipse.Height>
                                             <Canvas.Left>
                                                 <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                    <Binding Path="BallXPosition" FallbackValue="320" />
-                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                    <Binding FallbackValue="320" Path="BallXPosition" />
+                                                    <Binding FallbackValue="10" Path="BallRadius" />
                                                 </MultiBinding>
                                             </Canvas.Left>
                                             <Canvas.Top>
                                                 <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                    <Binding Path="BallYPosition" FallbackValue="240" />
-                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                    <Binding FallbackValue="240" Path="BallYPosition" />
+                                                    <Binding FallbackValue="10" Path="BallRadius" />
                                                 </MultiBinding>
                                             </Canvas.Top>
                                         </Ellipse>
@@ -711,8 +711,8 @@
                                             Stroke="#333333"
                                             StrokeDashArray="5,5"
                                             StrokeThickness="1"
-                                            StartPoint="310,0"
-                                            EndPoint="310,480" />
+                                            StartPoint="320,0"
+                                            EndPoint="320,480" />
 
                                     </Canvas>
 
@@ -782,14 +782,14 @@
                                             Fill="#FFFFFF">
                                             <Canvas.Left>
                                                 <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                    <Binding Path="BallXPosition" FallbackValue="320" />
-                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                    <Binding FallbackValue="320" Path="BallXPosition" />
+                                                    <Binding FallbackValue="12.5" Path="BallRadius" />
                                                 </MultiBinding>
                                             </Canvas.Left>
                                             <Canvas.Top>
                                                 <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                    <Binding Path="BallYPosition" FallbackValue="240" />
-                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                    <Binding FallbackValue="240" Path="BallYPosition" />
+                                                    <Binding FallbackValue="12.5" Path="BallRadius" />
                                                 </MultiBinding>
                                             </Canvas.Top>
                                         </Ellipse>

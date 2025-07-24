@@ -57,15 +57,15 @@ public static class BoolConverters
             var valueList = values.ToList();
             if (valueList.Count < 2) return 0;
 
-            double position = valueList[0];
-            double ballRadius = valueList[1] / 2.0; // Convert diameter to radius
-            const int canvasWidth = 620;
+            double centerX = valueList[0];      // Center X position of the ball
+            double ballRadius = valueList[1];   // Radius (not diameter)
+            const int canvasWidth = 640;
 
-            // Clamp position to canvas bounds accounting for ball radius
-            double clampedPosition = Math.Max(ballRadius, Math.Min(position, canvasWidth - ballRadius));
+            // Clamp center position to canvas bounds accounting for ball radius
+            double clampedCenterX = Math.Max(ballRadius, Math.Min(centerX, canvasWidth - ballRadius));
 
-            // Return position offset by radius to center the ball
-            return clampedPosition - ballRadius;
+            // Return top-left position (center - radius) for Canvas.Left
+            return clampedCenterX - ballRadius;
         });
 
     /// <summary>
@@ -78,15 +78,15 @@ public static class BoolConverters
             var valueList = values.ToList();
             if (valueList.Count < 2) return 0;
 
-            double position = valueList[0];
-            double ballRadius = valueList[1] / 2.0; // Convert diameter to radius
+            double centerY = valueList[0];      // Center Y position of the ball
+            double ballRadius = valueList[1];   // Radius (not diameter)
             const int canvasHeight = 480;
 
-            // Clamp position to canvas bounds accounting for ball radius
-            double clampedPosition = Math.Max(ballRadius, Math.Min(position, canvasHeight - ballRadius));
+            // Clamp center position to canvas bounds accounting for ball radius
+            double clampedCenterY = Math.Max(ballRadius, Math.Min(centerY, canvasHeight - ballRadius));
 
-            // Return position offset by radius to center the ball
-            return clampedPosition - ballRadius;
+            // Return top-left position (center - radius) for Canvas.Top
+            return clampedCenterY - ballRadius;
         });
 
     /// <summary>
