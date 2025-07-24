@@ -73,6 +73,7 @@ public class RmpGrpcService : IRmpGrpcService
         }
 
         _isConnected = false;
+        _firstTaskManagerIndex = null;
     }
 
     //motion

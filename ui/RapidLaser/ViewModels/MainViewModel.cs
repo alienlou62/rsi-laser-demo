@@ -1,5 +1,16 @@
 ﻿namespace RapidLaser.ViewModels;
 
+public partial class GlobalValueItem : ObservableObject
+{
+    [ObservableProperty]
+    private string _name = string.Empty;
+
+    [ObservableProperty]
+    private string _value = string.Empty;
+
+    public override string ToString() => Name;
+}
+
 public partial class MainViewModel : ViewModelBase, IDisposable
 {
     /** UI **/
@@ -31,7 +42,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     //globals
     [ObservableProperty]
-    private ObservableCollection<string> _globalValueNames = new();
+    private ObservableCollection<GlobalValueItem> _globalValues = new();
 
     [ObservableProperty]
     private string _global_BallX = string.Empty;
@@ -426,30 +437,62 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (_rmp == null) return;
 
         // Update global value names if task manager status is available
-        await UpdateGlobalValueNamesAsync();
+        await UpdateGlobalValuesAsync();
 
         // Update ball position from global values
         UpdateBallPositionFromGlobals();
     }
 
-    private async Task UpdateGlobalValueNamesAsync()
+    private async Task UpdateGlobalValuesAsync()
     {
         if (TaskManagerStatus?.GlobalValues == null) return;
 
-        var globalNames = TaskManagerStatus.GlobalValues.Keys.ToList();
+        var globalNames = TaskManagerStatus.GlobalValues.Keys.ToHashSet();
+        var currentNames = GlobalValues.Select(x => x.Name).ToHashSet();
 
-        // Only update UI if names have actually changed
-        if (!GlobalValueNames.SequenceEqual(globalNames))
+        // Only rebuild if names actually changed (added/removed globals)
+        var namesChanged = !globalNames.SetEquals(currentNames);
+
+        await Dispatcher.UIThread.InvokeAsync(() =>
         {
-            await Dispatcher.UIThread.InvokeAsync(() =>
+            if (namesChanged)
             {
-                GlobalValueNames.Clear();
-                foreach (var name in globalNames)
+                // Handle added globals
+                var newGlobals = globalNames.Except(currentNames).ToList();
+                foreach (var name in newGlobals)
                 {
-                    GlobalValueNames.Add(name);
+                    var valueItem = new GlobalValueItem { Name = name };
+                    if (TaskManagerStatus.GlobalValues.TryGetValue(name, out var globalValue))
+                    {
+                        valueItem.Value = FormatGlobalValue(globalValue);
+                    }
+                    GlobalValues.Add(valueItem);
                 }
-            });
-        }
+
+                // Handle removed globals
+                var removedGlobals = currentNames.Except(globalNames).ToList();
+                for (int i = GlobalValues.Count - 1; i >= 0; i--)
+                {
+                    if (removedGlobals.Contains(GlobalValues[i].Name))
+                    {
+                        GlobalValues.RemoveAt(i);
+                    }
+                }
+            }
+
+            // Always update values for existing items (this is the common case)
+            foreach (var item in GlobalValues)
+            {
+                if (TaskManagerStatus.GlobalValues.TryGetValue(item.Name, out var globalValue))
+                {
+                    var newValue = FormatGlobalValue(globalValue);
+                    if (item.Value != newValue)
+                    {
+                        item.Value = newValue;
+                    }
+                }
+            }
+        });
     }
 
     private void UpdateBallPositionFromGlobals()
@@ -478,11 +521,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return value.DoubleValue;
     }
 
+    private string FormatGlobalValue(FirmwareValue value)
+    {
+        return value.ValueCase switch
+        {
+            FirmwareValue.ValueOneofCase.DoubleValue => value.DoubleValue.ToString("F2"),
+            FirmwareValue.ValueOneofCase.Int32Value => value.Int32Value.ToString(),
+            FirmwareValue.ValueOneofCase.BoolValue => value.BoolValue.ToString(),
+            FirmwareValue.ValueOneofCase.Uint64Value => value.Uint64Value.ToString(),
+            _ => value.ToString() // Fallback to string representation
+        };
+    }
+
     //simulation
     private void UpdateGlobalValuesWithFakeData()
     {
         // Constants for simulation
-        const int CanvasWidth = 620;
+        const int CanvasWidth = 640;
         const int CanvasHeight = 480;
         const double MinConfidence = 85.0;
         const double MaxConfidence = 100.0;

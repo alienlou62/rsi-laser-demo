@@ -49,11 +49,16 @@ public static class BoolConverters
 
     /// <summary>
     /// Converts ball X position to canvas position (centers the ball circle and clamps to canvas bounds)
+    /// Takes both position and radius as input via MultiBinding
     /// </summary>
-    public static readonly FuncValueConverter<double, double> BallPositionToCenterOffsetConverter =
-        new(position =>
+    public static readonly FuncMultiValueConverter<double, double> BallPositionToCenterOffsetConverter =
+        new(values =>
         {
-            const int ballRadius = 20; // Half the circle diameter (40/2 = 20)
+            var valueList = values.ToList();
+            if (valueList.Count < 2) return 0;
+
+            double position = valueList[0];
+            double ballRadius = valueList[1] / 2.0; // Convert diameter to radius
             const int canvasWidth = 620;
 
             // Clamp position to canvas bounds accounting for ball radius
@@ -65,11 +70,16 @@ public static class BoolConverters
 
     /// <summary>
     /// Converts ball Y position to canvas position (centers the ball circle and clamps to canvas bounds)
+    /// Takes both position and radius as input via MultiBinding
     /// </summary>
-    public static readonly FuncValueConverter<double, double> BallYPositionToCenterOffsetConverter =
-        new(position =>
+    public static readonly FuncMultiValueConverter<double, double> BallYPositionToCenterOffsetConverter =
+        new(values =>
         {
-            const int ballRadius = 20; // Half the circle diameter (40/2 = 20)
+            var valueList = values.ToList();
+            if (valueList.Count < 2) return 0;
+
+            double position = valueList[0];
+            double ballRadius = valueList[1] / 2.0; // Convert diameter to radius
             const int canvasHeight = 480;
 
             // Clamp position to canvas bounds accounting for ball radius

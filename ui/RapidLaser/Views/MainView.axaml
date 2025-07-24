@@ -656,27 +656,49 @@
                         <!--  Connected State - Camera Feeds  -->
                         <Grid ColumnDefinitions="*" IsVisible="{Binding IsConnected}">
 
-                            <!--  Camera feed placeholder (620x480 aspect ratio)  -->
+                            <!--  Camera feed placeholder (640x480 aspect ratio)  -->
                             <Border Grid.Column="0" Margin="8">
                                 <Grid>
                                     <!--  Simulated camera feed background  -->
                                     <Rectangle
-                                        Width="620"
+                                        Width="640"
                                         Height="480"
                                         Fill="#2A2A2A" />
 
                                     <!--  Ball detection circle overlay  -->
-                                    <Canvas Width="620" Height="480">
+                                    <Canvas Width="640" Height="480">
 
-                                        <!--  Detected ball circle - bound to actual ball position  -->
+                                        <!--  rendred ball - red ball  -->
                                         <Ellipse
-                                            Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
-                                            Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}}"
-                                            Width="{Binding BallRadius}"
-                                            Height="{Binding BallRadius}"
                                             Fill="Red"
                                             Stroke="#000"
-                                            StrokeThickness="1" />
+                                            StrokeThickness="1">
+                                            <Ellipse.Resources>
+                                                <actipro:MathConverter x:Key="MathConverter" />
+                                            </Ellipse.Resources>
+                                            <Ellipse.Width>
+                                                <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
+                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                </MultiBinding>
+                                            </Ellipse.Width>
+                                            <Ellipse.Height>
+                                                <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
+                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                </MultiBinding>
+                                            </Ellipse.Height>
+                                            <Canvas.Left>
+                                                <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
+                                                    <Binding Path="BallXPosition" FallbackValue="320" />
+                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                </MultiBinding>
+                                            </Canvas.Left>
+                                            <Canvas.Top>
+                                                <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
+                                                    <Binding Path="BallYPosition" FallbackValue="240" />
+                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                </MultiBinding>
+                                            </Canvas.Top>
+                                        </Ellipse>
 
                                         <!--  Center crosshair  -->
                                         <Line
@@ -684,7 +706,7 @@
                                             StrokeDashArray="5,5"
                                             StrokeThickness="1"
                                             StartPoint="0,240"
-                                            EndPoint="620,240" />
+                                            EndPoint="640,240" />
                                         <Line
                                             Stroke="#333333"
                                             StrokeDashArray="5,5"
@@ -739,7 +761,7 @@
                                 </Grid>
                             </Border>
 
-                            <!--  Image mask placeholder (620x480 aspect ratio, black and white)  -->
+                            <!--  Image mask placeholder (640x480 aspect ratio, black and white)  -->
                             <Border
                                 Grid.Column="1"
                                 Margin="0,8,8,8"
@@ -747,19 +769,30 @@
                                 <Grid>
                                     <!--  Simulated image mask  -->
                                     <Rectangle
-                                        Width="620"
+                                        Width="640"
                                         Height="480"
                                         Fill="#000000" />
 
                                     <!--  White regions representing detected areas  -->
-                                    <Canvas Width="620" Height="480">
+                                    <Canvas Width="640" Height="480">
                                         <!--  Ball mask region - bound to actual ball position  -->
                                         <Ellipse
-                                            Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
-                                            Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}}"
                                             Width="40"
                                             Height="40"
-                                            Fill="#FFFFFF" />
+                                            Fill="#FFFFFF">
+                                            <Canvas.Left>
+                                                <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
+                                                    <Binding Path="BallXPosition" FallbackValue="320" />
+                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                </MultiBinding>
+                                            </Canvas.Left>
+                                            <Canvas.Top>
+                                                <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
+                                                    <Binding Path="BallYPosition" FallbackValue="240" />
+                                                    <Binding Path="BallRadius" FallbackValue="12.5" />
+                                                </MultiBinding>
+                                            </Canvas.Top>
+                                        </Ellipse>
                                     </Canvas>
 
                                     <!--  Overlay info  -->
@@ -863,18 +896,30 @@
                                 TitleOpacity="1"
                                 Value="{Binding TaskManagerStatus.State, FallbackValue='-'}" />
 
-                            <controls:StatusLabel
-                                Title="Globals"
+                            <ItemsControl
                                 Margin="0,-10,0,0"
-                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                IsValueVisible="{Binding $self.IsEnabled}"
-                                Value="{Binding TaskManagerStatus.GlobalValues, FallbackValue='-'}" />
+                                HorizontalAlignment="Stretch"
+                                FontSize="12"
+                                ItemsSource="{Binding GlobalValues}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="*,auto">
+                                            <TextBlock Opacity="60" Text="{Binding Name}" />
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                HorizontalAlignment="Right"
+                                                Text="{Binding Value}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
 
                             <controls:StatusLabel
                                 Title="Tasks"
-                                Margin="0,-10,0,0"
+                                Margin="0,0,0,0"
                                 IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
                                 IsValueVisible="{Binding $self.IsEnabled}"
+                                TitleOpacity="1"
                                 Value="{Binding TaskManagerStatus.TaskSubmissionCount, FallbackValue='-'}" />
 
                         </StackPanel>
@@ -912,8 +957,10 @@
                                     Padding="4,2"
                                     Background="Transparent"
                                     Classes="theme-soft"
-                                    ItemsSource="{Binding GlobalValueNames}"
-                                    SelectedItem="{Binding Global_BallX}"
+                                    FilterMode="Contains"
+                                    ItemsSource="{Binding GlobalValues}"
+                                    Text="{Binding Global_BallX}"
+                                    ValueMemberBinding="{Binding Name}"
                                     Watermark="Select global.." />
                             </StackPanel>
 
@@ -928,8 +975,10 @@
                                     Padding="4,2"
                                     Background="Transparent"
                                     Classes="theme-soft"
-                                    ItemsSource="{Binding GlobalValueNames}"
-                                    SelectedItem="{Binding Global_BallY}"
+                                    FilterMode="Contains"
+                                    ItemsSource="{Binding GlobalValues}"
+                                    Text="{Binding Global_BallY}"
+                                    ValueMemberBinding="{Binding Name}"
                                     Watermark="Select global.." />
                             </StackPanel>
 
@@ -944,12 +993,14 @@
                                     Padding="4,2"
                                     Background="Transparent"
                                     Classes="theme-soft"
-                                    ItemsSource="{Binding GlobalValueNames}"
-                                    SelectedItem="{Binding Global_BallRadius}"
+                                    FilterMode="Contains"
+                                    ItemsSource="{Binding GlobalValues}"
+                                    Text="{Binding Global_BallRadius}"
+                                    ValueMemberBinding="{Binding Name}"
                                     Watermark="Select global.." />
                             </StackPanel>
 
-                            <controls:StatusLabel
+                            <!--<controls:StatusLabel
                                 Title="Camera"
                                 TitleOpacity="1"
                                 Value="" />
@@ -958,7 +1009,7 @@
 
                             <controls:StatusLabel Title="Failure Count" Value="" />
 
-                            <controls:StatusLabel Title="Is Ball Detected" Value="" />
+                            <controls:StatusLabel Title="Is Ball Detected" Value="" />-->
 
                         </StackPanel>
                     </StackPanel>
