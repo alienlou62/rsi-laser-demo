@@ -84,15 +84,9 @@ RSI_TASK(DetectBall)
   {
     frameGrabbed = CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, 0);
   }
-  catch (const std::exception& e)
-  {
-    std::cerr << "Error grabbing frame: " << e.what() << std::endl;
-    data->frameGrabFailures++;
-    return;
-  }
   catch (...)
   {
-    std::cerr << "Unknown error during frame grab." << std::endl;
+    // If an exception occurs during frame grab increment failure count
     data->frameGrabFailures++;
     return;
   }
