@@ -195,21 +195,20 @@ namespace ImageProcessing
 
     ExtractV(yuyvFrame, v);
     MaskV(v, v);
+    bool ballFound = FindBall(v, ball);
 
-    // imshow("processed V mask", v);
-    //imshow("raw frame", yuyvFrame);
-    // waitKey(1);
+    // Scale the ball coordinates to match the original image size
+    ball *= 2.0f;
 
-    return FindBall(v, ball);
+    return ballFound;
   }
 
   void CalculateTargetPosition(const Vec3f& ball, double &offsetX, double &offsetY)
   {
-    // Image is downsampled to 1/2 size, so all constants need to be adjusted accordingly
-    constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 4;
-    constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 4;
-    constexpr unsigned int MIN_PIXEL_OFFSET = PIXEL_THRESHOLD / 2;
-    constexpr double MOTOR_UNITS_PER_PIXEL = -CameraHelpers::RADIANS_PER_PIXEL / std::numbers::pi;
+    constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 2;
+    constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 2;
+    constexpr unsigned int MIN_PIXEL_OFFSET = PIXEL_THRESHOLD;
+    constexpr double MOTOR_UNITS_PER_PIXEL = -CameraHelpers::RADIANS_PER_PIXEL / (2.0 * std::numbers::pi);
 
     // Calculate the offset from the center of the image
     int pixelOffsetX = static_cast<int>(ball[0]) - CENTER_X;

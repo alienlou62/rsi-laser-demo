@@ -9,7 +9,7 @@
 namespace ImageProcessing
 {
   // Offsets under this threshold are considered negligible and are ignored
-  inline constexpr unsigned int PIXEL_THRESHOLD = 10; 
+  inline constexpr unsigned int PIXEL_THRESHOLD = 5; 
 
   // Constants for image processing
   inline static constexpr double RED_THRESHOLD = 150; // Threshold for red channel (v) in YUYV format
