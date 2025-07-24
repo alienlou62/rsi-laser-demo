@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <SerializableMultiAxis xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <AxisIndexes>0,1</AxisIndexes>
-  <UserLabel />
+  <UserLabel>multiaxis</UserLabel>
   <FeedRate>1</FeedRate>
   <StopTime>0.5</StopTime>
   <EStopTime>0.05</EStopTime>
