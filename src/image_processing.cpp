@@ -211,13 +211,10 @@ namespace ImageProcessing
       offsetY = 0.0;
   }
 
-  bool TryDetectBall(const Mat& yuyvFrame, double &offsetX, double &offsetY)
+  bool TryDetectBall(const Mat& yuyvFrame, Vec3f& ball)
   {
     // Static variables to avoid reallocation
     static Mat v(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC1);
-    static Vec3f ball;
-
-    bool foundBall = false;
 
     ExtractV(yuyvFrame, v);
     MaskV(v, v);
@@ -226,11 +223,6 @@ namespace ImageProcessing
     //imshow("raw frame", yuyvFrame);
     // waitKey(1);
 
-    foundBall = FindBall(v, ball);
-    if(!foundBall) return false;
-
-    CalculateTargetPosition(ball, offsetX, offsetY);
-
-    return true;
+    return FindBall(v, ball);
   }
 } // namespace ImageProcessing

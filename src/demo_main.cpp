@@ -81,8 +81,9 @@ int main()
       cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(
             static_cast<uint8_t *>(ptrGrabResult->GetBuffer()),
             CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
-      double offsetX(0.0), offsetY(0.0);
-      bool ballDetected = ImageProcessing::TryDetectBall(yuyvFrame, offsetX, offsetY);
+      
+      cv::Vec3f ball(0.0, 0.0, -1.0);
+      bool ballDetected = ImageProcessing::TryDetectBall(yuyvFrame, ball);
       if (!ballDetected)
       {
         ++processFailures;
@@ -91,6 +92,8 @@ int main()
       processingStopwatch.Stop();
 
       // Calculate the target positions based on the offsets and the position at the time of frame grab
+      double offsetX = 0.0, offsetY = 0.0;
+      ImageProcessing::CalculateTargetPosition(ball, offsetX, offsetY);
       targetX = initialX + offsetX;
       targetY = initialY + offsetY;
 

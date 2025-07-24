@@ -79,20 +79,44 @@ RSI_TASK(DetectBall)
   if (!data->cameraReady) return;
 
   bool frameGrabbed = CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, 0);
-  if (!frameGrabbed) return;
+
+  // If frame grab failed, increment the failure count and exit early
+  if (!frameGrabbed)
+  {
+    data->frameGrabFailures++;
+    return;
+  }
+  data->cameraGrabbing = true;
 
   // Record the axis positions at the time of frame grab
   double initialX(RTAxisGet(0)->ActualPositionGet());
   double initialY(RTAxisGet(1)->ActualPositionGet());
 
+  // Convert the grabbed frame to a CV mat format for processing
   cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(
       static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()),
       CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
-  double offsetX(0.0), offsetY(0.0);
-  bool targetFound = ImageProcessing::TryDetectBall(yuyvFrame, offsetX, offsetY);
-  if (!targetFound) return;
+
+  // Detect the ball in the YUYV frame
+  cv::Vec3f ball(0.0, 0.0, -1.0);
+  bool ballDetected = ImageProcessing::TryDetectBall(yuyvFrame, ball);
+
+  // Update global data with the detection results
+  data->ballDetected = ballDetected;
+  data->ballCenterX = ball[0];
+  data->ballCenterY = ball[1];
+  data->ballRadius = ball[2]; 
+
+  // If no ball was detected, increment the failure count and exit early
+  if (!ballDetected)
+  {
+    data->ballDetectionFailures++;
+    return;
+  }
 
   // Calculate the target positions based on the offsets and the position at the time of frame grab
+  double offsetX(0,0), offsetY(0,0);
+  ImageProcessing::CalculateTargetPosition(ball, offsetX, offsetY);
   data->targetX = initialX + offsetX;
   data->targetY = initialY + offsetY;
   data->newTarget = true;

@@ -63,7 +63,19 @@ struct GlobalData
   GlobalData() { std::memset(this, 0, sizeof(*this)); }
   GlobalData(GlobalData&& other) { std::memcpy(this, &other, sizeof(*this)); }
 
+  // Camera state
   RSI_GLOBAL(bool, cameraReady);
+  RSI_GLOBAL(bool, cameraGrabbing);
+  RSI_GLOBAL(int, frameGrabFailures);
+
+  // Ball detection state
+  RSI_GLOBAL(bool, ballDetected);
+  RSI_GLOBAL(int, ballDetectionFailures);
+  RSI_GLOBAL(double, ballCenterX);
+  RSI_GLOBAL(double, ballCenterY);
+  RSI_GLOBAL(double, ballRadius);
+
+  // Multi-axis and motion control state
   RSI_GLOBAL(bool, multiAxisReady);
   RSI_GLOBAL(bool, motionEnabled);
   RSI_GLOBAL(bool, newTarget);
@@ -73,7 +85,19 @@ struct GlobalData
 
 inline constexpr GlobalMetadataMap<RSI::RapidCode::RealTimeTasks::GlobalMaxSize> GlobalMetadata(
 {
+  // Camera state
   REGISTER_GLOBAL(cameraReady),
+  REGISTER_GLOBAL(cameraGrabbing),
+  REGISTER_GLOBAL(frameGrabFailures),
+
+  // Ball detection state
+  REGISTER_GLOBAL(ballDetected),
+  REGISTER_GLOBAL(ballDetectionFailures),
+  REGISTER_GLOBAL(ballCenterX),
+  REGISTER_GLOBAL(ballCenterY),
+  REGISTER_GLOBAL(ballRadius),
+
+  // Multi-axis and motion control state
   REGISTER_GLOBAL(multiAxisReady),
   REGISTER_GLOBAL(motionEnabled),
   REGISTER_GLOBAL(newTarget),
