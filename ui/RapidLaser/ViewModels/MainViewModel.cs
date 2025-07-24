@@ -386,90 +386,122 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /** POLLING **/
     private async void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
     {
-        if (!IsConnected)
+        if (!IsConnected || _rmp == null)
             return;
 
         try
         {
-            //globals
+            // Get controller status first
+            ControllerStatus = await _rmp.GetControllerStatusAsync();
+            NetworkStatus     = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
+            TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+
+            // ball positions
             if (!IsSimulatingBallPosition)
             {
-                //rmp status
-                if (_rmp != null)
-                {
-                    ControllerStatus  = await _rmp.GetControllerStatusAsync();
-                    NetworkStatus     = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
-                    TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
-
-                    // Update global value names collection
-                    if (TaskManagerStatus?.GlobalValues != null)
-                    {
-                        var globalNames = TaskManagerStatus.GlobalValues.Select(kv => kv.Key).ToList();
-
-                        // Update the collection on UI thread if names have changed
-                        if (!GlobalValueNames.SequenceEqual(globalNames))
-                        {
-                            await Dispatcher.UIThread.InvokeAsync(() =>
-                            {
-                                GlobalValueNames.Clear();
-                                foreach (var name in globalNames)
-                                {
-                                    GlobalValueNames.Add(name);
-                                }
-                            });
-                        }
-                    }
-                }
-
-                if (TaskManagerStatus?.GlobalValues != null)
-                {
-                    // Ball X
-                    if (!string.IsNullOrEmpty(UserSelectedGlobalTargetX) &&
-                        TaskManagerStatus.GlobalValues.TryGetValue(UserSelectedGlobalTargetX, out var targetX) &&
-                        targetX.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
-                        BallXPosition = targetX.DoubleValue;
-
-                    // Ball Y
-                    if (!string.IsNullOrEmpty(UserSelectedGlobalTargetY) &&
-                        TaskManagerStatus.GlobalValues.TryGetValue(UserSelectedGlobalTargetY, out var targetY) &&
-                        targetY.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
-                        BallYPosition = targetY.DoubleValue;
-
-                    // Handle other globals
-                    // if (TaskManagerStatus.GlobalValues.TryGetValue("BallVelocityX", out var velX) &&
-                    //     velX.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
-                    //     BallVelocityX = velX.DoubleValue;
-                    // if (TaskManagerStatus.GlobalValues.TryGetValue("BallVelocityY", out var velY) &&
-                    //     velY.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
-                    //     BallVelocityY = velY.DoubleValue;
-                    // if (TaskManagerStatus.GlobalValues.TryGetValue("DetectionConfidence", out var confidence) &&
-                    //     confidence.ValueCase == FirmwareValue.ValueOneofCase.DoubleValue)
-                    //     DetectionConfidence = confidence.DoubleValue;
-                }
+                await UpdateRealBallPositionAsync();
             }
             else
             {
-                // Simulate random ball position within canvas bounds (accounting for ball radius)
-                const int ballRadius = 20; // Half of 40px ball diameter
-                const int canvasWidth = 620;
-                const int canvasHeight = 480;
-
-                BallXPosition = ballRadius + _random.NextDouble() * (canvasWidth - 2 * ballRadius); // Random X between 20-600
-                BallYPosition = ballRadius + _random.NextDouble() * (canvasHeight - 2 * ballRadius); // Random Y between 20-460
-
-                // Optional: Add some randomization to other simulation values
-                BallVelocityX = (_random.NextDouble() - 0.5) * 25; // Random velocity between -12.5 and 12.5
-                BallVelocityY = (_random.NextDouble() - 0.5) * 25; // Random velocity between -12.5 and 12.5
-                DetectionConfidence = 85 + _random.NextDouble() * 15; // Random confidence between 85-100%
+                UpdateSimulatedBallPosition();
             }
         }
-        catch
+        catch (Exception ex)
         {
+            // Log the exception instead of swallowing it silently
+            // _logger?.LogError(ex, "Error occurred during update timer polling");
+
+            // Optionally set error state or notify user
+            // HandlePollingError(ex);
         }
+    }
+
+    private async Task UpdateRealBallPositionAsync()
+    {
+        if (_rmp == null) return;
+
+        // Update global value names if task manager status is available
+        await UpdateGlobalValueNamesAsync();
+
+        // Update ball position from global values
+        UpdateBallPositionFromGlobals();
     }
 
 
     /** METHODS **/
+    //globals
+    private async Task UpdateGlobalValueNamesAsync()
+    {
+        if (TaskManagerStatus?.GlobalValues == null) return;
+
+        var globalNames = TaskManagerStatus.GlobalValues.Keys.ToList();
+
+        // Only update UI if names have actually changed
+        if (!GlobalValueNames.SequenceEqual(globalNames))
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                GlobalValueNames.Clear();
+                foreach (var name in globalNames)
+                {
+                    GlobalValueNames.Add(name);
+                }
+            });
+        }
+    }
+
+    private void UpdateBallPositionFromGlobals()
+    {
+        if (TaskManagerStatus?.GlobalValues == null) return;
+
+        // Extract ball position values with helper method
+        BallXPosition = GetDoubleValueFromGlobal(UserSelectedGlobalTargetX) ?? BallXPosition;
+        BallYPosition = GetDoubleValueFromGlobal(UserSelectedGlobalTargetY) ?? BallYPosition;
+
+        // Uncomment and use if needed:
+        // BallVelocityX = GetDoubleValueFromGlobal("BallVelocityX") ?? BallVelocityX;
+        // BallVelocityY = GetDoubleValueFromGlobal("BallVelocityY") ?? BallVelocityY;
+        // DetectionConfidence = GetDoubleValueFromGlobal("DetectionConfidence") ?? DetectionConfidence;
+    }
+
+    private double? GetDoubleValueFromGlobal(string? globalName)
+    {
+        if (string.IsNullOrEmpty(globalName) ||
+            TaskManagerStatus?.GlobalValues == null ||
+            !TaskManagerStatus.GlobalValues.TryGetValue(globalName, out var value) ||
+            value.ValueCase != FirmwareValue.ValueOneofCase.DoubleValue)
+        {
+            return null;
+        }
+
+        return value.DoubleValue;
+    }
+
+    //simulation
+    private void UpdateSimulatedBallPosition()
+    {
+        // Constants for simulation
+        const int BallRadius = 20;
+        const int CanvasWidth = 620;
+        const int CanvasHeight = 480;
+        const double MaxVelocity = 12.5;
+        const double MinConfidence = 85.0;
+        const double MaxConfidence = 100.0;
+
+        // Calculate valid position bounds
+        var minPosition = BallRadius;
+        var maxXPosition = CanvasWidth - BallRadius;
+        var maxYPosition = CanvasHeight - BallRadius;
+
+        // Generate random positions and velocities
+        BallXPosition = minPosition + _random.NextDouble() * (maxXPosition - minPosition);
+        BallYPosition = minPosition + _random.NextDouble() * (maxYPosition - minPosition);
+
+        BallVelocityX = (_random.NextDouble() - 0.5) * 2 * MaxVelocity;
+        BallVelocityY = (_random.NextDouble() - 0.5) * 2 * MaxVelocity;
+        DetectionConfidence = MinConfidence + _random.NextDouble() * (MaxConfidence - MinConfidence);
+    }
+
     //storage
     private void StorageLoad()
     {

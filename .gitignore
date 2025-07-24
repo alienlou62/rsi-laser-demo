@@ -5,3 +5,4 @@ test_img_input/
 test_img_output/
 test_video.mp4
 rttaskmanager.log
+temp/
