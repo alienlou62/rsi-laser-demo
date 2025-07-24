@@ -683,26 +683,30 @@
                                             <Ellipse.Resources>
                                                 <actipro:MathConverter x:Key="MathConverter" />
                                             </Ellipse.Resources>
+
+                                            <!--  ellipse/all size  -->
                                             <Ellipse.Width>
                                                 <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                    <Binding FallbackValue="10" Path="BallRadius" />
+                                                    <Binding FallbackValue="10" Path="Program_BallRadius" />
                                                 </MultiBinding>
                                             </Ellipse.Width>
                                             <Ellipse.Height>
                                                 <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                    <Binding FallbackValue="10" Path="BallRadius" />
+                                                    <Binding FallbackValue="10" Path="Program_BallRadius" />
                                                 </MultiBinding>
                                             </Ellipse.Height>
+
+                                            <!--  canvas position  -->
                                             <Canvas.Left>
                                                 <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                    <Binding FallbackValue="320" Path="BallXPosition" />
-                                                    <Binding FallbackValue="10" Path="BallRadius" />
+                                                    <Binding FallbackValue="320" Path="Program_BallX" />
+                                                    <Binding FallbackValue="10" Path="Program_BallRadius" />
                                                 </MultiBinding>
                                             </Canvas.Left>
                                             <Canvas.Top>
                                                 <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                    <Binding FallbackValue="240" Path="BallYPosition" />
-                                                    <Binding FallbackValue="10" Path="BallRadius" />
+                                                    <Binding FallbackValue="240" Path="Program_BallY" />
+                                                    <Binding FallbackValue="10" Path="Program_BallRadius" />
                                                 </MultiBinding>
                                             </Canvas.Top>
                                         </Ellipse>
@@ -744,11 +748,11 @@
                                                 <TextBlock
                                                     FontSize="12"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    Text="{Binding BallXPosition, StringFormat='{}X: {0:F0}'}" />
+                                                    Text="{Binding Program_BallX, StringFormat='{}X: {0:F0}'}" />
                                                 <TextBlock
                                                     FontSize="12"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    Text="{Binding BallYPosition, StringFormat='{}Y: {0:F0}'}" />
+                                                    Text="{Binding Program_BallY, StringFormat='{}Y: {0:F0}'}" />
                                                 <TextBlock
                                                     FontSize="12"
                                                     Foreground="{StaticResource TextBrush}"
@@ -762,7 +766,20 @@
                                                 Content="Simulate"
                                                 FontSize="10"
                                                 Foreground="{StaticResource TextBrush}"
-                                                IsChecked="{Binding IsSimulatingBallPosition}" />
+                                                IsChecked="{Binding IsSimulatingBallPosition}"
+                                                IsVisible="{Binding !IsConnected}" />
+
+                                            <!--  Enable Motion  -->
+                                            <CheckBox
+                                                Classes="size-xs"
+                                                Margin="0,4,0,0"
+                                                Command="{Binding ToggleProgramMotionEnabledCommand}"
+                                                CommandParameter="{Binding $self.IsChecked}"
+                                                Content="Enable Motion"
+                                                FontSize="12"
+                                                Foreground="{StaticResource TextBrush}"
+                                                IsChecked="{Binding Program_IsMotionEnabled}"
+                                                IsEnabled="{Binding Program_IsMotionEnabled, Converter={x:Static ObjectConverters.IsNotNull}}" />
                                         </StackPanel>
                                     </Border>
                                 </Grid>
@@ -789,14 +806,14 @@
                                             Fill="#FFFFFF">
                                             <Canvas.Left>
                                                 <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                    <Binding FallbackValue="320" Path="BallXPosition" />
-                                                    <Binding FallbackValue="12.5" Path="BallRadius" />
+                                                    <Binding FallbackValue="320" Path="Program_BallX" />
+                                                    <Binding FallbackValue="12.5" Path="Program_BallRadius" />
                                                 </MultiBinding>
                                             </Canvas.Left>
                                             <Canvas.Top>
                                                 <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                    <Binding FallbackValue="240" Path="BallYPosition" />
-                                                    <Binding FallbackValue="12.5" Path="BallRadius" />
+                                                    <Binding FallbackValue="240" Path="Program_BallY" />
+                                                    <Binding FallbackValue="12.5" Path="Program_BallRadius" />
                                                 </MultiBinding>
                                             </Canvas.Top>
                                         </Ellipse>
@@ -952,21 +969,28 @@
 
                             <controls:StatusLabel
                                 Title="Ball"
+                                Margin="0,0,0,-10"
                                 TitleOpacity="1"
                                 Value="" />
 
                             <StackPanel Orientation="Horizontal" Spacing="8">
+
                                 <controls:StatusLabel Title="Center X" Value="" />
+
                                 <icons:MaterialIcon
                                     Width="14"
                                     Height="14"
                                     Kind="Link" />
+
+                                <!--  ball x  -->
                                 <AutoCompleteBox
                                     Classes="theme-soft"
                                     MinWidth="100"
-                                    Padding="4,2"
+                                    Margin="-2,0,0,0"
+                                    Padding="2"
                                     behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                     Background="Transparent"
+                                    BorderThickness="0,0,0,1"
                                     FilterMode="ContainsOrdinal"
                                     ItemsSource="{Binding GlobalValues}"
                                     MinimumPopulateDelay="0"
@@ -974,20 +998,27 @@
                                     Text="{Binding Global_BallX}"
                                     ValueMemberBinding="{Binding Name}"
                                     Watermark="Select global.." />
+
                             </StackPanel>
 
+                            <!--  ball y  -->
                             <StackPanel Orientation="Horizontal" Spacing="8">
+
                                 <controls:StatusLabel Title="Center Y" Value="" />
+
                                 <icons:MaterialIcon
                                     Width="14"
                                     Height="14"
                                     Kind="Link" />
+
                                 <AutoCompleteBox
                                     Classes="theme-soft"
                                     MinWidth="100"
-                                    Padding="4,2"
+                                    Margin="-2,0,0,0"
+                                    Padding="2"
                                     behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                     Background="Transparent"
+                                    BorderThickness="0,0,0,1"
                                     FilterMode="ContainsOrdinal"
                                     ItemsSource="{Binding GlobalValues}"
                                     MinimumPopulateDelay="0"
@@ -995,25 +1026,66 @@
                                     Text="{Binding Global_BallY}"
                                     ValueMemberBinding="{Binding Name}"
                                     Watermark="Select global.." />
+
                             </StackPanel>
 
+                            <!--  ball radius  -->
                             <StackPanel Orientation="Horizontal" Spacing="8">
+
                                 <controls:StatusLabel Title="Radius" Value="" />
+
                                 <icons:MaterialIcon
                                     Width="14"
                                     Height="14"
                                     Kind="Link" />
+
                                 <AutoCompleteBox
                                     Classes="theme-soft"
                                     MinWidth="100"
-                                    Padding="4,2"
+                                    Margin="-2,0,0,0"
+                                    Padding="2"
                                     behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                     Background="Transparent"
+                                    BorderThickness="0,0,0,1"
                                     FilterMode="ContainsOrdinal"
                                     ItemsSource="{Binding GlobalValues}"
                                     MinimumPopulateDelay="0"
                                     MinimumPrefixLength="0"
                                     Text="{Binding Global_BallRadius}"
+                                    ValueMemberBinding="{Binding Name}"
+                                    Watermark="Select global.." />
+
+                            </StackPanel>
+
+                            <controls:StatusLabel
+                                Title="Program"
+                                Margin="0,0,0,-10"
+                                TitleOpacity="1"
+                                Value="" />
+
+                            <!--  is motion enabled  -->
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+
+                                <controls:StatusLabel Title="Is Motion Enabled" Value="" />
+
+                                <icons:MaterialIcon
+                                    Width="14"
+                                    Height="14"
+                                    Kind="Link" />
+
+                                <AutoCompleteBox
+                                    Classes="theme-soft"
+                                    MinWidth="100"
+                                    Margin="-2,0,0,0"
+                                    Padding="2"
+                                    behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                    Background="Transparent"
+                                    BorderThickness="0,0,0,1"
+                                    FilterMode="ContainsOrdinal"
+                                    ItemsSource="{Binding GlobalValues}"
+                                    MinimumPopulateDelay="0"
+                                    MinimumPrefixLength="0"
+                                    Text="{Binding Global_IsMotionEnabled}"
                                     ValueMemberBinding="{Binding Name}"
                                     Watermark="Select global.." />
                             </StackPanel>

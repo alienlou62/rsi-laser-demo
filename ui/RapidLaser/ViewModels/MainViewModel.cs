@@ -44,6 +44,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private ObservableCollection<GlobalValueItem> _globalValues = new();
 
+    //global names
     [ObservableProperty]
     private string _global_BallX = string.Empty;
 
@@ -54,28 +55,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private string _global_BallRadius = string.Empty;
 
     [ObservableProperty]
-    private double _ballXPosition = 320;
+    private string _global_IsMotionEnabled = string.Empty;
+
+    //program maps (these hold global values)
+    [ObservableProperty]
+    private double? _program_BallX;
 
     [ObservableProperty]
-    private double _ballYPosition = 240;
+    private double? _program_BallY;
 
     [ObservableProperty]
-    private double _ballRadius = 12.5;
+    private double? _program_BallRadius;
+
+    [ObservableProperty]
+    private bool? _program_IsMotionEnabled;
 
     [ObservableProperty]
     private double _detectionConfidence = 95.0;
-
-    [ObservableProperty]
-    private double _cpuUsage = 23.0;
-
-    [ObservableProperty]
-    private double _memoryUsage = 145.0; // MB
-
-    [ObservableProperty]
-    private double _ballDetectionLoopTime = 33.0; // ms
-
-    [ObservableProperty]
-    private long _ballDetectionIterations = 45123;
 
     //program
     [ObservableProperty]
@@ -161,6 +157,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
 
     /** COMMANDS **/
+    //program
     [RelayCommand]
     private async Task StartTasks()
     {
@@ -209,6 +206,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         // Example: Toggle a global value for motion pause
         IsProgramPaused = !IsProgramPaused;
+    }
+
+    [RelayCommand]
+    private async Task ToggleProgramMotionEnabledAsync(object isMotionEnabled)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(Global_IsMotionEnabled))
+                return;
+
+            var response = await _rmp.SetBoolGlobalValueAsync(Global_IsMotionEnabled, (bool)isMotionEnabled);
+        }
+        catch (Exception ex)
+        {
+            // we need logger or show a popup in screen
+        }
+
     }
 
     //connection
@@ -483,9 +497,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (TaskManagerStatus?.GlobalValues == null) return;
 
         // Extract ball position values with helper method
-        BallXPosition = GetDoubleValueFromGlobal(Global_BallX) ?? BallXPosition;
-        BallYPosition = GetDoubleValueFromGlobal(Global_BallY) ?? BallYPosition;
-        BallRadius    = GetDoubleValueFromGlobal(Global_BallRadius) ?? BallRadius;
+        Program_BallX           = GetDoubleValueFromGlobal(Global_BallX) ?? Program_BallX;
+        Program_BallY           = GetDoubleValueFromGlobal(Global_BallY) ?? Program_BallY;
+        Program_BallRadius      = GetDoubleValueFromGlobal(Global_BallRadius) ?? Program_BallRadius;
+        Program_IsMotionEnabled = GetBooleanValueFromGlobal(Global_IsMotionEnabled) ?? Program_IsMotionEnabled;
 
         // Uncomment and use if needed:
         // DetectionConfidence = GetDoubleValueFromGlobal("DetectionConfidence") ?? DetectionConfidence;
@@ -514,6 +529,33 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             FirmwareValue.ValueOneofCase.Int8Value => (double)value.Int8Value,
             FirmwareValue.ValueOneofCase.Uint8Value => (double)value.Uint8Value,
             _ => null // Cannot convert to double
+        };
+    }
+
+    private bool? GetBooleanValueFromGlobal(string? globalName)
+    {
+        if (string.IsNullOrEmpty(globalName) ||
+            TaskManagerStatus?.GlobalValues == null ||
+            !TaskManagerStatus.GlobalValues.TryGetValue(globalName, out var value))
+        {
+            return null;
+        }
+
+        // Handle boolean and numeric value types: 0 => false, 1 => true, else null
+        return value.ValueCase switch
+        {
+            FirmwareValue.ValueOneofCase.BoolValue => value.BoolValue,
+            FirmwareValue.ValueOneofCase.Int8Value => value.Int8Value == 0 ? false : value.Int8Value == 1 ? true : null,
+            FirmwareValue.ValueOneofCase.Uint8Value => value.Uint8Value == 0 ? false : value.Uint8Value == 1 ? true : null,
+            FirmwareValue.ValueOneofCase.Int16Value => value.Int16Value == 0 ? false : value.Int16Value == 1 ? true : null,
+            FirmwareValue.ValueOneofCase.Uint16Value => value.Uint16Value == 0 ? false : value.Uint16Value == 1 ? true : null,
+            FirmwareValue.ValueOneofCase.Int32Value => value.Int32Value == 0 ? false : value.Int32Value == 1 ? true : null,
+            FirmwareValue.ValueOneofCase.Uint32Value => value.Uint32Value == 0 ? false : value.Uint32Value == 1 ? true : null,
+            FirmwareValue.ValueOneofCase.Int64Value => value.Int64Value == 0 ? false : value.Int64Value == 1 ? true : null,
+            FirmwareValue.ValueOneofCase.Uint64Value => value.Uint64Value == 0 ? false : value.Uint64Value == 1 ? true : null,
+            FirmwareValue.ValueOneofCase.FloatValue => value.FloatValue == 0f ? false : value.FloatValue == 1f ? true : null,
+            FirmwareValue.ValueOneofCase.DoubleValue => value.DoubleValue == 0.0 ? false : value.DoubleValue == 1.0 ? true : null,
+            _ => null // Cannot convert to bool
         };
     }
 
@@ -555,9 +597,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         var maxYPosition = CanvasHeight - ballRadius;
 
         // Generate random positions and velocities
-        BallXPosition = minPosition + _random.NextDouble() * (maxXPosition - minPosition);
-        BallYPosition = minPosition + _random.NextDouble() * (maxYPosition - minPosition);
-        BallRadius    = ballRadius; // Random radius for simulation
+        Program_BallX = minPosition + _random.NextDouble() * (maxXPosition - minPosition);
+        Program_BallY = minPosition + _random.NextDouble() * (maxYPosition - minPosition);
+        Program_BallRadius = ballRadius; // Random radius for simulation
 
         DetectionConfidence = MinConfidence + _random.NextDouble() * (MaxConfidence - MinConfidence);
     }
