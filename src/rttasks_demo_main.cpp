@@ -129,10 +129,10 @@ int main()
   // --- RMP Initialization ---
   MotionController *controller = RMPHelpers::GetController();
   MultiAxis *multiAxis = RMPHelpers::CreateMultiAxis(controller);
+  RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
 
   try
   {
-    RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
     // std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
     SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
@@ -220,6 +220,7 @@ int main()
   }
 
   // --- Cleanup ---
+  manager.Shutdown();
   multiAxis->Abort();
   multiAxis->ClearFaults();
 
