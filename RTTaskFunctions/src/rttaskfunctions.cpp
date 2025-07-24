@@ -78,15 +78,28 @@ RSI_TASK(DetectBall)
 {
   if (!data->cameraReady) return;
 
-  bool frameGrabbed = CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, 0);
+  bool frameGrabbed = false;
 
-  // If frame grab failed, increment the failure count and exit early
-  if (!frameGrabbed)
+  try
   {
+    frameGrabbed = CameraHelpers::TryGrabFrame(g_camera, g_ptrGrabResult, 0);
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << "Error grabbing frame: " << e.what() << std::endl;
+    data->frameGrabFailures++;
+    return;
+  }
+  catch (...)
+  {
+    std::cerr << "Unknown error during frame grab." << std::endl;
     data->frameGrabFailures++;
     return;
   }
   data->cameraGrabbing = true;
+
+  // If frame grab failed due to a timeout, exit early but do not increment failure count
+  if (!frameGrabbed) return;
 
   // Record the axis positions at the time of frame grab
   double initialX(RTAxisGet(0)->ActualPositionGet());
