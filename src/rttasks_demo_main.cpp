@@ -19,44 +19,12 @@ using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
 constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
-constexpr int32_t TASK_WAIT_TIMEOUT = 1000;            // 1 seconds, for task execution wait
-constexpr int32_t INIT_TIMEOUT = 15000;                // 15 seconds, initialization can take a while
-constexpr int32_t DETECTION_TASK_PERIOD = 3;
-constexpr int32_t MOVE_TASK_PERIOD = 3;
 
 volatile sig_atomic_t g_shutdown = false;
 void sigint_handler(int signal)
 {
   std::cout << "SIGINT handler ran, setting shutdown flag..." << std::endl;
   g_shutdown = true;
-}
-
-void SubmitSingleShotTask(RTTaskManager &manager, const std::string &taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
-{
-  RTTaskCreationParameters singleShotParams(taskName.c_str());
-  singleShotParams.Repeats = RTTaskCreationParameters::RepeatNone;
-  singleShotParams.EnableTiming = true;
-  RTTask singleShotTask(RMPHelpers::SubmitRTTask(manager, singleShotParams));
-  singleShotTask.ExecutionCountAbsoluteWait(1, timeoutMs);
-}
-
-RTTask SubmitRepeatingTask(
-    RTTaskManager &manager, const std::string &taskName,
-    int32_t period = RTTaskCreationParameters::PeriodDefault,
-    int32_t phase = RTTaskCreationParameters::PhaseDefault,
-    TaskPriority priority = RTTaskCreationParameters::PriorityDefault,
-    int32_t timeoutMs = TASK_WAIT_TIMEOUT)
-{
-  RTTaskCreationParameters repeatingParams(taskName.c_str());
-  repeatingParams.Repeats = RTTaskCreationParameters::RepeatForever;
-  repeatingParams.Period = period;
-  repeatingParams.Phase = phase;
-  repeatingParams.Priority = priority;
-  repeatingParams.EnableTiming = true;
-  RTTask repeatingTask(RMPHelpers::SubmitRTTask(manager, repeatingParams));
-  repeatingTask.ExecutionCountAbsoluteWait(1, timeoutMs);
-  repeatingTask.TimingReset(); // Reset timing stats for the task after the first run
-  return repeatingTask;
 }
 
 void PrintTaskTiming(RTTask &task, const std::string &taskName)
@@ -74,17 +42,6 @@ void PrintTaskTiming(RTTask &task, const std::string &taskName)
   std::cout << "Maximum start time delta: " << nsToMs(status.StartTimeDeltaMax) << " ms" << std::endl;
   std::cout << "Average start time delta: " << nsToMs(status.StartTimeDeltaMean) << " ms" << std::endl
             << std::endl;
-}
-
-void SetupCamera()
-{
-  PylonAutoInitTerm pylonAutoInitTerm;
-  CInstantCamera camera;
-  CameraHelpers::ConfigureCamera(camera);
-  CGrabResultPtr ptr;
-  CameraHelpers::PrimeCamera(camera, ptr);
-  camera.Close();
-  camera.DestroyDevice();
 }
 
 bool CheckRTTaskStatus(RTTask &task, const std::string &taskName)
@@ -133,9 +90,6 @@ int main()
 
   try
   {
-    // std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
-    SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
-
     FirmwareValue cameraReady = manager.GlobalValueGet("cameraReady");
     if (!cameraReady.Bool)
     {
@@ -150,8 +104,6 @@ int main()
       return -1;
     }
 
-    RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0, TaskPriority::Low);
-    RTTask motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1, TaskPriority::High);
     FirmwareValue motionEnabled = {.Bool = true};
     manager.GlobalValueSet(motionEnabled, "motionEnabled");
 
@@ -220,7 +172,8 @@ int main()
   }
 
   // --- Cleanup ---
-  manager.Shutdown();
+  FirmwareValue motionEnabled = {.Bool = false};
+  manager.GlobalValueSet(motionEnabled, "motionEnabled");
   multiAxis->Abort();
   multiAxis->ClearFaults();
 

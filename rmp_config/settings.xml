@@ -35,49 +35,5 @@
       <XMLFile>multiaxis.xml</XMLFile>
     </MultiAxisXML>
   </MultiAxisXMLFiles>
-  <RTTaskManagers>
-    <RTTaskManager>
-      <RTTaskDirectory>/rsi</RTTaskDirectory>
-      <Platform>Linux</Platform>
-      <NodeName />
-      <CpuCore>-1</CpuCore>
-      <UserLabel>LaserTracking</UserLabel>
-      <NoRmp>false</NoRmp>
-      <RTTasks>
-        <RTTask>
-          <FunctionName>MoveMotors</FunctionName>
-          <LibraryName>RTTaskFunctions</LibraryName>
-          <LibraryDirectory />
-          <UserLabel>MoveMotors</UserLabel>
-          <Priority>High</Priority>
-          <Repeats>-1</Repeats>
-          <Period>2</Period>
-          <Phase>1</Phase>
-          <EnableTiming>true</EnableTiming>
-        </RTTask>
-        <RTTask>
-          <FunctionName>DetectBall</FunctionName>
-          <LibraryName>RTTaskFunctions</LibraryName>
-          <LibraryDirectory />
-          <UserLabel>DetectBall</UserLabel>
-          <Priority>Medium</Priority>
-          <Repeats>-1</Repeats>
-          <Period>2</Period>
-          <Phase>0</Phase>
-          <EnableTiming>true</EnableTiming>
-        </RTTask>
-        <RTTask>
-          <FunctionName>Initialize</FunctionName>
-          <LibraryName>RTTaskFunctions</LibraryName>
-          <LibraryDirectory />
-          <UserLabel>Initialize</UserLabel>
-          <Priority>NonRealTime</Priority>
-          <Repeats>0</Repeats>
-          <Period>1</Period>
-          <Phase>0</Phase>
-          <EnableTiming>false</EnableTiming>
-        </RTTask>
-      </RTTasks>
-    </RTTaskManager>
-  </RTTaskManagers>
+  <RTTaskManagers />
 </XMLSettings>
