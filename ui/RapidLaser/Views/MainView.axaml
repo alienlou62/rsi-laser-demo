@@ -667,15 +667,16 @@
 
                                     <!--  Ball detection circle overlay  -->
                                     <Canvas Width="620" Height="480">
+
                                         <!--  Detected ball circle - bound to actual ball position  -->
                                         <Ellipse
                                             Canvas.Left="{Binding BallXPosition, Converter={x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}}"
                                             Canvas.Top="{Binding BallYPosition, Converter={x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}}"
-                                            Width="20"
-                                            Height="20"
-                                            Fill="#00FF00"
+                                            Width="{Binding BallRadius}"
+                                            Height="{Binding BallRadius}"
+                                            Fill="Red"
                                             Stroke="#000"
-                                            StrokeThickness="2" />
+                                            StrokeThickness="1" />
 
                                         <!--  Center crosshair  -->
                                         <Line
@@ -690,6 +691,7 @@
                                             StrokeThickness="1"
                                             StartPoint="310,0"
                                             EndPoint="310,480" />
+
                                     </Canvas>
 
                                     <!--  Overlay info  -->

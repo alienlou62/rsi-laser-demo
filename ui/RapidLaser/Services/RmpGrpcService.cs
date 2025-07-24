@@ -107,7 +107,7 @@ public class RmpGrpcService : IRmpGrpcService
         return status;
     }
 
-    private int? _lastTaskManagerIndex;
+    private int? _firstTaskManagerIndex;
     public async Task<RTTaskManagerStatus> GetTaskManagerStatusAsync(int index = 0)
     {
         if (!_isConnected)
@@ -115,22 +115,22 @@ public class RmpGrpcService : IRmpGrpcService
 
         RTTaskManagerResponse response;
 
-        if (_lastTaskManagerIndex == null)
+        if (_firstTaskManagerIndex == null)
         {
             response = await _rmpClient.RTTaskManagerAsync(new()
             {
                 Header = infoOptimizationHeader,
                 Action = new RTTaskManagerAction { Discover = new() }
             });
-            _lastTaskManagerIndex = response.Action.Discover.ManagerIds[0];
+            _firstTaskManagerIndex = response.Action.Discover.ManagerIds[0];
         }
 
-        if (_lastTaskManagerIndex is null)
+        if (_firstTaskManagerIndex is null)
             throw new InvalidOperationException("No task manager index available.");
 
         response = await _rmpClient.RTTaskManagerAsync(new()
         {
-            Id = _lastTaskManagerIndex.Value,
+            Id = _firstTaskManagerIndex.Value,
             Header = statusOptimizationHeader,
         });
         var status = response.Status;

@@ -49,10 +49,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private double _ballYPosition = 240;
 
     [ObservableProperty]
-    private double _ballVelocityX = 12.5;
-
-    [ObservableProperty]
-    private double _ballVelocityY = -8.2;
+    private double _ballRadius = 12.5;
 
     [ObservableProperty]
     private double _detectionConfidence = 95.0;
@@ -378,26 +375,33 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
 
     /** POLLING **/
+    private readonly SemaphoreSlim _pollingSemaphore = new(1, 1);
+
     private async void OnUpdateTimerElapsed(object? sender, ElapsedEventArgs e)
     {
-        if (!IsConnected || _rmp == null)
+        // skip if already running
+        if (!await _pollingSemaphore.WaitAsync(0))
             return;
 
         try
         {
+            // checks
+            if (!IsConnected || _rmp == null)
+                return;
+
             // Get controller status first
             ControllerStatus = await _rmp.GetControllerStatusAsync();
-            NetworkStatus     = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
-            TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+            NetworkStatus    = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
 
             // ball positions
             if (!IsSimulatingBallPosition)
             {
-                await UpdateRealBallPositionAsync();
+                TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+                await UpdateGlobalValues();
             }
             else
             {
-                UpdateSimulatedBallPosition();
+                UpdateGlobalValuesWithFakeData();
             }
         }
         catch (Exception ex)
@@ -408,9 +412,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             // Optionally set error state or notify user
             // HandlePollingError(ex);
         }
+        finally
+        {
+            _pollingSemaphore.Release();
+        }
     }
 
-    private async Task UpdateRealBallPositionAsync()
+
+    /** METHODS **/
+    //globals
+    private async Task UpdateGlobalValues()
     {
         if (_rmp == null) return;
 
@@ -421,9 +432,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         UpdateBallPositionFromGlobals();
     }
 
-
-    /** METHODS **/
-    //globals
     private async Task UpdateGlobalValueNamesAsync()
     {
         if (TaskManagerStatus?.GlobalValues == null) return;
@@ -451,10 +459,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         // Extract ball position values with helper method
         BallXPosition = GetDoubleValueFromGlobal(Global_BallX) ?? BallXPosition;
         BallYPosition = GetDoubleValueFromGlobal(Global_BallY) ?? BallYPosition;
+        BallRadius    = GetDoubleValueFromGlobal(Global_BallRadius) ?? BallRadius;
 
         // Uncomment and use if needed:
-        // BallVelocityX = GetDoubleValueFromGlobal("BallVelocityX") ?? BallVelocityX;
-        // BallVelocityY = GetDoubleValueFromGlobal("BallVelocityY") ?? BallVelocityY;
         // DetectionConfidence = GetDoubleValueFromGlobal("DetectionConfidence") ?? DetectionConfidence;
     }
 
@@ -472,27 +479,27 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     //simulation
-    private void UpdateSimulatedBallPosition()
+    private void UpdateGlobalValuesWithFakeData()
     {
         // Constants for simulation
-        const int BallRadius = 20;
         const int CanvasWidth = 620;
         const int CanvasHeight = 480;
-        const double MaxVelocity = 12.5;
         const double MinConfidence = 85.0;
         const double MaxConfidence = 100.0;
 
-        // Calculate valid position bounds
-        var minPosition = BallRadius;
-        var maxXPosition = CanvasWidth - BallRadius;
-        var maxYPosition = CanvasHeight - BallRadius;
+        // Generate random ball radius between 10 and 50
+        var ballRadius = 10 + _random.NextDouble() * 40; // Random between 10 and 50
+
+        // Calculate valid position bounds  
+        var minPosition = ballRadius;
+        var maxXPosition = CanvasWidth - ballRadius;
+        var maxYPosition = CanvasHeight - ballRadius;
 
         // Generate random positions and velocities
         BallXPosition = minPosition + _random.NextDouble() * (maxXPosition - minPosition);
         BallYPosition = minPosition + _random.NextDouble() * (maxYPosition - minPosition);
+        BallRadius    = ballRadius; // Random radius for simulation
 
-        BallVelocityX = (_random.NextDouble() - 0.5) * 2 * MaxVelocity;
-        BallVelocityY = (_random.NextDouble() - 0.5) * 2 * MaxVelocity;
         DetectionConfidence = MinConfidence + _random.NextDouble() * (MaxConfidence - MinConfidence);
     }
 
