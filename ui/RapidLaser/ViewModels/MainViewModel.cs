@@ -397,15 +397,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (!IsConnected || _rmp == null)
                 return;
 
-            // Get controller status first
-            ControllerStatus = await _rmp.GetControllerStatusAsync();
-            NetworkStatus    = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null;
+            //controller status
+            try { ControllerStatus = await _rmp.GetControllerStatusAsync(); }
+            catch { ControllerStatus = null; }
+
+            //network status
+            try { NetworkStatus = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null; }
+            catch { NetworkStatus = null; }
 
             // ball positions
             if (!IsSimulatingBallPosition)
             {
-                TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
-                await UpdateGlobalValues();
+                //tm status
+                try { TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;}
+                catch { TaskManagerStatus = null; }
+
+                //tm globals
+                if(TaskManagerStatus != null)
+                    await UpdateGlobalValues();
             }
             else
             {
