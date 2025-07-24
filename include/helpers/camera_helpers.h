@@ -19,7 +19,7 @@ namespace CameraHelpers {
   inline constexpr unsigned int IMAGE_HEIGHT = 480;
 
   inline constexpr double PIXEL_SIZE = 4.8e-3; //mm
-  inline constexpr double FOCAL_LENGTH = 4; //mm
+  inline constexpr double FOCAL_LENGTH = 4.09; //mm
   inline constexpr double RADIANS_PER_PIXEL = 2.0 * std::atan(PIXEL_SIZE / (2.0 * FOCAL_LENGTH));
 
   // Image capture constants
