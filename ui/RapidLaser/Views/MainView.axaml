@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
+    xmlns:behaviors="using:RapidLaser.Behaviors"
     xmlns:controls="using:RapidLaser.Controls"
     xmlns:converters="using:RapidLaser.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -903,7 +904,7 @@
                                 ItemsSource="{Binding GlobalValues}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid ColumnDefinitions="*,auto">
+                                        <Grid Margin="0,2,0,0" ColumnDefinitions="*,auto">
                                             <TextBlock Opacity="60" Text="{Binding Name}" />
                                             <TextBlock
                                                 Grid.Column="1"
@@ -955,10 +956,13 @@
                                 <AutoCompleteBox
                                     MinWidth="100"
                                     Padding="4,2"
+                                    behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                     Background="Transparent"
                                     Classes="theme-soft"
-                                    FilterMode="Contains"
+                                    FilterMode="ContainsOrdinal"
                                     ItemsSource="{Binding GlobalValues}"
+                                    MinimumPopulateDelay="0"
+                                    MinimumPrefixLength="0"
                                     Text="{Binding Global_BallX}"
                                     ValueMemberBinding="{Binding Name}"
                                     Watermark="Select global.." />
@@ -973,10 +977,13 @@
                                 <AutoCompleteBox
                                     MinWidth="100"
                                     Padding="4,2"
+                                    behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                     Background="Transparent"
                                     Classes="theme-soft"
-                                    FilterMode="Contains"
+                                    FilterMode="ContainsOrdinal"
                                     ItemsSource="{Binding GlobalValues}"
+                                    MinimumPopulateDelay="0"
+                                    MinimumPrefixLength="0"
                                     Text="{Binding Global_BallY}"
                                     ValueMemberBinding="{Binding Name}"
                                     Watermark="Select global.." />
@@ -991,10 +998,13 @@
                                 <AutoCompleteBox
                                     MinWidth="100"
                                     Padding="4,2"
+                                    behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                     Background="Transparent"
                                     Classes="theme-soft"
-                                    FilterMode="Contains"
+                                    FilterMode="ContainsOrdinal"
                                     ItemsSource="{Binding GlobalValues}"
+                                    MinimumPopulateDelay="0"
+                                    MinimumPrefixLength="0"
                                     Text="{Binding Global_BallRadius}"
                                     ValueMemberBinding="{Binding Name}"
                                     Watermark="Select global.." />

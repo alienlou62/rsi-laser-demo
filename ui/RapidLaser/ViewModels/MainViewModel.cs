@@ -512,22 +512,43 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         if (string.IsNullOrEmpty(globalName) ||
             TaskManagerStatus?.GlobalValues == null ||
-            !TaskManagerStatus.GlobalValues.TryGetValue(globalName, out var value) ||
-            value.ValueCase != FirmwareValue.ValueOneofCase.DoubleValue)
+            !TaskManagerStatus.GlobalValues.TryGetValue(globalName, out var value))
         {
             return null;
         }
 
-        return value.DoubleValue;
+        // Handle different numeric value types that can be converted to double
+        return value.ValueCase switch
+        {
+            FirmwareValue.ValueOneofCase.DoubleValue => value.DoubleValue,
+            FirmwareValue.ValueOneofCase.FloatValue => (double)value.FloatValue,
+            FirmwareValue.ValueOneofCase.Int32Value => (double)value.Int32Value,
+            FirmwareValue.ValueOneofCase.Uint32Value => (double)value.Uint32Value,
+            FirmwareValue.ValueOneofCase.Int64Value => (double)value.Int64Value,
+            FirmwareValue.ValueOneofCase.Uint64Value => (double)value.Uint64Value,
+            FirmwareValue.ValueOneofCase.Int16Value => (double)value.Int16Value,
+            FirmwareValue.ValueOneofCase.Uint16Value => (double)value.Uint16Value,
+            FirmwareValue.ValueOneofCase.Int8Value => (double)value.Int8Value,
+            FirmwareValue.ValueOneofCase.Uint8Value => (double)value.Uint8Value,
+            _ => null // Cannot convert to double
+        };
     }
 
     private string FormatGlobalValue(FirmwareValue value)
     {
         return value.ValueCase switch
         {
-            FirmwareValue.ValueOneofCase.DoubleValue => value.DoubleValue.ToString("F2"),
-            FirmwareValue.ValueOneofCase.Int32Value => value.Int32Value.ToString(),
+            FirmwareValue.ValueOneofCase.None => "None",
             FirmwareValue.ValueOneofCase.BoolValue => value.BoolValue.ToString(),
+            FirmwareValue.ValueOneofCase.Int8Value => value.Int8Value.ToString(),
+            FirmwareValue.ValueOneofCase.Uint8Value => value.Uint8Value.ToString(),
+            FirmwareValue.ValueOneofCase.Int16Value => value.Int16Value.ToString(),
+            FirmwareValue.ValueOneofCase.Uint16Value => value.Uint16Value.ToString(),
+            FirmwareValue.ValueOneofCase.Int32Value => value.Int32Value.ToString(),
+            FirmwareValue.ValueOneofCase.Uint32Value => value.Uint32Value.ToString(),
+            FirmwareValue.ValueOneofCase.FloatValue => value.FloatValue.ToString("F2"),
+            FirmwareValue.ValueOneofCase.DoubleValue => value.DoubleValue.ToString("F2"),
+            FirmwareValue.ValueOneofCase.Int64Value => value.Int64Value.ToString(),
             FirmwareValue.ValueOneofCase.Uint64Value => value.Uint64Value.ToString(),
             _ => value.ToString() // Fallback to string representation
         };
@@ -599,13 +620,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     server_ipAddress = IpAddress,
                     server_port = Port.ToString(),
                     //server_autoReconnect = AutoReconnect,
+
                     polling_IntervalMs = _updateIntervalMs,
+
                     ssh_Username = SshUser,
                     ssh_Password = SshPassword,
+                    ssh_RunCommand = SshRunCommand,
+
                     //globals
                     global_BallX = Global_BallX,
-                    global_BallY = Global_BallY
-                    //global_BallRadius = BallRadius // Uncomment if needed
+                    global_BallY = Global_BallY,
+                    global_BallRadius = Global_BallRadius
                 }
             };
 

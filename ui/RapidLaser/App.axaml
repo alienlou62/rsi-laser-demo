@@ -73,12 +73,10 @@
 
         <!--  Custom TextBox style  -->
         <Style Selector="TextBox">
-            <Setter Property="CornerRadius" Value="0" />
             <Setter Property="Background" Value="{StaticResource MainContentColor}" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
             <Setter Property="Foreground" Value="{StaticResource TextColor}" />
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
-            <Setter Property="FontSize" Value="12" />
             <Setter Property="Padding" Value="8,4" />
         </Style>
 
@@ -90,10 +88,17 @@
 
         <!--  Label style with Saira font and positioning  -->
         <Style Selector="TextBlock">
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
         </Style>
-        <Style Selector="Label, Button">
+
+        <Style Selector="Label, Button, TextBox, ComboBox, CheckBox, RadioButton">
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+        </Style>
+
+        <Style Selector="TextBox, ComboBox, AutoCompleteBox">
+            <Setter Property="CornerRadius" Value="0" />
         </Style>
 
         <!--  we need to adjust the baselineoffset of the Saira font  -->
