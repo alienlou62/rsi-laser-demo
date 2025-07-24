@@ -33,24 +33,10 @@ RSI_TASK(Initialize)
   data->targetX = 0.0;
   data->targetY = 0.0;
 
-  try
-  {
-    CameraHelpers::ConfigureCamera(g_camera);
-    CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
-    data->cameraReady = true;
-  }
-  catch (const GenericException& e)
-  {
-    throw std::runtime_error(e.what());
-  }
-  catch (const std::exception& e)
-  {
-    throw std::runtime_error(e.what());
-  }
-  catch (...)
-  {
-    throw std::runtime_error("Unknown exception during camera initialization.");
-  }
+  // Initialize the camera
+  CameraHelpers::ConfigureCamera(g_camera);
+  CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
+  data->cameraReady = true;
 
   // Setup the multi-axis
   RTMultiAxisGet(0)->Abort();
