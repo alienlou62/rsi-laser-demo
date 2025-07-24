@@ -102,10 +102,11 @@ RSI_TASK(DetectBall)
   bool ballDetected = ImageProcessing::TryDetectBall(yuyvFrame, ball);
 
   // Update global data with the detection results
+  // The image was downsampled to 1/2 size, so we need to adjust the coordinates accordingly
+  data->ballCenterX = ball[0] * 2;
+  data->ballCenterY = ball[1] * 2;
+  data->ballRadius = ball[2] * 2;
   data->ballDetected = ballDetected;
-  data->ballCenterX = ball[0];
-  data->ballCenterY = ball[1];
-  data->ballRadius = ball[2]; 
 
   // If no ball was detected, increment the failure count and exit early
   if (!ballDetected)
