@@ -25,8 +25,8 @@
           <UserLabel>MoveMotors</UserLabel>
           <Priority>High</Priority>
           <Repeats>-1</Repeats>
-          <Period>2</Period>
-          <Phase>1</Phase>
+          <Period>1</Period>
+          <Phase>0</Phase>
           <EnableTiming>true</EnableTiming>
         </RTTask>
         <RTTask>
@@ -36,7 +36,7 @@
           <UserLabel>DetectBall</UserLabel>
           <Priority>Medium</Priority>
           <Repeats>-1</Repeats>
-          <Period>2</Period>
+          <Period>1</Period>
           <Phase>0</Phase>
           <EnableTiming>true</EnableTiming>
         </RTTask>

@@ -27,13 +27,21 @@ RSI_TASK(Initialize)
 {
   // Initialize the global data
   data->cameraReady = false;
+  data->cameraGrabbing = false;
+  data->frameGrabFailures = 0;
+
+  data->ballDetected = false;
+  data->ballDetectionFailures = 0;
+  data->ballCenterX = 0.0;
+  data->ballCenterY = 0.0;
+  data->ballRadius = 0.0;
+
   data->multiAxisReady = false;
   data->motionEnabled = false;
-  data->newTarget = false;
   data->targetX = 0.0;
   data->targetY = 0.0;
 
-  // Initialize the camera
+  // Setup the camera
   CameraHelpers::ConfigureCamera(g_camera);
   CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
   data->cameraReady = true;
@@ -44,6 +52,10 @@ RSI_TASK(Initialize)
   RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
   RTMultiAxisGet(0)->AmpEnableSet(true);
 
+  // Set the initial target positions to the current positions
+  data->targetX = RTAxisGet(0)->ActualPositionGet();
+  data->targetY = RTAxisGet(1)->ActualPositionGet();
+
   data->multiAxisReady = true;
 }
 
@@ -52,9 +64,6 @@ RSI_TASK(MoveMotors)
 {
   if (!data->motionEnabled) return;
   if (!data->multiAxisReady) return;
-
-  // Check if there is a new target, if not, return early
-  if (!data->newTarget.exchange(false)) return;
 
   MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
 }
@@ -112,5 +121,4 @@ RSI_TASK(DetectBall)
   ImageProcessing::CalculateTargetPosition(ball, offsetX, offsetY);
   data->targetX = initialX + offsetX;
   data->targetY = initialY + offsetY;
-  data->newTarget = true;
 }

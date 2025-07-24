@@ -78,7 +78,6 @@ struct GlobalData
   // Multi-axis and motion control state
   RSI_GLOBAL(bool, multiAxisReady);
   RSI_GLOBAL(bool, motionEnabled);
-  RSI_GLOBAL(bool, newTarget);
   RSI_GLOBAL(double, targetX);
   RSI_GLOBAL(double, targetY);
 };
@@ -100,7 +99,6 @@ inline constexpr GlobalMetadataMap<RSI::RapidCode::RealTimeTasks::GlobalMaxSize>
   // Multi-axis and motion control state
   REGISTER_GLOBAL(multiAxisReady),
   REGISTER_GLOBAL(motionEnabled),
-  REGISTER_GLOBAL(newTarget),
   REGISTER_GLOBAL(targetX),
   REGISTER_GLOBAL(targetY),
 });
