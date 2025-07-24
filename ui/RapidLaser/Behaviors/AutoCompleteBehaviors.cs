@@ -123,7 +123,7 @@ public static class AutoCompleteBehaviors
                 var topLevel = TopLevel.GetTopLevel(autoCompleteBox);
                 topLevel?.Focus();
 
-                focused:;
+            focused:;
             }
         }, DispatcherPriority.Loaded);
 
@@ -138,7 +138,7 @@ public static class AutoCompleteBehaviors
             // Use reflection to call internal methods for reliable dropdown opening
             typeof(AutoCompleteBox).GetMethod("PopulateDropDown", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.Invoke(autoCompleteBox, new object[] { autoCompleteBox, EventArgs.Empty });
-            
+
             typeof(AutoCompleteBox).GetMethod("OpeningDropDown", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.Invoke(autoCompleteBox, new object[] { false });
 

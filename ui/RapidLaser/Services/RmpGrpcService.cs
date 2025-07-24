@@ -10,7 +10,7 @@ public interface IRmpGrpcService
     Task DisconnectAsync();
 
     //program
-    Task<bool> StopMotionAsync();
+    Task<bool> StopTaskManagerAsync();
 
     //status
     Task<MotionControllerStatus> GetControllerStatusAsync();
@@ -77,14 +77,29 @@ public class RmpGrpcService : IRmpGrpcService
     }
 
     //motion
-    public async Task<bool> StopMotionAsync()
+    public async Task<bool> StopTaskManagerAsync()
     {
         if (!_isConnected)
             throw new InvalidOperationException("Not connected to gRPC server");
 
-        // TODO: Implement with actual proto service calls
-        await Task.Delay(100); // Simulate network call
-        return true;
+        if (_firstTaskManagerIndex is null)
+            throw new InvalidOperationException("No task manager index available.");
+
+        try
+        {
+            var response = await _rmpClient.RTTaskManagerAsync(new()
+            {
+                Id = _firstTaskManagerIndex.Value,
+                Action = new RTTaskManagerAction { Shutdown = new() },
+                Header = infoOptimizationHeader,
+            });
+
+            return true;
+        }
+        catch 
+        {
+            return false;
+        }
     }
 
     //status
@@ -120,8 +135,8 @@ public class RmpGrpcService : IRmpGrpcService
         {
             response = await _rmpClient.RTTaskManagerAsync(new()
             {
-                Header = infoOptimizationHeader,
-                Action = new RTTaskManagerAction { Discover = new() }
+                Action = new RTTaskManagerAction { Discover = new() },
+                Header = infoOptimizationHeader
             });
             _firstTaskManagerIndex = response.Action.Discover.ManagerIds[0];
         }
@@ -199,7 +214,7 @@ public class RmpGrpcService_Mock : IRmpGrpcService
     }
 
     //motion
-    public async Task<bool> StopMotionAsync()
+    public async Task<bool> StopTaskManagerAsync()
     {
         await Task.Delay(50);
         return true;

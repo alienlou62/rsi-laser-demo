@@ -33,11 +33,11 @@
 
             <!--  Top bar card with drag region  -->
             <Border
+                Classes="card"
                 Grid.Row="0"
                 Grid.ColumnSpan="3"
                 Margin="0,0,0,12"
                 Padding="5,7"
-                Classes="card"
                 PointerPressed="OnTitleBarPointerPressed">
 
                 <Grid Margin="6,0,0,0">
@@ -85,10 +85,10 @@
                         Spacing="12">
 
                         <!--  System Status Indicator  -->
-                        <TextBlock
+                        <!--<TextBlock
                             Classes="status-text status-active"
                             FontWeight="SemiBold"
-                            Text="{Binding SystemStatus}" />
+                            Text="{Binding ProgramStatus}" />-->
 
                         <!--  FPS Counter  -->
                         <TextBlock
@@ -107,11 +107,11 @@
                             <!--  Minimize Button  -->
                             <Button
                                 Name="MinimizeButton"
+                                Classes="theme-subtle shadowless"
                                 Width="32"
                                 Height="32"
                                 Padding="6"
                                 VerticalAlignment="Center"
-                                Classes="theme-subtle shadowless"
                                 Command="{Binding MinimizeWindowCommand}"
                                 Foreground="{StaticResource SubtleTextBrush}">
                                 <Button.Content>
@@ -127,11 +127,11 @@
                             <!--  Maximize/Restore Button  -->
                             <Button
                                 Name="MaximizeButton"
+                                Classes="theme-subtle shadowless"
                                 Width="32"
                                 Height="32"
                                 Padding="6"
                                 VerticalAlignment="Center"
-                                Classes="theme-subtle shadowless"
                                 Command="{Binding MaximizeWindowCommand}"
                                 Foreground="{StaticResource SubtleTextBrush}">
                                 <Button.Content>
@@ -148,11 +148,11 @@
                             <!--  Close Button  -->
                             <Button
                                 Name="CloseButton"
+                                Classes="theme-subtle shadowless"
                                 Width="32"
                                 Height="32"
                                 Padding="6"
                                 VerticalAlignment="Center"
-                                Classes="theme-subtle shadowless"
                                 Command="{Binding CloseWindowCommand}"
                                 Foreground="{StaticResource SubtleTextBrush}">
                                 <Button.Content>
@@ -296,9 +296,9 @@
 
                                 <!--  Connection Buttons  -->
                                 <Button
+                                    Classes="theme-soft success"
                                     Margin="0,2,0,0"
                                     HorizontalAlignment="Right"
-                                    Classes="theme-soft success"
                                     Command="{Binding ConnectCommand}"
                                     Content="Connect"
                                     IsEnabled="{Binding !IsConnecting}"
@@ -314,9 +314,9 @@
                             </StackPanel>
 
                             <Button
+                                Classes="theme-soft danger"
                                 Margin="0,10,0,0"
                                 HorizontalAlignment="Right"
-                                Classes="theme-soft danger"
                                 Command="{Binding DisconnectCommand}"
                                 Content="Disconnect"
                                 FontSize="12"
@@ -397,6 +397,7 @@
                                         </Style>
                                     </Border.Styles>
                                 </Border>
+
                             </Grid>
 
                             <!--  Control Buttons  -->
@@ -408,8 +409,8 @@
 
                                 <!--  start  -->
                                 <Button
-                                    HorizontalAlignment="Stretch"
                                     Classes="theme-soft success"
+                                    HorizontalAlignment="Stretch"
                                     Command="{Binding StartTasksCommand}"
                                     IsVisible="{Binding !IsProgramRunning}"
                                     ToolTip.Tip="{Binding SshRunCommand}">
@@ -418,8 +419,8 @@
 
                                 <!--  kill  -->
                                 <Button
-                                    HorizontalAlignment="Stretch"
                                     Classes="theme-soft danger"
+                                    HorizontalAlignment="Stretch"
                                     Command="{Binding ShutdownTasksCommand}"
                                     IsVisible="{Binding IsProgramRunning}">
                                     <icons:MaterialIcon Kind="Skull" />
@@ -429,8 +430,8 @@
 
                                     <!--  pause  -->
                                     <Button
-                                        HorizontalAlignment="Stretch"
                                         Classes="theme-soft accent"
+                                        HorizontalAlignment="Stretch"
                                         Command="{Binding ToggleMotionPauseCommand}"
                                         IsVisible="{Binding !IsProgramPaused}">
                                         <icons:MaterialIcon Kind="Pause" />
@@ -438,8 +439,8 @@
 
                                     <!--  resume  -->
                                     <Button
-                                        HorizontalAlignment="Stretch"
                                         Classes="theme-soft success"
+                                        HorizontalAlignment="Stretch"
                                         Command="{Binding ToggleMotionPauseCommand}"
                                         IsVisible="{Binding IsProgramPaused}">
                                         <icons:MaterialIcon Kind="PlayOutline" />
@@ -448,6 +449,11 @@
                                 </Panel>
 
                             </UniformGrid>
+
+                            <TextBlock
+                                Classes="danger"
+                                IsVisible="{Binding ProgramStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                Text="{Binding ProgramStatus}" />
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -504,12 +510,12 @@
                                 <TextBox.InnerRightContent>
                                     <!--  Execute Button  -->
                                     <Button
+                                        Classes="theme-subtle"
                                         Grid.Column="1"
                                         Margin="4,3,3,0"
                                         Padding="2"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
-                                        Classes="theme-subtle"
                                         Command="{Binding RunSshCommandCommand}"
                                         IsEnabled="{Binding !IsSshCommandRunning}">
                                         <Button.Styles>
@@ -548,10 +554,10 @@
 
                                         <!--  Clear Button  -->
                                         <Button
+                                            Classes="theme-subtle"
                                             Grid.Column="1"
                                             Margin="-8,-4"
                                             Padding="4,2,4,1"
-                                            Classes="theme-subtle"
                                             Command="{Binding ClearSshOutputCommand}"
                                             IsEnabled="{Binding IsConnected}"
                                             Opacity="0.5"
@@ -614,10 +620,10 @@
 
                 <!--  Image display area  -->
                 <Border
+                    Classes="card"
                     Grid.Column="0"
                     Background="#000000"
-                    BorderThickness="2"
-                    Classes="card">
+                    BorderThickness="2">
 
                     <!-- <Border
                     Grid.Column="0"
@@ -907,6 +913,7 @@
                                         <Grid Margin="0,2,0,0" ColumnDefinitions="*,auto">
                                             <TextBlock Opacity="60" Text="{Binding Name}" />
                                             <TextBlock
+                                                Classes="Mono"
                                                 Grid.Column="1"
                                                 HorizontalAlignment="Right"
                                                 Text="{Binding Value}" />
@@ -919,6 +926,7 @@
                                 Title="Tasks"
                                 Margin="0,0,0,0"
                                 IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                IsMonoFont="True"
                                 IsValueVisible="{Binding $self.IsEnabled}"
                                 TitleOpacity="1"
                                 Value="{Binding TaskManagerStatus.TaskSubmissionCount, FallbackValue='-'}" />
@@ -954,11 +962,11 @@
                                     Height="14"
                                     Kind="Link" />
                                 <AutoCompleteBox
+                                    Classes="theme-soft"
                                     MinWidth="100"
                                     Padding="4,2"
                                     behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                     Background="Transparent"
-                                    Classes="theme-soft"
                                     FilterMode="ContainsOrdinal"
                                     ItemsSource="{Binding GlobalValues}"
                                     MinimumPopulateDelay="0"
@@ -975,11 +983,11 @@
                                     Height="14"
                                     Kind="Link" />
                                 <AutoCompleteBox
+                                    Classes="theme-soft"
                                     MinWidth="100"
                                     Padding="4,2"
                                     behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                     Background="Transparent"
-                                    Classes="theme-soft"
                                     FilterMode="ContainsOrdinal"
                                     ItemsSource="{Binding GlobalValues}"
                                     MinimumPopulateDelay="0"
@@ -996,11 +1004,11 @@
                                     Height="14"
                                     Kind="Link" />
                                 <AutoCompleteBox
+                                    Classes="theme-soft"
                                     MinWidth="100"
                                     Padding="4,2"
                                     behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                     Background="Transparent"
-                                    Classes="theme-soft"
                                     FilterMode="ContainsOrdinal"
                                     ItemsSource="{Binding GlobalValues}"
                                     MinimumPopulateDelay="0"

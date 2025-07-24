@@ -108,6 +108,21 @@
             </Setter>
         </Style>
 
+        <!--  Mono Fonts  -->
+        <Style Selector="Label.Mono">
+            <Setter Property="FontFamily" Value="{StaticResource ShareTechMono}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="Light" />
+            <Setter Property="TextBlock.LetterSpacing" Value="0" />
+        </Style>
+
+        <Style Selector="TextBlock.Mono">
+            <Setter Property="FontFamily" Value="{StaticResource ShareTechMono}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="TextBlock.LetterSpacing" Value="0" />
+        </Style>
+
         <!--  Status Label Styles  -->
         <Style Selector="TextBlock:disabled">
             <Setter Property="Opacity" Value="0.5" />

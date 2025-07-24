@@ -85,14 +85,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private bool _isProgramRunning = false;
 
     [ObservableProperty]
-    private double _motionControlLoopTime = 16.0; // ms
+    private string _programStatus = "";
 
     //camera
     [ObservableProperty]
     private double _frameRate = 30.0;
-
-    [ObservableProperty]
-    private string _systemStatus = "SYSTEM ONLINE";
 
     [ObservableProperty]
     private int _binaryThreshold = 128;
@@ -173,51 +170,37 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (sshResult != null)
             {
                 IsProgramRunning = true;
-                SystemStatus = "TASKS STARTING VIA SSH";
             }
             else
             {
-                SystemStatus = "SSH START ERROR";
+                ProgramStatus = "SSH START ERROR";
             }
         }
         catch (Exception ex)
         {
-            SystemStatus = $"START ERROR: {ex.Message}";
+            ProgramStatus = $"START ERROR: {ex.Message}";
         }
     }
 
     [RelayCommand]
     private async Task ShutdownTasks()
     {
-        // Example: Stop motion via RMP
         try
         {
             if (_rmp != null)
             {
-                var result = await _rmp.StopMotionAsync();
+                var result = await _rmp.StopTaskManagerAsync();
                 IsProgramRunning = !result;
-                SystemStatus = IsProgramRunning ? "SHUTDOWN ERROR" : "TASKS STOPPED";
+                ProgramStatus = IsProgramRunning ? "SHUTDOWN ERROR" : "";
             }
             else
             {
-                SystemStatus = "RMP service not available";
+                ProgramStatus = "RMP service not available";
             }
-
-            // Alternative: Use SSH command execution
-            // var sshResult = await ExecuteSshCommandAsync("sudo systemctl stop rapidcode-demo", updateSshOutput: false);
-            // if (sshResult != null)
-            // {
-            //     IsProgramRunning = false;
-            //     SystemStatus = "TASKS STOPPED VIA SSH";
-            // }
-            // else
-            // {
-            //     SystemStatus = "SSH SHUTDOWN ERROR";
-            // }
         }
         catch (Exception ex)
         {
-            SystemStatus = $"SHUTDOWN ERROR: {ex.Message}";
+            ProgramStatus = $"SHUTDOWN ERROR: {ex.Message}";
         }
     }
 
