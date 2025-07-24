@@ -19,9 +19,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private readonly System.Timers.Timer _updateTimer;
     private readonly Random _random = new();
 
-    //storage
-    private IConfigurationSection _settings;
-
     //rmp
     [ObservableProperty]
     private MotionControllerStatus? _controllerStatus;
@@ -37,10 +34,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private ObservableCollection<string> _globalValueNames = new();
 
     [ObservableProperty]
-    private string _userSelectedGlobalTargetX = string.Empty;
+    private string _global_BallX = string.Empty;
 
     [ObservableProperty]
-    private string _userSelectedGlobalTargetY = string.Empty;
+    private string _global_BallY = string.Empty;
+
+    [ObservableProperty]
+    private string _global_BallRadius = string.Empty;
 
     [ObservableProperty]
     private double _ballXPosition = 320;
@@ -359,12 +359,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /** CONSTRUCTOR **/
     public MainViewModel()
     {
-        //storage
-        _settings = new ConfigurationBuilder()
-            .AddJsonFile("RapidLaser.json")
-            .Build()
-            .GetSection("Settings");
-
         StorageLoad();
 
         //services
@@ -455,8 +449,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         if (TaskManagerStatus?.GlobalValues == null) return;
 
         // Extract ball position values with helper method
-        BallXPosition = GetDoubleValueFromGlobal(UserSelectedGlobalTargetX) ?? BallXPosition;
-        BallYPosition = GetDoubleValueFromGlobal(UserSelectedGlobalTargetY) ?? BallYPosition;
+        BallXPosition = GetDoubleValueFromGlobal(Global_BallX) ?? BallXPosition;
+        BallYPosition = GetDoubleValueFromGlobal(Global_BallY) ?? BallYPosition;
 
         // Uncomment and use if needed:
         // BallVelocityX = GetDoubleValueFromGlobal("BallVelocityX") ?? BallVelocityX;
@@ -505,18 +499,30 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     //storage
     private void StorageLoad()
     {
+        //storage
+        var configPath = Path.Combine(AppContext.BaseDirectory, "RapidLaser.json");
+        var settings = new ConfigurationBuilder()
+                            .AddJsonFile(configPath)
+                            .Build()
+                            .GetSection("Settings");
+
         //server
-        IpAddress         = _settings["server_IpAddress"] ?? "localhost";
-        Port              = int.TryParse(_settings["server_Port"], out var port) ? port : 50061;
-        var autoReconnect = bool.TryParse(_settings["server_AutoReconnect"], out var reconnect) && reconnect;
+        IpAddress         = settings["server_IpAddress"] ?? "localhost";
+        Port              = int.TryParse(settings["server_Port"], out var port) ? port : 50061;
+        var autoReconnect = bool.TryParse(settings["server_AutoReconnect"], out var reconnect) && reconnect;
 
         //polling
-        _updateIntervalMs = int.TryParse(_settings["polling_IntervalMs"], out var pollingInterval) ? pollingInterval : 100;
+        _updateIntervalMs = int.TryParse(settings["polling_IntervalMs"], out var pollingInterval) ? pollingInterval : 100;
 
         //ssh
-        SshUser           = _settings["ssh_Username"] ?? "";
-        SshPassword       = _settings["ssh_Password"] ?? "";
-        SshRunCommand     = _settings["ssh_RunCommand"] ?? "";
+        SshUser           = settings["ssh_Username"] ?? "";
+        SshPassword       = settings["ssh_Password"] ?? "";
+        SshRunCommand     = settings["ssh_RunCommand"] ?? "";
+
+        //globals
+        Global_BallX      = settings["global_BallX"] ?? "";
+        Global_BallY      = settings["global_BallY"] ?? "";
+        Global_BallRadius = settings["global_BallRadius"] ?? "";
     }
 
     private void StorageSave()
@@ -533,7 +539,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     //server_autoReconnect = AutoReconnect,
                     polling_IntervalMs = _updateIntervalMs,
                     ssh_Username = SshUser,
-                    ssh_Password = SshPassword
+                    ssh_Password = SshPassword,
+                    //globals
+                    global_BallX = Global_BallX,
+                    global_BallY = Global_BallY
+                    //global_BallRadius = BallRadius // Uncomment if needed
                 }
             };
 
@@ -543,8 +553,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 WriteIndented = true
             });
 
-            // Write to file
-            File.WriteAllText("RapidLaser.json", json);
+            var configPath = Path.Combine(AppContext.BaseDirectory, "RapidLaser.json");
+            File.WriteAllText(configPath, json);
         }
         catch (Exception ex)
         {

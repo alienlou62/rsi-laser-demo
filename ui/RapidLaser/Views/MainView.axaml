@@ -35,7 +35,7 @@
                 Grid.Row="0"
                 Grid.ColumnSpan="3"
                 Margin="0,0,0,12"
-                Padding="4,7"
+                Padding="5,7"
                 Classes="card"
                 PointerPressed="OnTitleBarPointerPressed">
 
@@ -911,7 +911,7 @@
                                     Background="Transparent"
                                     Classes="theme-soft"
                                     ItemsSource="{Binding GlobalValueNames}"
-                                    SelectedItem="{Binding UserSelectedGlobalTargetX}"
+                                    SelectedItem="{Binding Global_BallX}"
                                     Watermark="Select global.." />
                             </StackPanel>
 
@@ -927,11 +927,25 @@
                                     Background="Transparent"
                                     Classes="theme-soft"
                                     ItemsSource="{Binding GlobalValueNames}"
-                                    SelectedItem="{Binding UserSelectedGlobalTargetY}"
+                                    SelectedItem="{Binding Global_BallY}"
                                     Watermark="Select global.." />
                             </StackPanel>
 
-                            <controls:StatusLabel Title="Radius" Value="" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <controls:StatusLabel Title="Radius" Value="" />
+                                <icons:MaterialIcon
+                                    Width="14"
+                                    Height="14"
+                                    Kind="Link" />
+                                <AutoCompleteBox
+                                    MinWidth="100"
+                                    Padding="4,2"
+                                    Background="Transparent"
+                                    Classes="theme-soft"
+                                    ItemsSource="{Binding GlobalValueNames}"
+                                    SelectedItem="{Binding Global_BallRadius}"
+                                    Watermark="Select global.." />
+                            </StackPanel>
 
                             <controls:StatusLabel
                                 Title="Camera"
