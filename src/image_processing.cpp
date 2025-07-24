@@ -188,6 +188,21 @@ namespace ImageProcessing
     return true;
   }
 
+  bool TryDetectBall(const Mat& yuyvFrame, Vec3f& ball)
+  {
+    // Static variables to avoid reallocation
+    static Mat v(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC1);
+
+    ExtractV(yuyvFrame, v);
+    MaskV(v, v);
+
+    // imshow("processed V mask", v);
+    //imshow("raw frame", yuyvFrame);
+    // waitKey(1);
+
+    return FindBall(v, ball);
+  }
+
   void CalculateTargetPosition(const Vec3f& ball, double &offsetX, double &offsetY)
   {
     // Image is downsampled to 1/2 size, so all constants need to be adjusted accordingly
@@ -209,20 +224,5 @@ namespace ImageProcessing
       offsetY = MOTOR_UNITS_PER_PIXEL * pixelOffsetY;
     else
       offsetY = 0.0;
-  }
-
-  bool TryDetectBall(const Mat& yuyvFrame, Vec3f& ball)
-  {
-    // Static variables to avoid reallocation
-    static Mat v(CameraHelpers::IMAGE_HEIGHT / 2, CameraHelpers::IMAGE_WIDTH / 2, CV_8UC1);
-
-    ExtractV(yuyvFrame, v);
-    MaskV(v, v);
-
-    // imshow("processed V mask", v);
-    //imshow("raw frame", yuyvFrame);
-    // waitKey(1);
-
-    return FindBall(v, ball);
   }
 } // namespace ImageProcessing

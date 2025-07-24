@@ -115,7 +115,7 @@ RSI_TASK(DetectBall)
   }
 
   // Calculate the target positions based on the offsets and the position at the time of frame grab
-  double offsetX(0,0), offsetY(0,0);
+  double offsetX(0.0), offsetY(0.0);
   ImageProcessing::CalculateTargetPosition(ball, offsetX, offsetY);
   data->targetX = initialX + offsetX;
   data->targetY = initialY + offsetY;
