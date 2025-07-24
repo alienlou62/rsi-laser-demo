@@ -851,246 +851,245 @@
             </Grid>
 
             <!--  Right sidebar - stacked cards  -->
-            <StackPanel
-                Grid.Row="1"
-                Grid.Column="2"
-                Margin="0"
-                VerticalAlignment="Top"
-                Spacing="12">
+            <ScrollViewer Grid.Row="1" Grid.Column="2">
+                <StackPanel
+                    Margin="0"
+                    VerticalAlignment="Top"
+                    Spacing="12">
 
-                <!--  Server Card  -->
-                <Border Classes="card">
-                    <StackPanel IsEnabled="{Binding IsConnected}">
+                    <!--  Server Card  -->
+                    <Border Classes="card">
+                        <StackPanel IsEnabled="{Binding IsConnected}">
 
-                        <TextBlock
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource TextBrush}"
-                            Text="RMP Status" />
+                            <TextBlock
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextBrush}"
+                                Text="RMP Status" />
 
-                        <StackPanel
-                            Margin="0,12,0,0"
-                            IsVisible="{Binding IsConnected}"
-                            Spacing="12">
+                            <StackPanel
+                                Margin="0,12,0,0"
+                                IsVisible="{Binding IsConnected}"
+                                Spacing="12">
 
-                            <!--  controller  -->
-                            <controls:StatusLabel
-                                Title="Controller"
-                                IsActive="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                TitleOpacity="1">
-                                <controls:StatusLabel.Styles>
-                                    <Style Selector="controls|StatusLabel[IsActive=true]">
-                                        <Setter Property="Value" Value="Created" />
-                                    </Style>
-                                    <Style Selector="controls|StatusLabel[IsActive=false]">
-                                        <Setter Property="Value" Value="Not created" />
-                                    </Style>
-                                </controls:StatusLabel.Styles>
-                            </controls:StatusLabel>
+                                <!--  controller  -->
+                                <controls:StatusLabel
+                                    Title="Controller"
+                                    IsActive="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    TitleOpacity="1">
+                                    <controls:StatusLabel.Styles>
+                                        <Style Selector="controls|StatusLabel[IsActive=true]">
+                                            <Setter Property="Value" Value="Created" />
+                                        </Style>
+                                        <Style Selector="controls|StatusLabel[IsActive=false]">
+                                            <Setter Property="Value" Value="Not created" />
+                                        </Style>
+                                    </controls:StatusLabel.Styles>
+                                </controls:StatusLabel>
 
-                            <controls:StatusLabel
-                                Title="Counter"
-                                Margin="0,-10,0,0"
-                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                IsMonoFont="True"
-                                Value="{Binding ControllerStatus.SampleCounter, FallbackValue='-', StringFormat=N0}" />
+                                <controls:StatusLabel
+                                    Title="Counter"
+                                    Margin="0,-10,0,0"
+                                    IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    IsMonoFont="True"
+                                    Value="{Binding ControllerStatus.SampleCounter, FallbackValue='-', StringFormat=N0}" />
 
-                            <!--  network  -->
-                            <controls:StatusLabel
-                                Title="EtherCAT Network"
-                                IsActive="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
-                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                TitleOpacity="1"
-                                Value="{Binding NetworkStatus.State, FallbackValue='-'}" />
+                                <!--  network  -->
+                                <controls:StatusLabel
+                                    Title="EtherCAT Network"
+                                    IsActive="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                    IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    TitleOpacity="1"
+                                    Value="{Binding NetworkStatus.State, FallbackValue='-'}" />
 
-                            <controls:StatusLabel
-                                Title="Counter"
-                                Margin="0,-10,0,0"
-                                IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
-                                IsMonoFont="True"
-                                IsValueVisible="{Binding $self.IsEnabled}"
-                                Value="{Binding NetworkStatus.Counter, FallbackValue='-', StringFormat=N0}" />
+                                <controls:StatusLabel
+                                    Title="Counter"
+                                    Margin="0,-10,0,0"
+                                    IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                    IsMonoFont="True"
+                                    IsValueVisible="{Binding $self.IsEnabled}"
+                                    Value="{Binding NetworkStatus.Counter, FallbackValue='-', StringFormat=N0}" />
 
-                            <!--  taskmanager  -->
-                            <controls:StatusLabel
-                                Title="TaskManager"
-                                IsActive="{Binding TaskManagerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                IsValueVisible="{Binding $self.IsEnabled}"
-                                TitleOpacity="1"
-                                Value="{Binding TaskManagerStatus.State, FallbackValue='-'}" />
+                                <!--  taskmanager  -->
+                                <controls:StatusLabel
+                                    Title="TaskManager"
+                                    IsActive="{Binding TaskManagerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    IsValueVisible="{Binding $self.IsEnabled}"
+                                    TitleOpacity="1"
+                                    Value="{Binding TaskManagerStatus.State, FallbackValue='-'}" />
 
-                            <ItemsControl
-                                Margin="0,-10,0,0"
-                                HorizontalAlignment="Stretch"
-                                FontSize="12"
-                                ItemsSource="{Binding GlobalValues}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="0,2,0,0" ColumnDefinitions="*,auto">
-                                            <TextBlock Opacity="60" Text="{Binding Name}" />
-                                            <TextBlock
-                                                Classes="Mono"
-                                                Grid.Column="1"
-                                                HorizontalAlignment="Right"
-                                                Text="{Binding Value}" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                <ItemsControl
+                                    Margin="0,-10,0,0"
+                                    HorizontalAlignment="Stretch"
+                                    FontSize="12"
+                                    ItemsSource="{Binding GlobalValues}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2,0,0" ColumnDefinitions="*,auto">
+                                                <TextBlock Opacity="60" Text="{Binding Name}" />
+                                                <TextBlock
+                                                    Classes="Mono"
+                                                    Grid.Column="1"
+                                                    HorizontalAlignment="Right"
+                                                    Text="{Binding Value}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
-                            <controls:StatusLabel
-                                Title="Tasks"
-                                Margin="0,0,0,0"
-                                IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                IsMonoFont="True"
-                                IsValueVisible="{Binding $self.IsEnabled}"
-                                TitleOpacity="1"
-                                Value="{Binding TaskManagerStatus.TaskSubmissionCount, FallbackValue='-'}" />
+                                <controls:StatusLabel
+                                    Title="Tasks"
+                                    Margin="0,0,0,0"
+                                    IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    IsMonoFont="True"
+                                    IsValueVisible="{Binding $self.IsEnabled}"
+                                    TitleOpacity="1"
+                                    Value="{Binding TaskManagerStatus.TaskSubmissionCount, FallbackValue='-'}" />
 
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                </Border>
+                    </Border>
 
-                <!--  Program Card  -->
-                <Border Classes="card" IsEnabled="{Binding IsConnected}">
-                    <StackPanel>
+                    <!--  Program Card  -->
+                    <Border Classes="card" IsEnabled="{Binding IsConnected}">
+                        <StackPanel>
 
-                        <TextBlock
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource TextBrush}"
-                            Text="Mapping" />
+                            <TextBlock
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextBrush}"
+                                Text="Mapping" />
 
-                        <StackPanel
-                            Margin="0,12,0,0"
-                            IsVisible="{Binding IsConnected}"
-                            Spacing="8">
+                            <StackPanel
+                                Margin="0,12,0,0"
+                                IsVisible="{Binding IsConnected}"
+                                Spacing="8">
 
-                            <controls:StatusLabel
-                                Title="Ball"
-                                Margin="0,0,0,-10"
-                                TitleOpacity="1"
-                                Value="" />
+                                <controls:StatusLabel
+                                    Title="Ball"
+                                    Margin="0,0,0,-10"
+                                    TitleOpacity="1"
+                                    Value="" />
 
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
 
-                                <controls:StatusLabel Title="Center X" Value="" />
+                                    <controls:StatusLabel Title="Center X" Value="" />
 
-                                <icons:MaterialIcon
-                                    Width="14"
-                                    Height="14"
-                                    Kind="Link" />
+                                    <icons:MaterialIcon
+                                        Width="14"
+                                        Height="14"
+                                        Kind="Link" />
 
-                                <!--  ball x  -->
-                                <AutoCompleteBox
-                                    Classes="theme-soft"
-                                    MinWidth="100"
-                                    Margin="-2,0,0,0"
-                                    Padding="2"
-                                    behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                    Background="Transparent"
-                                    BorderThickness="0,0,0,1"
-                                    FilterMode="ContainsOrdinal"
-                                    ItemsSource="{Binding GlobalValues}"
-                                    MinimumPopulateDelay="0"
-                                    MinimumPrefixLength="0"
-                                    Text="{Binding Global_BallX}"
-                                    ValueMemberBinding="{Binding Name}"
-                                    Watermark="Select global.." />
+                                    <!--  ball x  -->
+                                    <AutoCompleteBox
+                                        Classes="theme-soft"
+                                        MinWidth="100"
+                                        Margin="-2,0,0,0"
+                                        Padding="2"
+                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                        Background="Transparent"
+                                        BorderThickness="0,0,0,1"
+                                        FilterMode="ContainsOrdinal"
+                                        ItemsSource="{Binding GlobalValues}"
+                                        MinimumPopulateDelay="0"
+                                        MinimumPrefixLength="0"
+                                        Text="{Binding Global_BallX}"
+                                        ValueMemberBinding="{Binding Name}"
+                                        Watermark="Select global.." />
 
-                            </StackPanel>
+                                </StackPanel>
 
-                            <!--  ball y  -->
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <!--  ball y  -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
 
-                                <controls:StatusLabel Title="Center Y" Value="" />
+                                    <controls:StatusLabel Title="Center Y" Value="" />
 
-                                <icons:MaterialIcon
-                                    Width="14"
-                                    Height="14"
-                                    Kind="Link" />
+                                    <icons:MaterialIcon
+                                        Width="14"
+                                        Height="14"
+                                        Kind="Link" />
 
-                                <AutoCompleteBox
-                                    Classes="theme-soft"
-                                    MinWidth="100"
-                                    Margin="-2,0,0,0"
-                                    Padding="2"
-                                    behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                    Background="Transparent"
-                                    BorderThickness="0,0,0,1"
-                                    FilterMode="ContainsOrdinal"
-                                    ItemsSource="{Binding GlobalValues}"
-                                    MinimumPopulateDelay="0"
-                                    MinimumPrefixLength="0"
-                                    Text="{Binding Global_BallY}"
-                                    ValueMemberBinding="{Binding Name}"
-                                    Watermark="Select global.." />
+                                    <AutoCompleteBox
+                                        Classes="theme-soft"
+                                        MinWidth="100"
+                                        Margin="-2,0,0,0"
+                                        Padding="2"
+                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                        Background="Transparent"
+                                        BorderThickness="0,0,0,1"
+                                        FilterMode="ContainsOrdinal"
+                                        ItemsSource="{Binding GlobalValues}"
+                                        MinimumPopulateDelay="0"
+                                        MinimumPrefixLength="0"
+                                        Text="{Binding Global_BallY}"
+                                        ValueMemberBinding="{Binding Name}"
+                                        Watermark="Select global.." />
 
-                            </StackPanel>
+                                </StackPanel>
 
-                            <!--  ball radius  -->
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <!--  ball radius  -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
 
-                                <controls:StatusLabel Title="Radius" Value="" />
+                                    <controls:StatusLabel Title="Radius" Value="" />
 
-                                <icons:MaterialIcon
-                                    Width="14"
-                                    Height="14"
-                                    Kind="Link" />
+                                    <icons:MaterialIcon
+                                        Width="14"
+                                        Height="14"
+                                        Kind="Link" />
 
-                                <AutoCompleteBox
-                                    Classes="theme-soft"
-                                    MinWidth="100"
-                                    Margin="-2,0,0,0"
-                                    Padding="2"
-                                    behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                    Background="Transparent"
-                                    BorderThickness="0,0,0,1"
-                                    FilterMode="ContainsOrdinal"
-                                    ItemsSource="{Binding GlobalValues}"
-                                    MinimumPopulateDelay="0"
-                                    MinimumPrefixLength="0"
-                                    Text="{Binding Global_BallRadius}"
-                                    ValueMemberBinding="{Binding Name}"
-                                    Watermark="Select global.." />
+                                    <AutoCompleteBox
+                                        Classes="theme-soft"
+                                        MinWidth="100"
+                                        Margin="-2,0,0,0"
+                                        Padding="2"
+                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                        Background="Transparent"
+                                        BorderThickness="0,0,0,1"
+                                        FilterMode="ContainsOrdinal"
+                                        ItemsSource="{Binding GlobalValues}"
+                                        MinimumPopulateDelay="0"
+                                        MinimumPrefixLength="0"
+                                        Text="{Binding Global_BallRadius}"
+                                        ValueMemberBinding="{Binding Name}"
+                                        Watermark="Select global.." />
 
-                            </StackPanel>
+                                </StackPanel>
 
-                            <controls:StatusLabel
-                                Title="Program"
-                                Margin="0,0,0,-10"
-                                TitleOpacity="1"
-                                Value="" />
+                                <controls:StatusLabel
+                                    Title="Program"
+                                    Margin="0,0,0,-10"
+                                    TitleOpacity="1"
+                                    Value="" />
 
-                            <!--  is motion enabled  -->
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <!--  is motion enabled  -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
 
-                                <controls:StatusLabel Title="Is Motion Enabled" Value="" />
+                                    <controls:StatusLabel Title="Is Motion Enabled" Value="" />
 
-                                <icons:MaterialIcon
-                                    Width="14"
-                                    Height="14"
-                                    Kind="Link" />
+                                    <icons:MaterialIcon
+                                        Width="14"
+                                        Height="14"
+                                        Kind="Link" />
 
-                                <AutoCompleteBox
-                                    Classes="theme-soft"
-                                    MinWidth="100"
-                                    Margin="-2,0,0,0"
-                                    Padding="2"
-                                    behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                    Background="Transparent"
-                                    BorderThickness="0,0,0,1"
-                                    FilterMode="ContainsOrdinal"
-                                    ItemsSource="{Binding GlobalValues}"
-                                    MinimumPopulateDelay="0"
-                                    MinimumPrefixLength="0"
-                                    Text="{Binding Global_IsMotionEnabled}"
-                                    ValueMemberBinding="{Binding Name}"
-                                    Watermark="Select global.." />
-                            </StackPanel>
+                                    <AutoCompleteBox
+                                        Classes="theme-soft"
+                                        MinWidth="100"
+                                        Margin="-2,0,0,0"
+                                        Padding="2"
+                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                        Background="Transparent"
+                                        BorderThickness="0,0,0,1"
+                                        FilterMode="ContainsOrdinal"
+                                        ItemsSource="{Binding GlobalValues}"
+                                        MinimumPopulateDelay="0"
+                                        MinimumPrefixLength="0"
+                                        Text="{Binding Global_IsMotionEnabled}"
+                                        ValueMemberBinding="{Binding Name}"
+                                        Watermark="Select global.." />
+                                </StackPanel>
 
-                            <!--<controls:StatusLabel
+                                <!--<controls:StatusLabel
                                 Title="Camera"
                                 TitleOpacity="1"
                                 Value="" />
@@ -1101,11 +1100,12 @@
 
                             <controls:StatusLabel Title="Is Ball Detected" Value="" />-->
 
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                </Border>
+                    </Border>
 
-            </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
 
     </ContentControl>
