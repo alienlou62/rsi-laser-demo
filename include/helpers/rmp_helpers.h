@@ -14,7 +14,7 @@ namespace RMPHelpers {
 
   // RTTaskManager configuration parameters
   inline constexpr char RMP_PATH[] = "/rsi";
-  inline constexpr int CPU_CORE = 2;
+  inline constexpr int CPU_CORE = 6;
 
   // Check for errors in the RapidCodeObject and throw an exception if any non-warning errors are found
   void CheckErrors(RSI::RapidCode::RapidCodeObject *rsiObject, const std::source_location &location = std::source_location::current());

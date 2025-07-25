@@ -82,7 +82,7 @@ int main()
             static_cast<uint8_t *>(ptrGrabResult->GetBuffer()),
             CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
       
-      cv::Vec3f ball(0.0, 0.0, -1.0);
+      cv::Vec3f ball(0.0, 0.0, 0.0);
       bool ballDetected = ImageProcessing::TryDetectBall(yuyvFrame, ball);
       if (!ballDetected)
       {
