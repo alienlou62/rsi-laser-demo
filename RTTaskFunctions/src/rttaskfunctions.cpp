@@ -26,6 +26,8 @@ CGrabResultPtr g_ptrGrabResult;
 RSI_TASK(Initialize)
 {
   // Initialize the global data
+  data->initialized = false;
+
   data->cameraReady = false;
   data->cameraGrabbing = false;
   data->frameGrabFailures = 0;
@@ -49,6 +51,7 @@ RSI_TASK(Initialize)
   // Setup the multi-axis
   RTMultiAxisGet(0)->Abort();
   RTMultiAxisGet(0)->ClearFaults();
+  RTMultiAxisGet(0)->MotionAttributeMaskOnSet(RSIMotionAttrMask::RSIMotionAttrMaskNO_WAIT);
   RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
   RTMultiAxisGet(0)->AmpEnableSet(true);
 
@@ -57,11 +60,14 @@ RSI_TASK(Initialize)
   data->targetY = RTAxisGet(1)->ActualPositionGet();
 
   data->multiAxisReady = true;
+  data->initialized = true;
+  data->motionEnabled = true;
 }
 
 // Moves the motors based on the target positions.
 RSI_TASK(MoveMotors)
 {
+  if (!data->initialized) return;
   if (!data->motionEnabled) return;
   if (!data->multiAxisReady) return;
 
@@ -71,6 +77,7 @@ RSI_TASK(MoveMotors)
 // Processes the image captured by the camera.
 RSI_TASK(DetectBall)
 {
+  if (!data->initialized) return;
   if (!data->cameraReady) return;
 
   bool frameGrabbed = false;

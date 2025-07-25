@@ -63,6 +63,9 @@ struct GlobalData
   GlobalData() { std::memset(this, 0, sizeof(*this)); }
   GlobalData(GlobalData&& other) { std::memcpy(this, &other, sizeof(*this)); }
 
+  // Whether the initialization task has completed successfully
+  RSI_GLOBAL(bool, initialized);
+
   // Camera state
   RSI_GLOBAL(bool, cameraReady);
   RSI_GLOBAL(bool, cameraGrabbing);
@@ -84,6 +87,9 @@ struct GlobalData
 
 inline constexpr GlobalMetadataMap<RSI::RapidCode::RealTimeTasks::GlobalMaxSize> GlobalMetadata(
 {
+  // Initialization state
+  REGISTER_GLOBAL(initialized),
+
   // Camera state
   REGISTER_GLOBAL(cameraReady),
   REGISTER_GLOBAL(cameraGrabbing),

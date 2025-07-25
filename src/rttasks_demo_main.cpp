@@ -139,8 +139,8 @@ int main()
       return -1;
     }
 
-    RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0, TaskPriority::Low);
-    RTTask motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1, TaskPriority::High);
+    RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0);
+    RTTask motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1);
     FirmwareValue motionEnabled = {.Bool = true};
     manager.GlobalValueSet(motionEnabled, "motionEnabled");
 

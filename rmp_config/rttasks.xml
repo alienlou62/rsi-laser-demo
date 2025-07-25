@@ -23,9 +23,9 @@
           <LibraryName>RTTaskFunctions</LibraryName>
           <LibraryDirectory />
           <UserLabel>MoveMotors</UserLabel>
-          <Priority>High</Priority>
+          <Priority>Medium</Priority>
           <Repeats>-1</Repeats>
-          <Period>1</Period>
+          <Period>3</Period>
           <Phase>0</Phase>
           <EnableTiming>true</EnableTiming>
         </RTTask>
@@ -36,8 +36,8 @@
           <UserLabel>DetectBall</UserLabel>
           <Priority>Medium</Priority>
           <Repeats>-1</Repeats>
-          <Period>1</Period>
-          <Phase>0</Phase>
+          <Period>3</Period>
+          <Phase>1</Phase>
           <EnableTiming>true</EnableTiming>
         </RTTask>
         <RTTask>
@@ -45,7 +45,7 @@
           <LibraryName>RTTaskFunctions</LibraryName>
           <LibraryDirectory />
           <UserLabel>Initialize</UserLabel>
-          <Priority>NonRealTime</Priority>
+          <Priority>Medium</Priority>
           <Repeats>0</Repeats>
           <Period>1</Period>
           <Phase>0</Phase>
