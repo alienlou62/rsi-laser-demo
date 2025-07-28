@@ -929,32 +929,42 @@
                                         <DataTemplate>
                                             <Grid Margin="0,2,0,0" ColumnDefinitions="*,auto">
                                                 <TextBlock Opacity="60" Text="{Binding Name}" />
+
+                                                <!--  numeric  -->
                                                 <TextBlock
                                                     Classes="Mono"
                                                     Grid.Column="1"
                                                     HorizontalAlignment="Right"
                                                     VerticalAlignment="Bottom"
+                                                    IsVisible="{Binding IsNumeric}"
+                                                    Text="{Binding Value}" />
+
+                                                <!--  bool  -->
+                                                <icons:MaterialIcon
+                                                    Grid.Column="1"
+                                                    Width="14"
+                                                    Height="14"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Bottom"
                                                     Classes.is-false="{Binding !Value}"
-                                                    Classes.is-true="{Binding Value}">
-                                                    <TextBlock.Styles>
-                                                        <Style Selector="TextBlock">
-                                                            <Setter Property="Text" Value="{Binding Value}" />
-                                                        </Style>
+                                                    Classes.is-true="{Binding Value}"
+                                                    IsVisible="{Binding !IsNumeric}">
+                                                    <icons:MaterialIcon.Styles>
 
-                                                        <Style Selector="TextBlock.is-true">
-                                                            <Setter Property="Text" Value="✔️" />
+                                                        <Style Selector="icons|MaterialIcon.is-true">
+                                                            <Setter Property="Kind" Value="CheckBold" />
                                                             <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-                                                            <Setter Property="Margin" Value="0 0 -2 3" />
+                                                            <Setter Property="Margin" Value="0 0 -1 2" />
                                                         </Style>
 
-                                                        <Style Selector="TextBlock.is-false">
-                                                            <Setter Property="Text" Value="❌" />
+                                                        <Style Selector="icons|MaterialIcon.is-false">
+                                                            <Setter Property="Kind" Value="CloseBold" />
                                                             <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-                                                            <Setter Property="Margin" Value="0 0 -2 3" />
+                                                            <Setter Property="Margin" Value="0 0 -2 2" />
                                                         </Style>
 
-                                                    </TextBlock.Styles>
-                                                </TextBlock>
+                                                    </icons:MaterialIcon.Styles>
+                                                </icons:MaterialIcon>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>

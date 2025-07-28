@@ -8,6 +8,9 @@ public partial class GlobalValueItem : ObservableObject
     [ObservableProperty]
     private string _value = string.Empty;
 
+    [ObservableProperty]
+    private bool _isNumeric = true;
+
     public override string ToString() => Name;
 }
 
@@ -502,11 +505,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 var newGlobals = globalNames.Except(currentNames).ToList();
                 foreach (var name in newGlobals)
                 {
-                    var valueItem = new GlobalValueItem { Name = name };
+                    var valueItem = new GlobalValueItem 
+                    { 
+                        Name = name
+                    };
+
                     if (TaskManagerStatus.GlobalValues.TryGetValue(name, out var globalValue))
                     {
                         valueItem.Value = FormatGlobalValue(globalValue);
+                        valueItem.IsNumeric = globalValue.ValueCase != FirmwareValue.ValueOneofCase.BoolValue;
                     }
+
                     GlobalValues.Add(valueItem);
                 }
 
@@ -627,16 +636,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             FirmwareValue.ValueOneofCase.None => "None",
             FirmwareValue.ValueOneofCase.BoolValue => value.BoolValue.ToString(),
-            FirmwareValue.ValueOneofCase.Int8Value => value.Int8Value.ToString(),
-            FirmwareValue.ValueOneofCase.Uint8Value => value.Uint8Value.ToString(),
-            FirmwareValue.ValueOneofCase.Int16Value => value.Int16Value.ToString(),
-            FirmwareValue.ValueOneofCase.Uint16Value => value.Uint16Value.ToString(),
-            FirmwareValue.ValueOneofCase.Int32Value => value.Int32Value.ToString(),
-            FirmwareValue.ValueOneofCase.Uint32Value => value.Uint32Value.ToString(),
-            FirmwareValue.ValueOneofCase.FloatValue => value.FloatValue.ToString("F2"),
-            FirmwareValue.ValueOneofCase.DoubleValue => value.DoubleValue.ToString("F2"),
-            FirmwareValue.ValueOneofCase.Int64Value => value.Int64Value.ToString(),
-            FirmwareValue.ValueOneofCase.Uint64Value => value.Uint64Value.ToString(),
+            FirmwareValue.ValueOneofCase.Int8Value => value.Int8Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Uint8Value => value.Uint8Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Int16Value => value.Int16Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Uint16Value => value.Uint16Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Int32Value => value.Int32Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Uint32Value => value.Uint32Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.FloatValue => value.FloatValue.ToString("N0"),
+            FirmwareValue.ValueOneofCase.DoubleValue => value.DoubleValue.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Int64Value => value.Int64Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Uint64Value => value.Uint64Value.ToString("N0"),
             _ => value.ToString() // Fallback to string representation
         };
     }
