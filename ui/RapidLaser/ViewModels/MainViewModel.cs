@@ -693,6 +693,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Global_BallX      = settings["global_BallX"] ?? "";
         Global_BallY      = settings["global_BallY"] ?? "";
         Global_BallRadius = settings["global_BallRadius"] ?? "";
+        Global_IsMotionEnabled = settings["global_IsMotionEnabled"] ?? "";
     }
 
     private void StorageSave()
@@ -717,7 +718,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     //globals
                     global_BallX = Global_BallX,
                     global_BallY = Global_BallY,
-                    global_BallRadius = Global_BallRadius
+                    global_BallRadius = Global_BallRadius,
+                    global_IsMotionEnabled = Global_IsMotionEnabled
                 }
             };
 
