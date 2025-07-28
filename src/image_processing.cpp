@@ -8,6 +8,42 @@ using namespace cv;
 
 namespace ImageProcessing
 {
+  void SubsampleBayer(const Mat& in, Mat& out)
+  {
+    // Subsample the Bayer image by taking every second 2x2 pixel block
+    for (int y = 0; y < CameraHelpers::IMAGE_HEIGHT; y += 4) {
+      const uchar* const row0 = in.ptr<uchar>(y);
+      const uchar* const row1 = in.ptr<uchar>(y + 1);
+
+      uchar* outRow0 = out.ptr<uchar>(y / 2);
+      uchar* outRow1 = out.ptr<uchar>(y / 2 + 1);
+
+      for (int x = 0; x < CameraHelpers::IMAGE_WIDTH; x += 4)
+      {
+        outRow0[x / 2    ] = row0[x    ];
+        outRow0[x / 2 + 1] = row0[x + 1];
+        outRow1[x / 2    ] = row1[x    ];
+        outRow1[x / 2 + 1] = row1[x + 1];
+      }
+    }
+  }
+
+  void SubsampleYUYV(const Mat& in, Mat& out)
+  {
+    for (int i = 0; i < CameraHelpers::IMAGE_HEIGHT; i += 2)
+    {
+      const uchar* const inRow = in.ptr<uchar>(i);    // 2 channels per pixel
+      uchar* outRow = out.ptr<uchar>(i / 2);          // 3 channels per pixel
+
+      for (int j = 0; j < CameraHelpers::IMAGE_WIDTH; j += 2)
+      {
+        outRow[3 * (j / 2)    ] = inRow[2 * j    ];      // channel 0 of pixel j (Y)
+        outRow[3 * (j / 2) + 1] = inRow[2 * j + 1];      // channel 1 of pixel j (U)
+        outRow[3 * (j / 2) + 2] = inRow[2 * j + 3];      // channel 1 of pixel j+1 (V)
+      }
+    }
+  }
+
   void ExtractV(const Mat& in, Mat& out)
   {
     // Extract the V channel from a YUV image
