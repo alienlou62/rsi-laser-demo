@@ -944,13 +944,13 @@
                                                         <Style Selector="TextBlock.is-true">
                                                             <Setter Property="Text" Value="✔️" />
                                                             <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-                                                            <Setter Property="Margin" Value="0 0 -4 3" />
+                                                            <Setter Property="Margin" Value="0 0 -2 3" />
                                                         </Style>
 
                                                         <Style Selector="TextBlock.is-false">
                                                             <Setter Property="Text" Value="❌" />
                                                             <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-                                                            <Setter Property="Margin" Value="0 0 -4 3" />
+                                                            <Setter Property="Margin" Value="0 0 -2 3" />
                                                         </Style>
 
                                                     </TextBlock.Styles>
