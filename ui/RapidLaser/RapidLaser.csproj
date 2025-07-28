@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <RSIProtoPath Condition="'$(OS)' == 'Windows_NT'">C:\RSI\10.6.8\protos</RSIProtoPath>
+    <RSIProtoPath Condition="'$(OS)' == 'Windows_NT'">C:\repos\jpRapidSoftware\RapidStuff\protos</RSIProtoPath>
     <RSIProtoPath Condition="'$(OS)' != 'Windows_NT'">/rsi/protos</RSIProtoPath>
   </PropertyGroup>
 

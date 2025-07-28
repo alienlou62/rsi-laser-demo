@@ -42,20 +42,55 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     //globals
     [ObservableProperty]
-    private ObservableCollection<GlobalValueItem> _globalValues = new();
+    private ObservableCollection<GlobalValueItem> _globalValues = [];
+    partial void OnGlobalValuesChanged(ObservableCollection<GlobalValueItem> value)
+    {
+        OnGlobal_BallXChanged(Global_BallX);
+        OnGlobal_BallYChanged(Global_BallY);
+        OnGlobal_BallRadiusChanged(Global_BallRadius);
+        OnGlobal_IsMotionEnabledChanged(Global_IsMotionEnabled);
+    }
 
     //global names
     [ObservableProperty]
-    private string _global_BallX = string.Empty;
+    private string? _global_BallX;
+    partial void OnGlobal_BallXChanged(string? value)
+    {
+        Global_BallXValid = GlobalValues.Any(g => string.Equals(g.Name, value, StringComparison.OrdinalIgnoreCase));
+    }
 
     [ObservableProperty]
-    private string _global_BallY = string.Empty;
+    private bool _global_BallXValid;
 
     [ObservableProperty]
-    private string _global_BallRadius = string.Empty;
+    private string? _global_BallY;
+    partial void OnGlobal_BallYChanged(string? value)
+    {
+        Global_BallYValid = GlobalValues.Any(g => string.Equals(g.Name, value, StringComparison.OrdinalIgnoreCase));
+    }
 
     [ObservableProperty]
-    private string _global_IsMotionEnabled = string.Empty;
+    private bool _global_BallYValid;
+
+    [ObservableProperty]
+    private string? _global_BallRadius;
+    partial void OnGlobal_BallRadiusChanged(string? value)
+    {
+        Global_BallRadiusValid = GlobalValues.Any(g => string.Equals(g.Name, value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [ObservableProperty]
+    private bool _global_BallRadiusValid;
+
+    [ObservableProperty]
+    private string? _global_IsMotionEnabled;
+    partial void OnGlobal_IsMotionEnabledChanged(string? value)
+    {
+        Global_IsMotionEnabledValid = GlobalValues.Any(g => string.Equals(g.Name, value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [ObservableProperty]
+    private bool _global_IsMotionEnabledValid;
 
     //program maps (these hold global values)
     [ObservableProperty]
@@ -484,6 +519,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                         GlobalValues.RemoveAt(i);
                     }
                 }
+
+                // Sort after any add/remove
+                SortGlobalValues();
+
+                // Notify that globalValues have changed
+                OnGlobalValuesChanged(GlobalValues);
             }
 
             // Always update values for existing items (this is the common case)
@@ -499,6 +540,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 }
             }
         });
+    }
+
+    private void SortGlobalValues()
+    {
+        var sorted = GlobalValues.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            if (!ReferenceEquals(GlobalValues[i], sorted[i]))
+            {
+                GlobalValues.Move(GlobalValues.IndexOf(sorted[i]), i);
+            }
+        }
     }
 
     private void UpdateBallPositionFromGlobals()

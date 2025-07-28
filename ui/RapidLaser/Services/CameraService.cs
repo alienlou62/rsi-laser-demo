@@ -4,7 +4,6 @@ public interface ICameraService
 {
     bool IsInitialized { get; }
     bool IsGrabbing { get; }
-    double FrameRate { get; }
     int ImageWidth { get; }
     int ImageHeight { get; }
 
@@ -23,7 +22,6 @@ public class SimulatedCameraService : ICameraService
 
     public bool IsInitialized => _isInitialized;
     public bool IsGrabbing => _isGrabbing;
-    public double FrameRate => 30.0;
     public int ImageWidth => 640;
     public int ImageHeight => 480;
 

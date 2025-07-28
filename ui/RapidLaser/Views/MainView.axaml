@@ -95,7 +95,8 @@
                             VerticalAlignment="Center"
                             FontSize="12"
                             Foreground="{StaticResource SubtleTextBrush}"
-                            Text="{Binding FrameRate, StringFormat={}{0:F0} FPS}" />
+                            IsVisible="False"
+                            Text="30 FPS" />
 
                         <!--  Custom Window Controls  -->
                         <StackPanel
@@ -932,7 +933,28 @@
                                                     Classes="Mono"
                                                     Grid.Column="1"
                                                     HorizontalAlignment="Right"
-                                                    Text="{Binding Value}" />
+                                                    VerticalAlignment="Bottom"
+                                                    Classes.is-false="{Binding !Value}"
+                                                    Classes.is-true="{Binding Value}">
+                                                    <TextBlock.Styles>
+                                                        <Style Selector="TextBlock">
+                                                            <Setter Property="Text" Value="{Binding Value}" />
+                                                        </Style>
+
+                                                        <Style Selector="TextBlock.is-true">
+                                                            <Setter Property="Text" Value="✔️" />
+                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                                            <Setter Property="Margin" Value="0 0 -4 3" />
+                                                        </Style>
+
+                                                        <Style Selector="TextBlock.is-false">
+                                                            <Setter Property="Text" Value="❌" />
+                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                                            <Setter Property="Margin" Value="0 0 -4 3" />
+                                                        </Style>
+
+                                                    </TextBlock.Styles>
+                                                </TextBlock>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -953,6 +975,18 @@
 
                     <!--  Program Card  -->
                     <Border Classes="card" IsEnabled="{Binding IsConnected}">
+                        <Border.Styles>
+                            <Style Selector="icons|MaterialIcon[IsEnabled=true]">
+                                <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                <Setter Property="Kind" Value="Link" />
+                            </Style>
+
+                            <Style Selector="icons|MaterialIcon[IsEnabled=false]">
+                                <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                <Setter Property="Kind" Value="LinkOff" />
+                            </Style>
+                        </Border.Styles>
+
                         <StackPanel>
 
                             <TextBlock
@@ -976,13 +1010,11 @@
 
                                     <controls:StatusLabel Title="Center X" Value="" />
 
-                                    <icons:MaterialIcon
-                                        Width="14"
-                                        Height="14"
-                                        Kind="Link" />
+                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallXValid}" />
 
                                     <!--  ball x  -->
                                     <AutoCompleteBox
+                                        x:Name="BallX_AutoCompleteBox"
                                         Classes="theme-soft"
                                         MinWidth="100"
                                         Margin="-2,0,0,0"
@@ -1005,10 +1037,7 @@
 
                                     <controls:StatusLabel Title="Center Y" Value="" />
 
-                                    <icons:MaterialIcon
-                                        Width="14"
-                                        Height="14"
-                                        Kind="Link" />
+                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallYValid}" />
 
                                     <AutoCompleteBox
                                         Classes="theme-soft"
@@ -1033,10 +1062,7 @@
 
                                     <controls:StatusLabel Title="Radius" Value="" />
 
-                                    <icons:MaterialIcon
-                                        Width="14"
-                                        Height="14"
-                                        Kind="Link" />
+                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallRadiusValid}" />
 
                                     <AutoCompleteBox
                                         Classes="theme-soft"
@@ -1067,10 +1093,7 @@
 
                                     <controls:StatusLabel Title="Is Motion Enabled" Value="" />
 
-                                    <icons:MaterialIcon
-                                        Width="14"
-                                        Height="14"
-                                        Kind="Link" />
+                                    <icons:MaterialIcon IsEnabled="{Binding Global_IsMotionEnabledValid}" />
 
                                     <AutoCompleteBox
                                         Classes="theme-soft"

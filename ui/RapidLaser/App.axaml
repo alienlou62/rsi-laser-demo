@@ -90,11 +90,13 @@
         <Style Selector="TextBlock">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+            <Setter Property="TextBlock.LetterSpacing" Value="0.2" />
         </Style>
 
         <Style Selector="Label, Button, TextBox, ComboBox, CheckBox, RadioButton">
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontFamily" Value="{StaticResource Saira}" />
+            <Setter Property="TextBlock.LetterSpacing" Value="0.2" />
         </Style>
 
         <Style Selector="TextBox, ComboBox, AutoCompleteBox">
