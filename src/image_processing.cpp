@@ -243,19 +243,18 @@ namespace ImageProcessing
   {
     constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 2;
     constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 2;
-    constexpr unsigned int MIN_PIXEL_OFFSET = PIXEL_THRESHOLD;
     constexpr double MOTOR_UNITS_PER_PIXEL = -CameraHelpers::RADIANS_PER_PIXEL / (2.0 * std::numbers::pi);
 
     // Calculate the offset from the center of the image
     int pixelOffsetX = static_cast<int>(ball[0]) - CENTER_X;
     int pixelOffsetY = static_cast<int>(ball[1]) - CENTER_Y;
 
-    if (std::abs(pixelOffsetX) > MIN_PIXEL_OFFSET)
+    if (std::abs(pixelOffsetX) > PIXEL_THRESHOLD)
       offsetX = MOTOR_UNITS_PER_PIXEL * pixelOffsetX;
     else
       offsetX = 0.0;
     
-    if (std::abs(pixelOffsetY) > MIN_PIXEL_OFFSET)
+    if (std::abs(pixelOffsetY) > PIXEL_THRESHOLD)
       offsetY = MOTOR_UNITS_PER_PIXEL * pixelOffsetY;
     else
       offsetY = 0.0;
