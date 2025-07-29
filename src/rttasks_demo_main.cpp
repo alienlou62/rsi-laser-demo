@@ -117,7 +117,7 @@ int main()
 
   // --- RMP Initialization ---
   MotionController *controller = RMPHelpers::GetController();
-  MultiAxis *multiAxis = RMPHelpers::CreateMultiAxis(controller);
+  MultiAxis* multiAxis = controller->LoadExistingMultiAxis(RMPHelpers::NUM_AXES);
   RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
 
   try

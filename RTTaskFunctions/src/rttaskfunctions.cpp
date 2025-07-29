@@ -40,6 +40,7 @@ RSI_TASK(Initialize)
 
   data->multiAxisReady = false;
   data->motionEnabled = false;
+  data->newTarget = false;
   data->targetX = 0.0;
   data->targetY = 0.0;
 
@@ -51,8 +52,8 @@ RSI_TASK(Initialize)
   // Setup the multi-axis
   RTMultiAxisGet(0)->Abort();
   RTMultiAxisGet(0)->ClearFaults();
-  RTMultiAxisGet(0)->MotionAttributeMaskOnSet(RSIMotionAttrMask::RSIMotionAttrMaskNO_WAIT);
   RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
+  RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskNO_WAIT);
   RTMultiAxisGet(0)->AmpEnableSet(true);
 
   // Set the initial target positions to the current positions
@@ -70,6 +71,9 @@ RSI_TASK(MoveMotors)
   if (!data->initialized) return;
   if (!data->motionEnabled) return;
   if (!data->multiAxisReady) return;
+
+  // Only execute if a new target is set
+  if (!data->newTarget.exchange(false)) return;
 
   MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
 }
@@ -128,4 +132,5 @@ RSI_TASK(DetectBall)
   ImageProcessing::CalculateTargetPosition(ball, offsetX, offsetY);
   data->targetX = initialX + offsetX;
   data->targetY = initialY + offsetY;
+  data->newTarget = true;
 }

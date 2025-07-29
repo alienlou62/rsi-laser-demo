@@ -46,10 +46,16 @@ int main()
 
   // --- RMP Initialization ---
   MotionController* controller = RMPHelpers::GetController();
-  MultiAxis* multiAxis = RMPHelpers::CreateMultiAxis(controller);
+  MultiAxis* multiAxis = controller->LoadExistingMultiAxis(RMPHelpers::NUM_AXES);
   Axis* axisX = controller->AxisGet(0);
   Axis* axisY = controller->AxisGet(1);
+
+  multiAxis->Abort();
+  multiAxis->ClearFaults();
+  multiAxis->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
+  multiAxis->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskNO_WAIT);
   multiAxis->AmpEnableSet(true);
+
   double targetX = 0.0, targetY = 0.0;
 
   int grabFailures = 0, processFailures = 0;
@@ -64,10 +70,21 @@ int main()
 
       // --- Frame Retrieval ---
       auto retrieveStopwatch = Stopwatch(retrieveTiming);
-      bool frameGrabbed = CameraHelpers::TryGrabFrame(camera, ptrGrabResult, CameraHelpers::TIMEOUT_MS);
+      bool frameGrabbed = false;
+      try
+      {
+        frameGrabbed = CameraHelpers::TryGrabFrame(camera, ptrGrabResult, 0);
+      }
+      catch (...)
+      {
+        // If an exception occurs during frame grab increment failure count
+        ++grabFailures;
+        continue;
+      }
+
+      // If the frame grab failed due to a timeout, exit early but do not increment failure count
       if (!frameGrabbed)
       {
-        ++grabFailures;
         continue;
       }
       retrieveStopwatch.Stop();
@@ -101,6 +118,8 @@ int main()
       auto motionStopwatch = Stopwatch(motionTiming);
       try
       {
+        std::cout << "Initial Position: (" << initialX << ", " << initialY << "), "
+                  << "Target Position: (" << targetX << ", " << targetY << ")" << std::endl;
         MotionControl::MoveMotorsWithLimits(multiAxis, targetX, targetY);
       }
       catch (const RsiError &e)
@@ -109,6 +128,7 @@ int main()
         g_shutdown = true;
       }
       motionStopwatch.Stop();
+      // g_shutdown = true;
     }
   }
   catch (const cv::Exception &e)
