@@ -399,28 +399,49 @@
                     </Grid>
                 </Border>
 
-
                 <!--  SSH Card  -->
                 <Border Classes="card" IsEnabled="{Binding IsConnected}">
 
                     <StackPanel Spacing="8">
-                        <TextBlock
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            Foreground="{StaticResource TextBrush}"
-                            Text="SSH" />
+                        <Grid Margin="0,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextBrush}"
+                                Text="SSH" />
+
+                            <icons:MaterialIcon
+                                Grid.Column="1"
+                                Width="17"
+                                Height="17"
+                                VerticalAlignment="Center"
+                                Classes.is-ssh-authenticated="{Binding IsSshAuthenticated}"
+                                Classes.is-ssh-not-authenticated="{Binding !IsSshAuthenticated}">
+                                <icons:MaterialIcon.Styles>
+                                    <Style Selector="icons|MaterialIcon.is-ssh-authenticated">
+                                        <Setter Property="Kind" Value="AccountCheck" />
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                    </Style>
+                                    <Style Selector="icons|MaterialIcon.is-ssh-not-authenticated">
+                                        <Setter Property="Kind" Value="AccountOff" />
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                    </Style>
+                                </icons:MaterialIcon.Styles>
+                            </icons:MaterialIcon>
+                        </Grid>
 
 
                         <StackPanel IsVisible="{Binding IsConnected}" Spacing="8">
-                            <!-- <StackPanel.Styles>
-                                    <Style Selector="ContentControl.is-connected controls|LabeledControl TextPresenter">
-                                        <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccessPressed}" />
-                                    </Style>
-                                </StackPanel.Styles>-->
 
                             <!--  usernmae  -->
                             <controls:LabeledControl
-                                IsEnabled="{Binding IsConnected}"
+                                IsEnabled="{Binding !IsSshAuthenticated}"
                                 Label="Username"
                                 LabelWidth="60">
                                 <TextBox HorizontalAlignment="Stretch" Text="{Binding SshUser}" />
@@ -428,129 +449,98 @@
 
                             <!--  password  -->
                             <controls:LabeledControl
-                                IsEnabled="{Binding IsConnected}"
+                                IsEnabled="{Binding !IsSshAuthenticated}"
                                 Label="Password"
                                 LabelWidth="60">
                                 <TextBox HorizontalAlignment="Stretch" Text="{Binding SshPassword}" />
                             </controls:LabeledControl>
 
-                            <controls:LabeledControl IsEnabled="{Binding IsConnected}" Label="Command" />
-
-                            <!--  Command Input  -->
-                            <TextBox
-                                Margin="0,-4,0,0"
-                                HorizontalAlignment="Stretch"
-                                IsEnabled="{Binding !IsSshCommandRunning}"
-                                Text="{Binding SshCommand}"
-                                TextWrapping="Wrap"
-                                ToolTip.ShowDelay="0"
-                                ToolTip.Tip="Send SSH command"
-                                Watermark="Enter SSH command..">
-                                <TextBox.KeyBindings>
-                                    <KeyBinding Command="{Binding RunSshCommandCommand}" Gesture="Enter" />
-                                </TextBox.KeyBindings>
-                                <TextBox.InnerRightContent>
-                                    <!--  Execute Button  -->
-                                    <Button
-                                        Grid.Column="1"
-                                        Margin="4,3,3,0"
-                                        Padding="2"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Top"
-                                        Classes="theme-subtle"
-                                        Command="{Binding RunSshCommandCommand}"
-                                        IsEnabled="{Binding !IsSshCommandRunning}">
-                                        <Button.Styles>
-                                            <!--  Default faded state  -->
-                                            <Style Selector="Button">
-                                                <Setter Property="Opacity" Value="0.5" />
-                                            </Style>
-                                            <!--  Show when parent TextBox is focused  -->
-                                            <Style Selector="TextBox:focus Button, TextBox:pointerover Button, Button:pointerover">
-                                                <Setter Property="Opacity" Value="1.0" />
-                                            </Style>
-                                        </Button.Styles>
-                                        <icons:MaterialIcon Kind="Terminal" />
-                                    </Button>
-                                </TextBox.InnerRightContent>
-                            </TextBox>
-
-                            <!--  Grouped Card  -->
-                            <Border Classes="grouped-card">
-
-                                <StackPanel Spacing="8">
-                                    <!--  Status and Clear Button Row  -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <!--  Status  -->
-                                        <TextBlock
-                                            Grid.Column="0"
-                                            FontSize="12"
-                                            Foreground="{StaticResource TextBrush}"
-                                            Text="{Binding SshStatus}"
-                                            TextWrapping="Wrap" />
-
-                                        <!--  Clear Button  -->
-                                        <Button
-                                            Grid.Column="1"
-                                            Margin="-8,-4"
-                                            Padding="4,2,4,1"
-                                            Classes="theme-subtle"
-                                            Command="{Binding ClearSshOutputCommand}"
-                                            IsEnabled="{Binding IsConnected}"
-                                            Opacity="0.5"
-                                            ToolTip.Tip="Clear output">
-                                            <icons:MaterialIcon Kind="Close" />
-                                        </Button>
-                                    </Grid>
-
-                                    <!--  Output  -->
-                                    <TextBox
-                                        MaxHeight="280"
-                                        Margin="0,0,-12,0"
-                                        Padding="0"
-                                        AcceptsReturn="True"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        FontSize="11"
-                                        IsReadOnly="True"
-                                        Text="{Binding SshOutput}"
-                                        TextWrapping="WrapWithOverflow"
-                                        Watermark="Command output will appear here..." />
+                            <!--  Test Connection Button  -->
+                            <Button
+                                Margin="0,2,0,0"
+                                HorizontalAlignment="Right"
+                                Classes="theme-soft"
+                                Command="{Binding TestSshConnectionCommand}"
+                                IsEnabled="{Binding IsConnected}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icons:MaterialIcon
+                                        Width="16"
+                                        Height="16"
+                                        IsVisible="False"
+                                        Kind="Connection" />
+                                    <TextBlock Text="Test Connection" />
                                 </StackPanel>
-                            </Border>
+                            </Button>
+
                         </StackPanel>
 
 
                     </StackPanel>
                 </Border>
 
-                <!--  Status Card  -->
-                <Border Classes="card" IsVisible="False">
-                    <StackPanel>
+            </StackPanel>
+
+            <!--  Output Card  -->
+            <Border
+                Name="OutputCardBorder"
+                Grid.Row="1"
+                Grid.Column="0"
+                Margin="0,0,12,0"
+                VerticalAlignment="Bottom"
+                Background="#50000000"
+                Classes="card">
+
+                <StackPanel Spacing="8">
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
                         <TextBlock
-                            Margin="0,0,0,12"
+                            Grid.Column="0"
                             FontSize="14"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="Task Status" />
-                        <StackPanel Spacing="8">
-                            <controls:StatusLabel
-                                Title="RT Task Manager"
-                                IsActive="True"
-                                Value="Running" />
-                            <controls:StatusLabel
-                                Title="Ball Detection Task"
-                                IsActive="True"
-                                Value="Active" />
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                            Text="Output" />
+
+                        <!--  Clear Button  -->
+                        <Button
+                            Grid.Column="1"
+                            Margin="-8,-4"
+                            Padding="4,2,4,1"
+                            Classes="theme-subtle"
+                            Command="{Binding ClearLogOutputCommand}"
+                            IsEnabled="{Binding IsConnected}"
+                            Opacity="0.5"
+                            ToolTip.Tip="Clear output">
+                            <Button.Styles>
+                                <Style Selector="Button">
+                                    <Setter Property="IsVisible" Value="False" />
+                                </Style>
+                                <Style Selector="Border#OutputCardBorder:pointerover Button">
+                                    <Setter Property="IsVisible" Value="True" />
+                                </Style>
+                            </Button.Styles>
+                            <icons:MaterialIcon Kind="Close" />
+                        </Button>
+                    </Grid>
+
+                    <TextBox
+                        MaxHeight="280"
+                        Margin="0,0,0,0"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        FontSize="11"
+                        IsReadOnly="True"
+                        Text="{Binding LogOutput}"
+                        TextWrapping="WrapWithOverflow"
+                        Watermark="App output will appear here.." />
+
+
+                </StackPanel>
+            </Border>
 
             <!--  Main/Middle Content  -->
             <Grid
@@ -573,6 +563,7 @@
                         Classes="card"
                         Effect="{x:Null}">
                         <Grid Background="#000000">
+
                             <!--  Trapezoidal button container at top center  -->
                             <Border
                                 Margin="8,-1,8,8"
@@ -1010,7 +1001,7 @@
                                     IsMonoFont="True"
                                     IsValueVisible="{Binding $self.IsEnabled}"
                                     TitleOpacity="1"
-                                    Value="{Binding TaskManagerStatus.TaskSubmissionCount, FallbackValue='-'}" />
+                                    Value="{Binding TaskManagerStatus.TaskIds.Count, FallbackValue='-'}" />
 
                             </StackPanel>
                         </StackPanel>
@@ -1022,16 +1013,21 @@
 
                             <Style Selector="icons|MaterialIcon">
                                 <Setter Property="Margin" Value="0 0 0 -2" />
+                                <Setter Property="Background" Value="Transparent" />
                             </Style>
 
-                            <Style Selector="icons|MaterialIcon[IsEnabled=true]">
+                            <Style Selector="icons|MaterialIcon[Tag=True]">
                                 <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
                                 <Setter Property="Kind" Value="Link" />
+                                <Setter Property="ToolTip.Tip" Value="Linked to a global" />
+                                <Setter Property="ToolTip.ShowDelay" Value="0" />
                             </Style>
 
-                            <Style Selector="icons|MaterialIcon[IsEnabled=false]">
+                            <Style Selector="icons|MaterialIcon[Tag=False]">
                                 <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
                                 <Setter Property="Kind" Value="LinkOff" />
+                                <Setter Property="ToolTip.Tip" Value="Not linked to a global" />
+                                <Setter Property="ToolTip.ShowDelay" Value="0" />
                             </Style>
 
                             <Style Selector="AutoCompleteBox">
@@ -1090,7 +1086,7 @@
                                                 Text="{Binding Global_BallX}"
                                                 ValueMemberBinding="{Binding Name}">
                                                 <AutoCompleteBox.InnerRightContent>
-                                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallXValid}" />
+                                                    <icons:MaterialIcon Tag="{Binding Global_BallXValid}" />
                                                 </AutoCompleteBox.InnerRightContent>
                                             </AutoCompleteBox>
 
@@ -1113,7 +1109,7 @@
                                                 Text="{Binding Global_BallY}"
                                                 ValueMemberBinding="{Binding Name}">
                                                 <AutoCompleteBox.InnerRightContent>
-                                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallYValid}" />
+                                                    <icons:MaterialIcon Tag="{Binding Global_BallYValid}" />
                                                 </AutoCompleteBox.InnerRightContent>
                                             </AutoCompleteBox>
 
@@ -1136,7 +1132,7 @@
                                                 Text="{Binding Global_BallRadius}"
                                                 ValueMemberBinding="{Binding Name}">
                                                 <AutoCompleteBox.InnerRightContent>
-                                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallRadiusValid}" />
+                                                    <icons:MaterialIcon Tag="{Binding Global_BallRadiusValid}" />
                                                 </AutoCompleteBox.InnerRightContent>
                                             </AutoCompleteBox>
 
@@ -1159,7 +1155,7 @@
                                                 Text="{Binding Global_IsMotionEnabled}"
                                                 ValueMemberBinding="{Binding Name}">
                                                 <AutoCompleteBox.InnerRightContent>
-                                                    <icons:MaterialIcon IsEnabled="{Binding Global_IsMotionEnabledValid}" />
+                                                    <icons:MaterialIcon Tag="{Binding Global_IsMotionEnabledValid}" />
                                                 </AutoCompleteBox.InnerRightContent>
                                             </AutoCompleteBox>
 
@@ -1175,6 +1171,7 @@
 
                 </StackPanel>
             </ScrollViewer>
+
         </Grid>
 
     </ContentControl>

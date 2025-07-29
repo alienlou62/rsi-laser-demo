@@ -174,9 +174,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     //ssh
     [ObservableProperty]
     private string _sshUser = "";
+    partial void OnSshUserChanged(string value)
+    {
+        IsSshAuthenticated = false;
+    }
 
     [ObservableProperty]
     private string _sshPassword = "";
+    partial void OnSshPasswordChanged(string value)
+    {
+        IsSshAuthenticated = false;
+    }
 
     [ObservableProperty]
     private string _sshCommand = "whoami";
@@ -185,13 +193,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private string _sshRunCommand = "";
 
     [ObservableProperty]
-    private string _sshOutput = string.Empty;
-
-    [ObservableProperty]
     private bool _isSshCommandRunning = false;
 
     [ObservableProperty]
-    private string _sshStatus = "Ready";
+    private bool _isSshAuthenticated = false;
+
+    //logging
+    [ObservableProperty]
+    private string _logOutput = string.Empty;
+
+    //notifications
+    [ObservableProperty]
+    private ObservableCollection<INotification> _notifications = [];
+
+    // Notification manager reference
+    private INotificationManager? _notificationManager;
 
 
     /** COMMANDS **/
@@ -201,16 +217,24 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            LogMessage($"Executing SSH command: {SshRunCommand}");
             var sshResult = await ExecuteSshCommandAsync(SshRunCommand, updateSshOutput: true);
 
             if (sshResult == null)
             {
                 ProgramStatus = "SSH ERROR";
+                LogMessage("Program run failed: SSH command returned null");
+            }
+            else
+            {
+                ProgramStatus = "";
+                LogMessage("Program run completed successfully");
             }
         }
         catch (Exception ex)
         {
             ProgramStatus = $"SSH ERROR: {ex.Message}";
+            LogMessage($"Program Run Error: {ex.Message}");
         }
     }
 
@@ -221,18 +245,30 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             if (_rmp != null)
             {
+                LogMessage("Stopping task manager...");
                 var result = await _rmp.StopTaskManagerAsync();
                 IsProgramRunning = !result;
                 ProgramStatus = IsProgramRunning ? "SHUTDOWN ERROR" : "";
+
+                if (IsProgramRunning)
+                {
+                    LogMessage("Program stop failed: Task manager shutdown error");
+                }
+                else
+                {
+                    LogMessage("Program stopped successfully");
+                }
             }
             else
             {
                 ProgramStatus = "RMP service not available";
+                LogMessage("Program stop failed: RMP service not available");
             }
         }
         catch (Exception ex)
         {
             ProgramStatus = $"SHUTDOWN ERROR: {ex.Message}";
+            LogMessage($"Program Stop Error: {ex.Message}");
         }
     }
 
@@ -248,14 +284,15 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            if (string.IsNullOrEmpty(Global_IsMotionEnabled))
+            if (string.IsNullOrEmpty(Global_IsMotionEnabled) || _rmp == null)
                 return;
 
             var response = await _rmp.SetBoolGlobalValueAsync(Global_IsMotionEnabled, (bool)isMotionEnabled);
+            LogMessage($"Motion enabled set to: {(bool)isMotionEnabled}");
         }
         catch (Exception ex)
         {
-            // we need logger or show a popup in screen
+            LogMessage($"Motion Control Error: {ex.Message}");
         }
 
     }
@@ -296,17 +333,23 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
                 // rmp service
                 _rmp = _connectionManager.GrpcService;
+
+                // Test SSH authentication after successful server connection
+                await TestSshAuthenticationAsync();
             }
             else
             {
                 // rmp service
                 _rmp = null;
                 LastError = "Failed to connect to server";
+                LogMessage("Connection failed: Failed to connect to server");
+                IsSshAuthenticated = false;
             }
         }
         catch (Exception ex)
         {
             LastError = ex.Message;
+            LogMessage($"Connection Error: {ex.Message}");
         }
         finally
         {
@@ -334,10 +377,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             await _connectionManager.DisconnectAsync();
             IsConnected = false;
+            IsSshAuthenticated = false;
         }
         catch (Exception ex)
         {
             LastError = ex.Message;
+            LogMessage($"Disconnect Error: {ex.Message}");
         }
     }
 
@@ -362,10 +407,30 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     [RelayCommand]
-    private void ClearSshOutput()
+    private void ClearLogOutput()
     {
-        SshOutput = string.Empty;
-        SshStatus = "Ready";
+        LogOutput = string.Empty;
+    }
+
+    [RelayCommand]
+    private async Task TestSshConnectionAsync()
+    {
+        if (!IsConnected)
+        {
+            LogOutput += $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] SSH: Not connected to server\n";
+            return;
+        }
+
+        await TestSshAuthenticationAsync();
+
+        if (IsSshAuthenticated)
+        {
+            LogOutput += $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] SSH: Authentication successful\n";
+        }
+        else
+        {
+            LogOutput += $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] SSH: Authentication failed\n";
+        }
     }
 
     //window
@@ -458,11 +523,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
         catch (Exception ex)
         {
-            // Log the exception instead of swallowing it silently
-            // _logger?.LogError(ex, "Error occurred during update timer polling");
-
-            // Optionally set error state or notify user
-            // HandlePollingError(ex);
+            LogMessage($"Polling Error: {ex.Message}");
         }
         finally
         {
@@ -472,6 +533,104 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
 
     /** METHODS **/
+    //logging
+    private void LogMessage(string message)
+    {
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        LogOutput += $"[{timestamp}] {message}\n";
+        
+        // Also create a notification for important messages
+        CreateNotificationFromMessage(message);
+    }
+
+    //notifications
+    private void CreateNotificationFromMessage(string message)
+    {
+        // Determine notification type based on message content
+        var notificationType = GetNotificationTypeFromMessage(message);
+        var title = GetNotificationTitleFromMessage(message);
+        
+        CreateNotification(title, message, notificationType);
+    }
+
+    private NotificationType GetNotificationTypeFromMessage(string message)
+    {
+        var lowerMessage = message.ToLowerInvariant();
+        
+        if (lowerMessage.Contains("error") || lowerMessage.Contains("failed") || lowerMessage.Contains("shutdown error"))
+            return NotificationType.Error;
+        
+        if (lowerMessage.Contains("warning") || lowerMessage.Contains("disconnect"))
+            return NotificationType.Warning;
+        
+        if (lowerMessage.Contains("successful") || lowerMessage.Contains("completed") || lowerMessage.Contains("authentication successful"))
+            return NotificationType.Success;
+        
+        return NotificationType.Information;
+    }
+
+    private string GetNotificationTitleFromMessage(string message)
+    {
+        if (message.StartsWith("SSH:"))
+            return "SSH";
+        if (message.StartsWith("Connection"))
+            return "Connection";
+        if (message.StartsWith("Program"))
+            return "Program";
+        if (message.StartsWith("Motion"))
+            return "Motion Control";
+        if (message.StartsWith("Polling"))
+            return "System";
+        
+        return "System";
+    }
+
+    private void CreateNotification(string title, string message, NotificationType type)
+    {
+        var notification = new Notification(title, message, type);
+        
+        // Use notification manager if available
+        _notificationManager?.Show(notification);
+        
+        // Also add to our collection for UI binding
+        Dispatcher.UIThread.Post(() =>
+        {
+            Notifications.Add(notification);
+            
+            // Auto-remove after 10 seconds for non-error notifications
+            if (type != NotificationType.Error)
+            {
+                Task.Delay(10000).ContinueWith(_ =>
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        Notifications.Remove(notification);
+                    });
+                });
+            }
+        });
+    }
+
+    public void SetNotificationManager(INotificationManager notificationManager)
+    {
+        _notificationManager = notificationManager;
+    }
+
+    [RelayCommand]
+    private void ClearNotifications()
+    {
+        Notifications.Clear();
+    }
+
+    [RelayCommand]
+    private void TestNotifications()
+    {
+        CreateNotification("Test Info", "This is an information notification", NotificationType.Information);
+        CreateNotification("Test Success", "Operation completed successfully", NotificationType.Success);
+        CreateNotification("Test Warning", "This is a warning notification", NotificationType.Warning);
+        CreateNotification("Test Error", "This is an error notification", NotificationType.Error);
+    }
+
     //globals
     private async Task UpdateGlobalValues()
     {
@@ -745,25 +904,51 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     //ssh
+    private async Task TestSshAuthenticationAsync()
+    {
+        // Reset authentication status
+        IsSshAuthenticated = false;
+
+        // Skip if credentials are not provided
+        if (string.IsNullOrWhiteSpace(SshUser) || string.IsNullOrWhiteSpace(SshPassword))
+        {
+            return;
+        }
+
+        try
+        {
+            // Test SSH connection with a simple command that should work on most systems
+            var result = await ExecuteSshCommandAsync("whoami", updateSshOutput: false);
+
+            // If we get a result (not null), SSH authentication was successful
+            IsSshAuthenticated = !string.IsNullOrWhiteSpace(result);
+        }
+        catch
+        {
+            // Any exception means authentication failed
+            IsSshAuthenticated = false;
+        }
+    }
+
     private async Task<string?> ExecuteSshCommandAsync(string command, bool updateSshOutput = true)
     {
         if (!IsConnected)
         {
-            if (updateSshOutput) SshStatus = "Not connected to server";
+            if (updateSshOutput) LogMessage("SSH: Not connected to server");
             return null;
         }
 
         if (string.IsNullOrWhiteSpace(command))
         {
             if (updateSshOutput)
-                SshStatus = "Please enter a command";
+                LogMessage("SSH: Please enter a command");
             return null;
         }
 
         if (string.IsNullOrWhiteSpace(SshUser) || string.IsNullOrWhiteSpace(SshPassword))
         {
             if (updateSshOutput)
-                SshStatus = "Please enter SSH username and password";
+                LogMessage("SSH: Please enter SSH username and password");
             return null;
         }
 
@@ -772,27 +957,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (updateSshOutput)
             {
                 IsSshCommandRunning = true;
-                SshStatus = "Running command...";
-                SshOutput = string.Empty;
+                LogMessage($"SSH: Running command '{command}'...");
             }
 
             var result = await _connectionManager.RunSshCommandAsync(command, SshUser, SshPassword);
 
             if (updateSshOutput)
             {
-                SshOutput = result;
-                SshStatus = "Command completed";
+                LogMessage($"SSH Command Output:\n{result}");
+                LogMessage("SSH: Command completed");
             }
 
             return result;
         }
         catch (Exception ex)
         {
-            var errorMessage = $"Error: {ex.Message}";
+            var errorMessage = $"SSH Error: {ex.Message}";
             if (updateSshOutput)
             {
-                SshOutput = errorMessage;
-                SshStatus = "Command failed";
+                LogMessage(errorMessage);
             }
             return null;
         }
