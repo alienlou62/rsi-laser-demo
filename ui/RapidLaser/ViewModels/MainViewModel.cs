@@ -197,28 +197,25 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /** COMMANDS **/
     //program
     [RelayCommand]
-    private async Task StartTasks()
+    private async Task ProgramRunAsync()
     {
         try
         {
-            var sshResult = await ExecuteSshCommandAsync(SshRunCommand, updateSshOutput: false);
-            if (sshResult != null)
+            var sshResult = await ExecuteSshCommandAsync(SshRunCommand, updateSshOutput: true);
+
+            if (sshResult == null)
             {
-                IsProgramRunning = true;
-            }
-            else
-            {
-                ProgramStatus = "SSH START ERROR";
+                ProgramStatus = "SSH ERROR";
             }
         }
         catch (Exception ex)
         {
-            ProgramStatus = $"START ERROR: {ex.Message}";
+            ProgramStatus = $"SSH ERROR: {ex.Message}";
         }
     }
 
     [RelayCommand]
-    private async Task ShutdownTasks()
+    private async Task ProgramStopAsync()
     {
         try
         {
@@ -447,11 +444,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (!IsSimulatingBallPosition)
             {
                 //tm status
-                try { TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;}
+                try { TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null; }
                 catch { TaskManagerStatus = null; }
 
                 //tm globals
-                if(TaskManagerStatus != null)
+                if (TaskManagerStatus != null)
                     await UpdateGlobalValues();
             }
             else
@@ -505,8 +502,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 var newGlobals = globalNames.Except(currentNames).ToList();
                 foreach (var name in newGlobals)
                 {
-                    var valueItem = new GlobalValueItem 
-                    { 
+                    var valueItem = new GlobalValueItem
+                    {
                         Name = name
                     };
 
@@ -635,16 +632,16 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         return value.ValueCase switch
         {
             FirmwareValue.ValueOneofCase.None => "None",
-            FirmwareValue.ValueOneofCase.BoolValue   => value.BoolValue.ToString(),
-            FirmwareValue.ValueOneofCase.Int8Value   => value.Int8Value.ToString("N0"),
-            FirmwareValue.ValueOneofCase.Uint8Value  => value.Uint8Value.ToString("N0"),
-            FirmwareValue.ValueOneofCase.Int16Value  => value.Int16Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.BoolValue => value.BoolValue.ToString(),
+            FirmwareValue.ValueOneofCase.Int8Value => value.Int8Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Uint8Value => value.Uint8Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Int16Value => value.Int16Value.ToString("N0"),
             FirmwareValue.ValueOneofCase.Uint16Value => value.Uint16Value.ToString("N0"),
-            FirmwareValue.ValueOneofCase.Int32Value  => value.Int32Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Int32Value => value.Int32Value.ToString("N0"),
             FirmwareValue.ValueOneofCase.Uint32Value => value.Uint32Value.ToString("N0"),
-            FirmwareValue.ValueOneofCase.FloatValue  => value.FloatValue.ToString("N3"),
+            FirmwareValue.ValueOneofCase.FloatValue => value.FloatValue.ToString("N3"),
             FirmwareValue.ValueOneofCase.DoubleValue => value.DoubleValue.ToString("N3"),
-            FirmwareValue.ValueOneofCase.Int64Value  => value.Int64Value.ToString("N0"),
+            FirmwareValue.ValueOneofCase.Int64Value => value.Int64Value.ToString("N0"),
             FirmwareValue.ValueOneofCase.Uint64Value => value.Uint64Value.ToString("N0"),
             _ => value.ToString() // Fallback to string representation
         };

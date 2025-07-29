@@ -124,12 +124,14 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
                 throw new InvalidOperationException("Failed to establish SSH connection.");
             }
 
-            var sshCommand = client.CreateCommand(command);
+            // Wrap the command in a login shell to ensure environment is loaded
+            var wrappedCommand = $"bash -l -c \"{command.Replace("\"", "\\\"")}\"";
+            var sshCommand = client.CreateCommand(wrappedCommand);
             sshCommand.CommandTimeout = TimeSpan.FromSeconds(30);
 
-            //make sure this returns error stirng if an error occurs
-            // var result = await Task.Run(sshCommand.Execute);
-            var result = sshCommand.Execute();
+            sshCommand.Execute();
+            var result = string.IsNullOrEmpty(sshCommand.Error) ? sshCommand.Result : sshCommand.Error;
+
             client.Disconnect();
 
             return result;

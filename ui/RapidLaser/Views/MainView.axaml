@@ -412,7 +412,7 @@
                                 <Button
                                     Classes="theme-soft success"
                                     HorizontalAlignment="Stretch"
-                                    Command="{Binding StartTasksCommand}"
+                                    Command="{Binding ProgramRunCommand}"
                                     IsVisible="{Binding !IsProgramRunning}"
                                     ToolTip.Tip="{Binding SshRunCommand}">
                                     <icons:MaterialIcon Kind="Play" />
@@ -422,7 +422,7 @@
                                 <Button
                                     Classes="theme-soft danger"
                                     HorizontalAlignment="Stretch"
-                                    Command="{Binding ShutdownTasksCommand}"
+                                    Command="{Binding ProgramStopCommand}"
                                     IsVisible="{Binding IsProgramRunning}">
                                     <icons:MaterialIcon Kind="Skull" />
                                 </Button>
