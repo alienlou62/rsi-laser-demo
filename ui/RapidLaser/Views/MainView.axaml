@@ -33,11 +33,11 @@
 
             <!--  Top bar card with drag region  -->
             <Border
-                Classes="card"
                 Grid.Row="0"
                 Grid.ColumnSpan="3"
                 Margin="0,0,0,12"
                 Padding="5,7"
+                Classes="card"
                 PointerPressed="OnTitleBarPointerPressed">
 
                 <Grid Margin="6,0,0,0">
@@ -69,12 +69,76 @@
                             Text="Real-time Laser Ball Tracker" />
                     </StackPanel>
 
-                    <!--  Center drag area  -->
-                    <Border
-                        Margin="200,0,200,0"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Stretch"
-                        Background="Transparent" />
+                    <!--  Center  -->
+                    <!--  Button container  -->
+                    <StackPanel
+                        Margin="0"
+                        HorizontalAlignment="Center"
+                        IsVisible="{Binding IsConnected}"
+                        Orientation="Horizontal"
+                        Spacing="6">
+
+                        <!--  Start button  -->
+                        <Button
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-soft success"
+                            Command="{Binding ProgramRunCommand}"
+                            IsVisible="{Binding !IsProgramRunning}"
+                            ToolTip.Tip="{Binding SshRunCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <icons:MaterialIcon
+                                    Width="20"
+                                    Height="20"
+                                    Kind="CogPlayOutline" />
+                                <TextBlock Text="Configure RMP &amp; Run Tasks" />
+                            </StackPanel>
+                        </Button>
+
+                        <!--  Kill button  -->
+                        <Button
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-soft danger"
+                            Command="{Binding ProgramStopCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <icons:MaterialIcon Kind="Skull" />
+                                <TextBlock Text="Kill Tasks" />
+                            </StackPanel>
+                        </Button>
+
+                        <!--  Pause/Resume button  -->
+                        <Panel IsVisible="{Binding IsProgramRunning}">
+                            <!--  Pause  -->
+                            <Button
+                                HorizontalAlignment="Stretch"
+                                Classes="theme-soft accent"
+                                Command="{Binding ToggleMotionPauseCommand}"
+                                IsVisible="{Binding !IsProgramPaused}">
+                                <StackPanel Orientation="Horizontal" Spacing="2">
+                                    <icons:MaterialIcon
+                                        Width="19"
+                                        Height="19"
+                                        Kind="Pause" />
+                                    <TextBlock Text="Pause Program" />
+                                </StackPanel>
+                            </Button>
+
+                            <!--  Resume  -->
+                            <Button
+                                HorizontalAlignment="Stretch"
+                                Classes="theme-soft success"
+                                Command="{Binding ToggleMotionPauseCommand}"
+                                IsVisible="{Binding IsProgramPaused}">
+                                <StackPanel Orientation="Horizontal" Spacing="0">
+                                    <icons:MaterialIcon
+                                        Width="20"
+                                        Height="20"
+                                        Kind="PlayOutline" />
+                                    <TextBlock Text="Resume Program" />
+                                </StackPanel>
+                            </Button>
+                        </Panel>
+
+                    </StackPanel>
 
                     <!--  Right side content with status and custom window controls  -->
                     <StackPanel
@@ -108,11 +172,11 @@
                             <!--  Minimize Button  -->
                             <Button
                                 Name="MinimizeButton"
-                                Classes="theme-subtle shadowless"
                                 Width="32"
                                 Height="32"
                                 Padding="6"
                                 VerticalAlignment="Center"
+                                Classes="theme-subtle shadowless"
                                 Command="{Binding MinimizeWindowCommand}"
                                 Foreground="{StaticResource SubtleTextBrush}">
                                 <Button.Content>
@@ -128,11 +192,11 @@
                             <!--  Maximize/Restore Button  -->
                             <Button
                                 Name="MaximizeButton"
-                                Classes="theme-subtle shadowless"
                                 Width="32"
                                 Height="32"
                                 Padding="6"
                                 VerticalAlignment="Center"
+                                Classes="theme-subtle shadowless"
                                 Command="{Binding MaximizeWindowCommand}"
                                 Foreground="{StaticResource SubtleTextBrush}">
                                 <Button.Content>
@@ -149,11 +213,11 @@
                             <!--  Close Button  -->
                             <Button
                                 Name="CloseButton"
-                                Classes="theme-subtle shadowless"
                                 Width="32"
                                 Height="32"
                                 Padding="6"
                                 VerticalAlignment="Center"
+                                Classes="theme-subtle shadowless"
                                 Command="{Binding CloseWindowCommand}"
                                 Foreground="{StaticResource SubtleTextBrush}">
                                 <Button.Content>
@@ -297,9 +361,9 @@
 
                                 <!--  Connection Buttons  -->
                                 <Button
-                                    Classes="theme-soft success"
                                     Margin="0,2,0,0"
                                     HorizontalAlignment="Right"
+                                    Classes="theme-soft success"
                                     Command="{Binding ConnectCommand}"
                                     Content="Connect"
                                     IsEnabled="{Binding !IsConnecting}"
@@ -315,9 +379,9 @@
                             </StackPanel>
 
                             <Button
-                                Classes="theme-soft danger"
                                 Margin="0,10,0,0"
                                 HorizontalAlignment="Right"
+                                Classes="theme-soft danger"
                                 Command="{Binding DisconnectCommand}"
                                 Content="Disconnect"
                                 FontSize="12"
@@ -335,129 +399,6 @@
                     </Grid>
                 </Border>
 
-                <!--  Actions Card  -->
-                <Border
-                    Classes="card"
-                    ClipToBounds="True"
-                    IsEnabled="{Binding IsConnected}">
-
-                    <Grid>
-                        <!--  Mesh gradient overlay for program running state  -->
-                        <actipro:MeshGradientPresenter Margin="-12" IsVisible="{Binding IsProgramRunning}">
-                            <actipro:MeshGradientNode Center="100%, 0%" Color="#304CAF50" />
-                            <actipro:MeshGradientNode Center="0%, 100%" Color="#00000000" />
-                        </actipro:MeshGradientPresenter>
-
-                        <StackPanel Spacing="8">
-                            <!--  Program Control Header with Progress Ring  -->
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <TextBlock
-                                    Grid.Column="0"
-                                    FontSize="14"
-                                    FontWeight="SemiBold"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="Program" />
-
-                                <!--  Spinning icon when program is running  -->
-                                <Border
-                                    Grid.Column="1"
-                                    Width="20"
-                                    Height="20"
-                                    Background="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}"
-                                    CornerRadius="10"
-                                    IsVisible="{Binding IsProgramRunning}">
-                                    <Border.Child>
-                                        <icons:MaterialIcon
-                                            Width="12"
-                                            Height="12"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center"
-                                            Foreground="White"
-                                            Kind="Sync" />
-                                    </Border.Child>
-                                    <Border.Styles>
-                                        <Style Selector="Border">
-                                            <Style.Animations>
-                                                <Animation IterationCount="INFINITE" Duration="0:0:1">
-                                                    <KeyFrame Cue="0%">
-                                                        <Setter Property="Opacity" Value="0.3" />
-                                                    </KeyFrame>
-                                                    <KeyFrame Cue="50%">
-                                                        <Setter Property="Opacity" Value="1.0" />
-                                                    </KeyFrame>
-                                                    <KeyFrame Cue="100%">
-                                                        <Setter Property="Opacity" Value="0.3" />
-                                                    </KeyFrame>
-                                                </Animation>
-                                            </Style.Animations>
-                                        </Style>
-                                    </Border.Styles>
-                                </Border>
-
-                            </Grid>
-
-                            <!--  Control Buttons  -->
-                            <UniformGrid
-                                Margin="0,8,0,0"
-                                ColumnSpacing="8"
-                                Columns="3"
-                                IsVisible="{Binding IsConnected}">
-
-                                <!--  start  -->
-                                <Button
-                                    Classes="theme-soft success"
-                                    HorizontalAlignment="Stretch"
-                                    Command="{Binding ProgramRunCommand}"
-                                    IsVisible="{Binding !IsProgramRunning}"
-                                    ToolTip.Tip="{Binding SshRunCommand}">
-                                    <icons:MaterialIcon Kind="Play" />
-                                </Button>
-
-                                <!--  kill  -->
-                                <Button
-                                    Classes="theme-soft danger"
-                                    HorizontalAlignment="Stretch"
-                                    Command="{Binding ProgramStopCommand}"
-                                    IsVisible="{Binding IsProgramRunning}">
-                                    <icons:MaterialIcon Kind="Skull" />
-                                </Button>
-
-                                <Panel IsVisible="{Binding IsProgramRunning}">
-
-                                    <!--  pause  -->
-                                    <Button
-                                        Classes="theme-soft accent"
-                                        HorizontalAlignment="Stretch"
-                                        Command="{Binding ToggleMotionPauseCommand}"
-                                        IsVisible="{Binding !IsProgramPaused}">
-                                        <icons:MaterialIcon Kind="Pause" />
-                                    </Button>
-
-                                    <!--  resume  -->
-                                    <Button
-                                        Classes="theme-soft success"
-                                        HorizontalAlignment="Stretch"
-                                        Command="{Binding ToggleMotionPauseCommand}"
-                                        IsVisible="{Binding IsProgramPaused}">
-                                        <icons:MaterialIcon Kind="PlayOutline" />
-                                    </Button>
-
-                                </Panel>
-
-                            </UniformGrid>
-
-                            <TextBlock
-                                Classes="danger"
-                                IsVisible="{Binding ProgramStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                                Text="{Binding ProgramStatus}" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
 
                 <!--  SSH Card  -->
                 <Border Classes="card" IsEnabled="{Binding IsConnected}">
@@ -511,12 +452,12 @@
                                 <TextBox.InnerRightContent>
                                     <!--  Execute Button  -->
                                     <Button
-                                        Classes="theme-subtle"
                                         Grid.Column="1"
                                         Margin="4,3,3,0"
                                         Padding="2"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Top"
+                                        Classes="theme-subtle"
                                         Command="{Binding RunSshCommandCommand}"
                                         IsEnabled="{Binding !IsSshCommandRunning}">
                                         <Button.Styles>
@@ -555,10 +496,10 @@
 
                                         <!--  Clear Button  -->
                                         <Button
-                                            Classes="theme-subtle"
                                             Grid.Column="1"
                                             Margin="-8,-4"
                                             Padding="4,2,4,1"
+                                            Classes="theme-subtle"
                                             Command="{Binding ClearSshOutputCommand}"
                                             IsEnabled="{Binding IsConnected}"
                                             Opacity="0.5"
@@ -575,7 +516,6 @@
                                         AcceptsReturn="True"
                                         Background="Transparent"
                                         BorderThickness="0"
-                                        FontFamily="Consolas, 'Courier New', monospace"
                                         FontSize="11"
                                         IsReadOnly="True"
                                         Text="{Binding SshOutput}"
@@ -612,7 +552,7 @@
                 </Border>
             </StackPanel>
 
-            <!--  Main content area - no card wrapper  -->
+            <!--  Main/Middle Content  -->
             <Grid
                 Grid.Row="1"
                 Grid.Column="1"
@@ -621,233 +561,326 @@
 
                 <!--  Image display area  -->
                 <Border
-                    Classes="card"
                     Grid.Column="0"
-                    Background="#000000"
-                    BorderThickness="2">
+                    Padding="0"
+                    BorderThickness="1"
+                    Classes="card">
 
-                    <!-- <Border
-                    Grid.Column="0"
-                    Background="#000000"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="2"
-                    CornerRadius="{StaticResource StandardCornerRadius}">-->
-
-                    <Grid>
-                        <!--  Disconnected State Message  -->
-                        <StackPanel
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            IsVisible="{Binding !IsConnected}">
-                            <icons:MaterialIcon
-                                Width="36"
-                                Height="36"
-                                Margin="0,-40,0,4"
-                                Foreground="{StaticResource SubtleTextBrush}"
+                    <Border
+                        Margin="2"
+                        Padding="0"
+                        BorderThickness="0"
+                        Classes="card"
+                        Effect="{x:Null}">
+                        <Grid Background="#000000">
+                            <!--  Trapezoidal button container at top center  -->
+                            <Border
+                                Margin="8,-1,8,8"
+                                Padding="5,1,5,5"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Top"
+                                BorderThickness="1,0,1,1"
+                                Classes="card"
+                                CornerRadius="0 0 2 2"
+                                Effect="{x:Null}"
                                 IsVisible="False"
-                                Kind="LanDisconnect"
-                                Opacity="0.45" />
-                            <TextBlock
+                                ZIndex="10">
+
+                                <StackPanel>
+                                    <TextBlock
+                                        Margin="0,-6,0,4"
+                                        HorizontalAlignment="Center"
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource TextBrush}"
+                                        IsVisible="False"
+                                        Text="Program" />
+
+                                    <!--  Button container  -->
+                                    <UniformGrid
+                                        Margin="0"
+                                        ColumnSpacing="6"
+                                        Columns="3">
+
+                                        <!--  Start button  -->
+                                        <Button
+                                            Width="46"
+                                            Height="29"
+                                            HorizontalAlignment="Stretch"
+                                            Classes="theme-solid success"
+                                            Command="{Binding ProgramRunCommand}"
+                                            FontWeight="SemiBold"
+                                            IsVisible="{Binding !IsProgramRunning}"
+                                            ToolTip.Tip="{Binding SshRunCommand}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <icons:MaterialIcon
+                                                    Width="20"
+                                                    Height="20"
+                                                    Kind="Play" />
+                                                <TextBlock IsVisible="False" Text=" Run" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!--  Kill button  -->
+                                        <Button
+                                            Width="46"
+                                            Height="29"
+                                            HorizontalAlignment="Stretch"
+                                            Classes="theme-soft danger"
+                                            Command="{Binding ProgramStopCommand}"
+                                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
+                                            IsEnabled="{Binding IsProgramRunning}">
+                                            <icons:MaterialIcon Kind="Skull" />
+                                        </Button>
+
+                                        <!--  Pause/Resume button  -->
+                                        <Panel IsVisible="{Binding IsProgramRunning}">
+                                            <!--  Pause  -->
+                                            <Button
+                                                Width="28"
+                                                Height="24"
+                                                Padding="2"
+                                                HorizontalAlignment="Stretch"
+                                                Classes="theme-soft accent"
+                                                Command="{Binding ToggleMotionPauseCommand}"
+                                                IsVisible="{Binding !IsProgramPaused}">
+                                                <icons:MaterialIcon Kind="Pause" />
+                                            </Button>
+
+                                            <!--  Resume  -->
+                                            <Button
+                                                Width="28"
+                                                Height="24"
+                                                Padding="2"
+                                                HorizontalAlignment="Stretch"
+                                                Classes="theme-soft success"
+                                                Command="{Binding ToggleMotionPauseCommand}"
+                                                IsVisible="{Binding IsProgramPaused}">
+                                                <icons:MaterialIcon Kind="PlayOutline" />
+                                            </Button>
+                                        </Panel>
+
+                                    </UniformGrid>
+
+                                </StackPanel>
+                            </Border>
+
+                            <!--  Disconnected State Message  -->
+                            <StackPanel
                                 HorizontalAlignment="Center"
-                                FontSize="18"
-                                FontWeight="SemiBold"
-                                Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
-                                Text="Connection Required" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                FontSize="14"
-                                Foreground="{StaticResource SubtleTextBrush}"
-                                Opacity="0.7"
-                                Text="Connect to the demo's RapidServer to view camera feeds" />
-                        </StackPanel>
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding !IsConnected}">
+                                <icons:MaterialIcon
+                                    Width="36"
+                                    Height="36"
+                                    Margin="0,-40,0,4"
+                                    Foreground="{StaticResource SubtleTextBrush}"
+                                    IsVisible="False"
+                                    Kind="LanDisconnect"
+                                    Opacity="0.45" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="18"
+                                    FontWeight="SemiBold"
+                                    Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
+                                    Text="Connection Required" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="14"
+                                    Foreground="{StaticResource SubtleTextBrush}"
+                                    Opacity="0.7"
+                                    Text="Connect to the demo's RapidServer to view camera feeds" />
+                            </StackPanel>
 
-                        <!--  Connected State - Camera Feeds  -->
-                        <Grid ColumnDefinitions="*" IsVisible="{Binding IsConnected}">
+                            <!--  Connected State - Camera Feeds  -->
+                            <Grid ColumnDefinitions="*" IsVisible="{Binding IsConnected}">
 
-                            <!--  Camera feed placeholder (640x480 aspect ratio)  -->
-                            <Border Grid.Column="0" Margin="8">
-                                <Grid>
-                                    <!--  Simulated camera feed background  -->
-                                    <Rectangle
-                                        Width="640"
-                                        Height="480"
-                                        Fill="#2A2A2A" />
+                                <!--  Camera feed placeholder (640x480 aspect ratio)  -->
+                                <Border Grid.Column="0" Margin="8">
+                                    <Grid>
+                                        <!--  Simulated camera feed background  -->
+                                        <Rectangle
+                                            Width="640"
+                                            Height="480"
+                                            Fill="#2A2A2A" />
 
-                                    <!--  Ball detection circle overlay  -->
-                                    <Canvas Width="640" Height="480">
+                                        <!--  Ball detection circle overlay  -->
+                                        <Canvas Width="640" Height="480">
 
-                                        <!--  rendred ball - red ball  -->
-                                        <Ellipse
-                                            Fill="Red"
-                                            Stroke="#000"
-                                            StrokeThickness="1">
-                                            <Ellipse.Resources>
-                                                <actipro:MathConverter x:Key="MathConverter" />
-                                            </Ellipse.Resources>
+                                            <!--  rendred ball - red ball  -->
+                                            <Ellipse
+                                                Fill="Red"
+                                                Stroke="#000"
+                                                StrokeThickness="1">
+                                                <Ellipse.Resources>
+                                                    <actipro:MathConverter x:Key="MathConverter" />
+                                                </Ellipse.Resources>
 
-                                            <!--  ellipse/all size  -->
-                                            <Ellipse.Width>
-                                                <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                    <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                </MultiBinding>
-                                            </Ellipse.Width>
-                                            <Ellipse.Height>
-                                                <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                    <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                </MultiBinding>
-                                            </Ellipse.Height>
+                                                <!--  ellipse/all size  -->
+                                                <Ellipse.Width>
+                                                    <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
+                                                        <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                    </MultiBinding>
+                                                </Ellipse.Width>
+                                                <Ellipse.Height>
+                                                    <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
+                                                        <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                    </MultiBinding>
+                                                </Ellipse.Height>
 
-                                            <!--  canvas position  -->
-                                            <Canvas.Left>
-                                                <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                    <Binding FallbackValue="320" Path="Program_BallX" />
-                                                    <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                </MultiBinding>
-                                            </Canvas.Left>
-                                            <Canvas.Top>
-                                                <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                    <Binding FallbackValue="240" Path="Program_BallY" />
-                                                    <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                </MultiBinding>
-                                            </Canvas.Top>
-                                        </Ellipse>
+                                                <!--  canvas position  -->
+                                                <Canvas.Left>
+                                                    <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
+                                                        <Binding FallbackValue="320" Path="Program_BallX" />
+                                                        <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                    </MultiBinding>
+                                                </Canvas.Left>
+                                                <Canvas.Top>
+                                                    <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
+                                                        <Binding FallbackValue="240" Path="Program_BallY" />
+                                                        <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                    </MultiBinding>
+                                                </Canvas.Top>
+                                            </Ellipse>
 
-                                        <!--  Center crosshair  -->
-                                        <Line
-                                            Stroke="#333333"
-                                            StrokeDashArray="5,5"
-                                            StrokeThickness="1"
-                                            StartPoint="0,240"
-                                            EndPoint="640,240" />
-                                        <Line
-                                            Stroke="#333333"
-                                            StrokeDashArray="5,5"
-                                            StrokeThickness="1"
-                                            StartPoint="320,0"
-                                            EndPoint="320,480" />
+                                            <!--  Center crosshair  -->
+                                            <Line
+                                                Stroke="#333333"
+                                                StrokeDashArray="5,5"
+                                                StrokeThickness="1"
+                                                StartPoint="0,240"
+                                                EndPoint="640,240" />
+                                            <Line
+                                                Stroke="#333333"
+                                                StrokeDashArray="5,5"
+                                                StrokeThickness="1"
+                                                StartPoint="320,0"
+                                                EndPoint="320,480" />
 
-                                    </Canvas>
+                                        </Canvas>
 
-                                    <!--  Overlay info  -->
-                                    <Border
-                                        Margin="12"
-                                        Padding="8"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Top"
-                                        Background="#80000000">
-                                        <StackPanel>
-                                            <TextBlock
-                                                FontSize="12"
-                                                FontWeight="Bold"
-                                                Foreground="#00FF00"
-                                                Text="CAMERA FEED" />
-                                            <StackPanel Spacing="0">
+                                        <!--  Overlay info  -->
+                                        <Border
+                                            Margin="12"
+                                            Padding="8"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Background="#80000000">
+                                            <StackPanel>
+                                                <TextBlock
+                                                    FontSize="12"
+                                                    FontWeight="Bold"
+                                                    Foreground="#00FF00"
+                                                    Text="CAMERA FEED" />
+                                                <StackPanel Spacing="0">
+                                                    <TextBlock
+                                                        FontSize="10"
+                                                        Foreground="{StaticResource TextBrush}"
+                                                        Text="Ball Coordinates" />
+                                                    <TextBlock
+                                                        FontSize="12"
+                                                        Foreground="{StaticResource TextBrush}"
+                                                        Text="{Binding Program_BallX, StringFormat='{}X: {0:F0}'}" />
+                                                    <TextBlock
+                                                        FontSize="12"
+                                                        Foreground="{StaticResource TextBrush}"
+                                                        Text="{Binding Program_BallY, StringFormat='{}Y: {0:F0}'}" />
+                                                    <TextBlock
+                                                        FontSize="12"
+                                                        Foreground="{StaticResource TextBrush}"
+                                                        IsVisible="False"
+                                                        Text="{Binding DetectionConfidence, StringFormat='{}Confidence: {0:F0}%'}" />
+                                                </StackPanel>
+
+                                                <!--  Simulation Toggle  -->
+                                                <CheckBox
+                                                    Margin="0,4,0,0"
+                                                    Content="Simulate"
+                                                    FontSize="10"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    IsChecked="{Binding IsSimulatingBallPosition}"
+                                                    IsVisible="{Binding !IsConnected}" />
+
+                                                <!--  Enable Motion  -->
+                                                <CheckBox
+                                                    Margin="0,4,0,0"
+                                                    Classes="size-xs"
+                                                    Command="{Binding ToggleProgramMotionEnabledCommand}"
+                                                    CommandParameter="{Binding $self.IsChecked}"
+                                                    Content="Enable Motion"
+                                                    FontSize="12"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    IsChecked="{Binding Program_IsMotionEnabled}"
+                                                    IsEnabled="{Binding Program_IsMotionEnabled, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+
+                                <!--  Image mask placeholder (640x480 aspect ratio, black and white)  -->
+                                <Border
+                                    Grid.Column="1"
+                                    Margin="0,8,8,8"
+                                    IsVisible="False">
+                                    <Grid>
+                                        <!--  Simulated image mask  -->
+                                        <Rectangle
+                                            Width="640"
+                                            Height="480"
+                                            Fill="#000000" />
+
+                                        <!--  White regions representing detected areas  -->
+                                        <Canvas Width="640" Height="480">
+                                            <!--  Ball mask region - bound to actual ball position  -->
+                                            <Ellipse
+                                                Width="40"
+                                                Height="40"
+                                                Fill="#FFFFFF">
+                                                <Canvas.Left>
+                                                    <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
+                                                        <Binding FallbackValue="320" Path="Program_BallX" />
+                                                        <Binding FallbackValue="12.5" Path="Program_BallRadius" />
+                                                    </MultiBinding>
+                                                </Canvas.Left>
+                                                <Canvas.Top>
+                                                    <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
+                                                        <Binding FallbackValue="240" Path="Program_BallY" />
+                                                        <Binding FallbackValue="12.5" Path="Program_BallRadius" />
+                                                    </MultiBinding>
+                                                </Canvas.Top>
+                                            </Ellipse>
+                                        </Canvas>
+
+                                        <!--  Overlay info  -->
+                                        <Border
+                                            Margin="12"
+                                            Padding="8"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            Background="#80000000">
+                                            <StackPanel>
+                                                <TextBlock
+                                                    FontSize="12"
+                                                    FontWeight="Bold"
+                                                    Foreground="#FFFFFF"
+                                                    Text="IMAGE MASK" />
                                                 <TextBlock
                                                     FontSize="10"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    Text="Ball Coordinates" />
+                                                    Text="{Binding BinaryThreshold, StringFormat=Binary Threshold: {0}}" />
                                                 <TextBlock
-                                                    FontSize="12"
+                                                    FontSize="10"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    Text="{Binding Program_BallX, StringFormat='{}X: {0:F0}'}" />
-                                                <TextBlock
-                                                    FontSize="12"
-                                                    Foreground="{StaticResource TextBrush}"
-                                                    Text="{Binding Program_BallY, StringFormat='{}Y: {0:F0}'}" />
-                                                <TextBlock
-                                                    FontSize="12"
-                                                    Foreground="{StaticResource TextBrush}"
-                                                    IsVisible="False"
-                                                    Text="{Binding DetectionConfidence, StringFormat='{}Confidence: {0:F0}%'}" />
+                                                    Text="{Binding ObjectsDetected, StringFormat=Objects: {0}}" />
                                             </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </Border>
 
-                                            <!--  Simulation Toggle  -->
-                                            <CheckBox
-                                                Margin="0,4,0,0"
-                                                Content="Simulate"
-                                                FontSize="10"
-                                                Foreground="{StaticResource TextBrush}"
-                                                IsChecked="{Binding IsSimulatingBallPosition}"
-                                                IsVisible="{Binding !IsConnected}" />
-
-                                            <!--  Enable Motion  -->
-                                            <CheckBox
-                                                Classes="size-xs"
-                                                Margin="0,4,0,0"
-                                                Command="{Binding ToggleProgramMotionEnabledCommand}"
-                                                CommandParameter="{Binding $self.IsChecked}"
-                                                Content="Enable Motion"
-                                                FontSize="12"
-                                                Foreground="{StaticResource TextBrush}"
-                                                IsChecked="{Binding Program_IsMotionEnabled}"
-                                                IsEnabled="{Binding Program_IsMotionEnabled, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                                        </StackPanel>
-                                    </Border>
-                                </Grid>
-                            </Border>
-
-                            <!--  Image mask placeholder (640x480 aspect ratio, black and white)  -->
-                            <Border
-                                Grid.Column="1"
-                                Margin="0,8,8,8"
-                                IsVisible="False">
-                                <Grid>
-                                    <!--  Simulated image mask  -->
-                                    <Rectangle
-                                        Width="640"
-                                        Height="480"
-                                        Fill="#000000" />
-
-                                    <!--  White regions representing detected areas  -->
-                                    <Canvas Width="640" Height="480">
-                                        <!--  Ball mask region - bound to actual ball position  -->
-                                        <Ellipse
-                                            Width="40"
-                                            Height="40"
-                                            Fill="#FFFFFF">
-                                            <Canvas.Left>
-                                                <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                    <Binding FallbackValue="320" Path="Program_BallX" />
-                                                    <Binding FallbackValue="12.5" Path="Program_BallRadius" />
-                                                </MultiBinding>
-                                            </Canvas.Left>
-                                            <Canvas.Top>
-                                                <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                    <Binding FallbackValue="240" Path="Program_BallY" />
-                                                    <Binding FallbackValue="12.5" Path="Program_BallRadius" />
-                                                </MultiBinding>
-                                            </Canvas.Top>
-                                        </Ellipse>
-                                    </Canvas>
-
-                                    <!--  Overlay info  -->
-                                    <Border
-                                        Margin="12"
-                                        Padding="8"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Top"
-                                        Background="#80000000">
-                                        <StackPanel>
-                                            <TextBlock
-                                                FontSize="12"
-                                                FontWeight="Bold"
-                                                Foreground="#FFFFFF"
-                                                Text="IMAGE MASK" />
-                                            <TextBlock
-                                                FontSize="10"
-                                                Foreground="{StaticResource TextBrush}"
-                                                Text="{Binding BinaryThreshold, StringFormat=Binary Threshold: {0}}" />
-                                            <TextBlock
-                                                FontSize="10"
-                                                Foreground="{StaticResource TextBrush}"
-                                                Text="{Binding ObjectsDetected, StringFormat=Objects: {0}}" />
-                                        </StackPanel>
-                                    </Border>
-                                </Grid>
-                            </Border>
-
+                            </Grid>
                         </Grid>
-                    </Grid>
+                    </Border>
+
                 </Border>
             </Grid>
 
@@ -932,10 +965,10 @@
 
                                                 <!--  numeric  -->
                                                 <TextBlock
-                                                    Classes="Mono"
                                                     Grid.Column="1"
                                                     HorizontalAlignment="Right"
                                                     VerticalAlignment="Bottom"
+                                                    Classes="Mono"
                                                     IsVisible="{Binding IsNumeric}"
                                                     Text="{Binding Value}" />
 
@@ -997,132 +1030,133 @@
                             </Style>
                         </Border.Styles>
 
-                        <StackPanel>
+                        <Grid>
+                            <!--  Main content  -->
+                            <StackPanel>
+                                <TextBlock
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextBrush}"
+                                    Text="Mapping" />
 
-                            <TextBlock
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="Mapping" />
+                                <StackPanel
+                                    Margin="0,12,0,0"
+                                    IsVisible="{Binding IsConnected}"
+                                    Spacing="8">
 
-                            <StackPanel
-                                Margin="0,12,0,0"
-                                IsVisible="{Binding IsConnected}"
-                                Spacing="8">
+                                    <controls:StatusLabel
+                                        Title="Ball"
+                                        Margin="0,0,0,-10"
+                                        TitleOpacity="1"
+                                        Value="" />
 
-                                <controls:StatusLabel
-                                    Title="Ball"
-                                    Margin="0,0,0,-10"
-                                    TitleOpacity="1"
-                                    Value="" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
 
-                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <controls:StatusLabel Title="Center X" Value="" />
 
-                                    <controls:StatusLabel Title="Center X" Value="" />
+                                        <icons:MaterialIcon IsEnabled="{Binding Global_BallXValid}" />
 
-                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallXValid}" />
+                                        <!--  ball x  -->
+                                        <AutoCompleteBox
+                                            x:Name="BallX_AutoCompleteBox"
+                                            MinWidth="100"
+                                            Margin="-2,0,0,0"
+                                            Padding="2"
+                                            behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                            Background="Transparent"
+                                            BorderThickness="0,0,0,1"
+                                            Classes="theme-soft"
+                                            FilterMode="ContainsOrdinal"
+                                            ItemsSource="{Binding GlobalValues}"
+                                            MinimumPopulateDelay="0"
+                                            MinimumPrefixLength="0"
+                                            Text="{Binding Global_BallX}"
+                                            ValueMemberBinding="{Binding Name}"
+                                            Watermark="Select global.." />
 
-                                    <!--  ball x  -->
-                                    <AutoCompleteBox
-                                        x:Name="BallX_AutoCompleteBox"
-                                        Classes="theme-soft"
-                                        MinWidth="100"
-                                        Margin="-2,0,0,0"
-                                        Padding="2"
-                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                        Background="Transparent"
-                                        BorderThickness="0,0,0,1"
-                                        FilterMode="ContainsOrdinal"
-                                        ItemsSource="{Binding GlobalValues}"
-                                        MinimumPopulateDelay="0"
-                                        MinimumPrefixLength="0"
-                                        Text="{Binding Global_BallX}"
-                                        ValueMemberBinding="{Binding Name}"
-                                        Watermark="Select global.." />
+                                    </StackPanel>
 
-                                </StackPanel>
+                                    <!--  ball y  -->
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
 
-                                <!--  ball y  -->
-                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <controls:StatusLabel Title="Center Y" Value="" />
 
-                                    <controls:StatusLabel Title="Center Y" Value="" />
+                                        <icons:MaterialIcon IsEnabled="{Binding Global_BallYValid}" />
 
-                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallYValid}" />
+                                        <AutoCompleteBox
+                                            MinWidth="100"
+                                            Margin="-2,0,0,0"
+                                            Padding="2"
+                                            behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                            Background="Transparent"
+                                            BorderThickness="0,0,0,1"
+                                            Classes="theme-soft"
+                                            FilterMode="ContainsOrdinal"
+                                            ItemsSource="{Binding GlobalValues}"
+                                            MinimumPopulateDelay="0"
+                                            MinimumPrefixLength="0"
+                                            Text="{Binding Global_BallY}"
+                                            ValueMemberBinding="{Binding Name}"
+                                            Watermark="Select global.." />
 
-                                    <AutoCompleteBox
-                                        Classes="theme-soft"
-                                        MinWidth="100"
-                                        Margin="-2,0,0,0"
-                                        Padding="2"
-                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                        Background="Transparent"
-                                        BorderThickness="0,0,0,1"
-                                        FilterMode="ContainsOrdinal"
-                                        ItemsSource="{Binding GlobalValues}"
-                                        MinimumPopulateDelay="0"
-                                        MinimumPrefixLength="0"
-                                        Text="{Binding Global_BallY}"
-                                        ValueMemberBinding="{Binding Name}"
-                                        Watermark="Select global.." />
+                                    </StackPanel>
 
-                                </StackPanel>
+                                    <!--  ball radius  -->
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
 
-                                <!--  ball radius  -->
-                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <controls:StatusLabel Title="Radius" Value="" />
 
-                                    <controls:StatusLabel Title="Radius" Value="" />
+                                        <icons:MaterialIcon IsEnabled="{Binding Global_BallRadiusValid}" />
 
-                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallRadiusValid}" />
+                                        <AutoCompleteBox
+                                            MinWidth="100"
+                                            Margin="-2,0,0,0"
+                                            Padding="2"
+                                            behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                            Background="Transparent"
+                                            BorderThickness="0,0,0,1"
+                                            Classes="theme-soft"
+                                            FilterMode="ContainsOrdinal"
+                                            ItemsSource="{Binding GlobalValues}"
+                                            MinimumPopulateDelay="0"
+                                            MinimumPrefixLength="0"
+                                            Text="{Binding Global_BallRadius}"
+                                            ValueMemberBinding="{Binding Name}"
+                                            Watermark="Select global.." />
 
-                                    <AutoCompleteBox
-                                        Classes="theme-soft"
-                                        MinWidth="100"
-                                        Margin="-2,0,0,0"
-                                        Padding="2"
-                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                        Background="Transparent"
-                                        BorderThickness="0,0,0,1"
-                                        FilterMode="ContainsOrdinal"
-                                        ItemsSource="{Binding GlobalValues}"
-                                        MinimumPopulateDelay="0"
-                                        MinimumPrefixLength="0"
-                                        Text="{Binding Global_BallRadius}"
-                                        ValueMemberBinding="{Binding Name}"
-                                        Watermark="Select global.." />
+                                    </StackPanel>
 
-                                </StackPanel>
+                                    <controls:StatusLabel
+                                        Title="Program"
+                                        Margin="0,0,0,-10"
+                                        TitleOpacity="1"
+                                        Value="" />
 
-                                <controls:StatusLabel
-                                    Title="Program"
-                                    Margin="0,0,0,-10"
-                                    TitleOpacity="1"
-                                    Value="" />
+                                    <!--  is motion enabled  -->
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
 
-                                <!--  is motion enabled  -->
-                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <controls:StatusLabel Title="Is Motion Enabled" Value="" />
 
-                                    <controls:StatusLabel Title="Is Motion Enabled" Value="" />
+                                        <icons:MaterialIcon IsEnabled="{Binding Global_IsMotionEnabledValid}" />
 
-                                    <icons:MaterialIcon IsEnabled="{Binding Global_IsMotionEnabledValid}" />
+                                        <AutoCompleteBox
+                                            MinWidth="100"
+                                            Margin="-2,0,0,0"
+                                            Padding="2"
+                                            behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                            Background="Transparent"
+                                            BorderThickness="0,0,0,1"
+                                            Classes="theme-soft"
+                                            FilterMode="ContainsOrdinal"
+                                            ItemsSource="{Binding GlobalValues}"
+                                            MinimumPopulateDelay="0"
+                                            MinimumPrefixLength="0"
+                                            Text="{Binding Global_IsMotionEnabled}"
+                                            ValueMemberBinding="{Binding Name}"
+                                            Watermark="Select global.." />
+                                    </StackPanel>
 
-                                    <AutoCompleteBox
-                                        Classes="theme-soft"
-                                        MinWidth="100"
-                                        Margin="-2,0,0,0"
-                                        Padding="2"
-                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                        Background="Transparent"
-                                        BorderThickness="0,0,0,1"
-                                        FilterMode="ContainsOrdinal"
-                                        ItemsSource="{Binding GlobalValues}"
-                                        MinimumPopulateDelay="0"
-                                        MinimumPrefixLength="0"
-                                        Text="{Binding Global_IsMotionEnabled}"
-                                        ValueMemberBinding="{Binding Name}"
-                                        Watermark="Select global.." />
-                                </StackPanel>
-
-                                <!--<controls:StatusLabel
+                                    <!--<controls:StatusLabel
                                 Title="Camera"
                                 TitleOpacity="1"
                                 Value="" />
@@ -1133,8 +1167,11 @@
 
                             <controls:StatusLabel Title="Is Ball Detected" Value="" />-->
 
+                                </StackPanel>
                             </StackPanel>
-                        </StackPanel>
+
+
+                        </Grid>
                     </Border>
 
                 </StackPanel>

@@ -164,6 +164,8 @@
             <Setter Property="CornerRadius" Value="2" />
             <Setter Property="TextBlock.LetterSpacing" Value="0.5" />
             <Setter Property="Padding" Value="8,4" />
+            <Setter Property="ToolTip.ShowDelay" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Effect">
                 <DropShadowEffect
                     BlurRadius="6"
