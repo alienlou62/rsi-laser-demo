@@ -90,7 +90,7 @@
                                     Width="20"
                                     Height="20"
                                     Kind="CogPlayOutline" />
-                                <TextBlock Text="Configure RMP &amp; Run Tasks" />
+                                <TextBlock VerticalAlignment="Center" Text="Configure RMP &amp; Run Tasks" />
                             </StackPanel>
                         </Button>
 
@@ -101,7 +101,7 @@
                             Command="{Binding ProgramStopCommand}">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <icons:MaterialIcon Kind="Skull" />
-                                <TextBlock Text="Kill Tasks" />
+                                <TextBlock VerticalAlignment="Center" Text="Kill Tasks" />
                             </StackPanel>
                         </Button>
 
@@ -118,7 +118,7 @@
                                         Width="19"
                                         Height="19"
                                         Kind="Pause" />
-                                    <TextBlock Text="Pause Program" />
+                                    <TextBlock VerticalAlignment="Center" Text="Pause Program" />
                                 </StackPanel>
                             </Button>
 
@@ -133,7 +133,7 @@
                                         Width="20"
                                         Height="20"
                                         Kind="PlayOutline" />
-                                    <TextBlock Text="Resume Program" />
+                                    <TextBlock VerticalAlignment="Center" Text="Resume Program" />
                                 </StackPanel>
                             </Button>
                         </Panel>
@@ -1019,6 +1019,11 @@
                     <!--  Program Card  -->
                     <Border Classes="card" IsEnabled="{Binding IsConnected}">
                         <Border.Styles>
+
+                            <Style Selector="icons|MaterialIcon">
+                                <Setter Property="Margin" Value="0 0 0 -2" />
+                            </Style>
+
                             <Style Selector="icons|MaterialIcon[IsEnabled=true]">
                                 <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
                                 <Setter Property="Kind" Value="Link" />
@@ -1028,6 +1033,31 @@
                                 <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
                                 <Setter Property="Kind" Value="LinkOff" />
                             </Style>
+
+                            <Style Selector="AutoCompleteBox">
+                                <Setter Property="Margin" Value="0 0 0 -1" />
+                                <Setter Property="MinWidth" Value="120" />
+                                <Setter Property="Padding" Value="2" />
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0,0,0,1" />
+                                <Setter Property="FilterMode" Value="ContainsOrdinal" />
+                                <Setter Property="MinimumPopulateDelay" Value="0" />
+                                <Setter Property="MinimumPrefixLength" Value="0" />
+                                <Setter Property="Watermark" Value="Select global.." />
+                                <Setter Property="behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick" Value="True" />
+                            </Style>
+
+                            <Style Selector="controls|StatusLabel[IsActive=true]">
+                                <!--<Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                <Setter Property="TitleOpacity" Value="1" />
+                                <Setter Property="FontWeight" Value="Medium" />-->
+                            </Style>
+
+                            <Style Selector="controls|StatusLabel[IsActive=false]">
+                                <!--  <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" /> -->
+                                <Setter Property="TitleOpacity" Value="0.6" />
+                            </Style>
+
                         </Border.Styles>
 
                         <Grid>
@@ -1037,135 +1067,104 @@
                                     FontSize="14"
                                     FontWeight="SemiBold"
                                     Foreground="{StaticResource TextBrush}"
-                                    Text="Mapping" />
+                                    Text="Mappings" />
 
                                 <StackPanel
                                     Margin="0,12,0,0"
                                     IsVisible="{Binding IsConnected}"
-                                    Spacing="8">
+                                    Spacing="6">
 
-                                    <controls:StatusLabel
-                                        Title="Ball"
-                                        Margin="0,0,0,-10"
-                                        TitleOpacity="1"
-                                        Value="" />
+                                    <!--  ball x  -->
+                                    <DockPanel LastChildFill="True">
+                                        <controls:StatusLabel Title="Ball Center X" IsActive="{Binding Global_BallXValid}" />
 
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <StackPanel
+                                            HorizontalAlignment="Right"
+                                            Orientation="Horizontal"
+                                            Spacing="8">
 
-                                        <controls:StatusLabel Title="Center X" Value="" />
+                                            <AutoCompleteBox
+                                                behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                Classes="theme-soft"
+                                                ItemsSource="{Binding GlobalValues}"
+                                                Text="{Binding Global_BallX}"
+                                                ValueMemberBinding="{Binding Name}">
+                                                <AutoCompleteBox.InnerRightContent>
+                                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallXValid}" />
+                                                </AutoCompleteBox.InnerRightContent>
+                                            </AutoCompleteBox>
 
-                                        <icons:MaterialIcon IsEnabled="{Binding Global_BallXValid}" />
-
-                                        <!--  ball x  -->
-                                        <AutoCompleteBox
-                                            x:Name="BallX_AutoCompleteBox"
-                                            MinWidth="100"
-                                            Margin="-2,0,0,0"
-                                            Padding="2"
-                                            behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                            Background="Transparent"
-                                            BorderThickness="0,0,0,1"
-                                            Classes="theme-soft"
-                                            FilterMode="ContainsOrdinal"
-                                            ItemsSource="{Binding GlobalValues}"
-                                            MinimumPopulateDelay="0"
-                                            MinimumPrefixLength="0"
-                                            Text="{Binding Global_BallX}"
-                                            ValueMemberBinding="{Binding Name}"
-                                            Watermark="Select global.." />
-
-                                    </StackPanel>
+                                        </StackPanel>
+                                    </DockPanel>
 
                                     <!--  ball y  -->
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <DockPanel LastChildFill="True">
+                                        <controls:StatusLabel Title="Ball Center Y" IsActive="{Binding Global_BallYValid}" />
 
-                                        <controls:StatusLabel Title="Center Y" Value="" />
+                                        <StackPanel
+                                            HorizontalAlignment="Right"
+                                            Orientation="Horizontal"
+                                            Spacing="8">
 
-                                        <icons:MaterialIcon IsEnabled="{Binding Global_BallYValid}" />
+                                            <AutoCompleteBox
+                                                behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                Classes="theme-soft"
+                                                ItemsSource="{Binding GlobalValues}"
+                                                Text="{Binding Global_BallY}"
+                                                ValueMemberBinding="{Binding Name}">
+                                                <AutoCompleteBox.InnerRightContent>
+                                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallYValid}" />
+                                                </AutoCompleteBox.InnerRightContent>
+                                            </AutoCompleteBox>
 
-                                        <AutoCompleteBox
-                                            MinWidth="100"
-                                            Margin="-2,0,0,0"
-                                            Padding="2"
-                                            behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                            Background="Transparent"
-                                            BorderThickness="0,0,0,1"
-                                            Classes="theme-soft"
-                                            FilterMode="ContainsOrdinal"
-                                            ItemsSource="{Binding GlobalValues}"
-                                            MinimumPopulateDelay="0"
-                                            MinimumPrefixLength="0"
-                                            Text="{Binding Global_BallY}"
-                                            ValueMemberBinding="{Binding Name}"
-                                            Watermark="Select global.." />
-
-                                    </StackPanel>
+                                        </StackPanel>
+                                    </DockPanel>
 
                                     <!--  ball radius  -->
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <DockPanel LastChildFill="True">
+                                        <controls:StatusLabel Title="Ball Radius" IsActive="{Binding Global_BallRadiusValid}" />
 
-                                        <controls:StatusLabel Title="Radius" Value="" />
+                                        <StackPanel
+                                            HorizontalAlignment="Right"
+                                            Orientation="Horizontal"
+                                            Spacing="8">
 
-                                        <icons:MaterialIcon IsEnabled="{Binding Global_BallRadiusValid}" />
+                                            <AutoCompleteBox
+                                                behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                Classes="theme-soft"
+                                                ItemsSource="{Binding GlobalValues}"
+                                                Text="{Binding Global_BallRadius}"
+                                                ValueMemberBinding="{Binding Name}">
+                                                <AutoCompleteBox.InnerRightContent>
+                                                    <icons:MaterialIcon IsEnabled="{Binding Global_BallRadiusValid}" />
+                                                </AutoCompleteBox.InnerRightContent>
+                                            </AutoCompleteBox>
 
-                                        <AutoCompleteBox
-                                            MinWidth="100"
-                                            Margin="-2,0,0,0"
-                                            Padding="2"
-                                            behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                            Background="Transparent"
-                                            BorderThickness="0,0,0,1"
-                                            Classes="theme-soft"
-                                            FilterMode="ContainsOrdinal"
-                                            ItemsSource="{Binding GlobalValues}"
-                                            MinimumPopulateDelay="0"
-                                            MinimumPrefixLength="0"
-                                            Text="{Binding Global_BallRadius}"
-                                            ValueMemberBinding="{Binding Name}"
-                                            Watermark="Select global.." />
-
-                                    </StackPanel>
-
-                                    <controls:StatusLabel
-                                        Title="Program"
-                                        Margin="0,0,0,-10"
-                                        TitleOpacity="1"
-                                        Value="" />
+                                        </StackPanel>
+                                    </DockPanel>
 
                                     <!--  is motion enabled  -->
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <DockPanel LastChildFill="True">
+                                        <controls:StatusLabel Title="Is Motion Enabled" IsActive="{Binding Global_IsMotionEnabledValid}" />
 
-                                        <controls:StatusLabel Title="Is Motion Enabled" Value="" />
+                                        <StackPanel
+                                            HorizontalAlignment="Right"
+                                            Orientation="Horizontal"
+                                            Spacing="8">
 
-                                        <icons:MaterialIcon IsEnabled="{Binding Global_IsMotionEnabledValid}" />
+                                            <AutoCompleteBox
+                                                behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                Classes="theme-soft"
+                                                ItemsSource="{Binding GlobalValues}"
+                                                Text="{Binding Global_IsMotionEnabled}"
+                                                ValueMemberBinding="{Binding Name}">
+                                                <AutoCompleteBox.InnerRightContent>
+                                                    <icons:MaterialIcon IsEnabled="{Binding Global_IsMotionEnabledValid}" />
+                                                </AutoCompleteBox.InnerRightContent>
+                                            </AutoCompleteBox>
 
-                                        <AutoCompleteBox
-                                            MinWidth="100"
-                                            Margin="-2,0,0,0"
-                                            Padding="2"
-                                            behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                            Background="Transparent"
-                                            BorderThickness="0,0,0,1"
-                                            Classes="theme-soft"
-                                            FilterMode="ContainsOrdinal"
-                                            ItemsSource="{Binding GlobalValues}"
-                                            MinimumPopulateDelay="0"
-                                            MinimumPrefixLength="0"
-                                            Text="{Binding Global_IsMotionEnabled}"
-                                            ValueMemberBinding="{Binding Name}"
-                                            Watermark="Select global.." />
-                                    </StackPanel>
-
-                                    <!--<controls:StatusLabel
-                                Title="Camera"
-                                TitleOpacity="1"
-                                Value="" />
-
-                            <controls:StatusLabel Title="Is Active" Value="" />
-
-                            <controls:StatusLabel Title="Failure Count" Value="" />
-
-                            <controls:StatusLabel Title="Is Ball Detected" Value="" />-->
+                                        </StackPanel>
+                                    </DockPanel>
 
                                 </StackPanel>
                             </StackPanel>

@@ -9,6 +9,7 @@
     </Design.PreviewWith>
 
     <ControlTheme x:Key="{x:Type controls:StatusLabel}" TargetType="controls:StatusLabel">
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         <Setter Property="Template">
             <ControlTemplate>
                 <Grid>
@@ -21,7 +22,7 @@
                         Grid.Column="0"
                         VerticalAlignment="Center"
                         FontSize="12"
-                        Foreground="{StaticResource TextBrush}"
+                        Foreground="{TemplateBinding Foreground}"
                         Opacity="{TemplateBinding TitleOpacity}"
                         Text="{TemplateBinding Title}" />
 
