@@ -202,13 +202,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _logOutput = string.Empty;
 
-    //notifications
-    [ObservableProperty]
-    private ObservableCollection<INotification> _notifications = [];
-
-    // Notification manager reference
-    private INotificationManager? _notificationManager;
-
 
     /** COMMANDS **/
     //program
@@ -538,97 +531,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         LogOutput += $"[{timestamp}] {message}\n";
-        
-        // Also create a notification for important messages
-        CreateNotificationFromMessage(message);
-    }
-
-    //notifications
-    private void CreateNotificationFromMessage(string message)
-    {
-        // Determine notification type based on message content
-        var notificationType = GetNotificationTypeFromMessage(message);
-        var title = GetNotificationTitleFromMessage(message);
-        
-        CreateNotification(title, message, notificationType);
-    }
-
-    private NotificationType GetNotificationTypeFromMessage(string message)
-    {
-        var lowerMessage = message.ToLowerInvariant();
-        
-        if (lowerMessage.Contains("error") || lowerMessage.Contains("failed") || lowerMessage.Contains("shutdown error"))
-            return NotificationType.Error;
-        
-        if (lowerMessage.Contains("warning") || lowerMessage.Contains("disconnect"))
-            return NotificationType.Warning;
-        
-        if (lowerMessage.Contains("successful") || lowerMessage.Contains("completed") || lowerMessage.Contains("authentication successful"))
-            return NotificationType.Success;
-        
-        return NotificationType.Information;
-    }
-
-    private string GetNotificationTitleFromMessage(string message)
-    {
-        if (message.StartsWith("SSH:"))
-            return "SSH";
-        if (message.StartsWith("Connection"))
-            return "Connection";
-        if (message.StartsWith("Program"))
-            return "Program";
-        if (message.StartsWith("Motion"))
-            return "Motion Control";
-        if (message.StartsWith("Polling"))
-            return "System";
-        
-        return "System";
-    }
-
-    private void CreateNotification(string title, string message, NotificationType type)
-    {
-        var notification = new Notification(title, message, type);
-        
-        // Use notification manager if available
-        _notificationManager?.Show(notification);
-        
-        // Also add to our collection for UI binding
-        Dispatcher.UIThread.Post(() =>
-        {
-            Notifications.Add(notification);
-            
-            // Auto-remove after 10 seconds for non-error notifications
-            if (type != NotificationType.Error)
-            {
-                Task.Delay(10000).ContinueWith(_ =>
-                {
-                    Dispatcher.UIThread.Post(() =>
-                    {
-                        Notifications.Remove(notification);
-                    });
-                });
-            }
-        });
-    }
-
-    public void SetNotificationManager(INotificationManager notificationManager)
-    {
-        _notificationManager = notificationManager;
-    }
-
-    [RelayCommand]
-    private void ClearNotifications()
-    {
-        Notifications.Clear();
-    }
-
-    [RelayCommand]
-    private void TestNotifications()
-    {
-        CreateNotification("Test Info", "This is an information notification", NotificationType.Information);
-        CreateNotification("Test Success", "Operation completed successfully", NotificationType.Success);
-        CreateNotification("Test Warning", "This is a warning notification", NotificationType.Warning);
-        CreateNotification("Test Error", "This is an error notification", NotificationType.Error);
     }
 
     //globals
