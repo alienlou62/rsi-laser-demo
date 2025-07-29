@@ -21,8 +21,8 @@ using namespace RSI::RapidCode::RealTimeTasks;
 constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
 constexpr int32_t TASK_WAIT_TIMEOUT = 1000;            // 1 seconds, for task execution wait
 constexpr int32_t INIT_TIMEOUT = 15000;                // 15 seconds, initialization can take a while
-constexpr int32_t DETECTION_TASK_PERIOD = 3;
-constexpr int32_t MOVE_TASK_PERIOD = 3;
+constexpr int32_t DETECTION_TASK_PERIOD = 1;
+constexpr int32_t MOVE_TASK_PERIOD = 1;
 
 volatile sig_atomic_t g_shutdown = false;
 void sigint_handler(int signal)
@@ -67,10 +67,10 @@ void PrintTaskTiming(RTTask &task, const std::string &taskName)
   { return static_cast<double>(ns) / 1e6; };
   std::cout << "Task: " << taskName << std::endl;
   std::cout << "Execution count: " << status.ExecutionCount << std::endl;
-  std::cout << "Last execution time: " << nsToMs(status.ExecutionTimeLast) << " ms" << std::endl;
+  // std::cout << "Last execution time: " << nsToMs(status.ExecutionTimeLast) << " ms" << std::endl;
   std::cout << "Maximum execution time: " << nsToMs(status.ExecutionTimeMax) << " ms" << std::endl;
   std::cout << "Average execution time: " << nsToMs(status.ExecutionTimeMean) << " ms" << std::endl;
-  std::cout << "Last start time delta: " << nsToMs(status.StartTimeDeltaLast) << " ms" << std::endl;
+  // std::cout << "Last start time delta: " << nsToMs(status.StartTimeDeltaLast) << " ms" << std::endl;
   std::cout << "Maximum start time delta: " << nsToMs(status.StartTimeDeltaMax) << " ms" << std::endl;
   std::cout << "Average start time delta: " << nsToMs(status.StartTimeDeltaMean) << " ms" << std::endl
             << std::endl;
@@ -140,7 +140,7 @@ int main()
     }
 
     RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0);
-    RTTask motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 1);
+    RTTask motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 0, TaskPriority::High);
     FirmwareValue motionEnabled = {.Bool = true};
     manager.GlobalValueSet(motionEnabled, "motionEnabled");
 
@@ -150,10 +150,9 @@ int main()
       RateLimiter rateLimiter(LOOP_INTERVAL);
 
       FirmwareValue targetX = manager.GlobalValueGet("targetX");
-      std::cout << "Target X: " << targetX.Double << std::endl;
-
       FirmwareValue targetY = manager.GlobalValueGet("targetY");
-      std::cout << "Target Y: " << targetY.Double << std::endl;
+      
+      std::cout << "Target X: " << targetX.Double << ", Target Y: " << targetY.Double << std::endl;
 
       if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))
       {

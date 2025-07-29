@@ -15,6 +15,7 @@
 
 // --- RMP/RSI Headers ---
 #include "rsi.h"
+#include "rttask.h"
 
 #include "camera_helpers.h"
 #include "image_processing.h"
@@ -29,6 +30,7 @@
 #endif // SANDBOX_DIR
 
 using namespace RSI::RapidCode;
+using namespace RSI::RapidCode::RealTimeTasks;
 using namespace cv;
 using namespace Pylon;
 using namespace GenApi;
@@ -40,43 +42,6 @@ void sigint_handler(int signal)
   g_shutdown = true;
 }
 
-void OldCalculateTargetPosition(const Vec3f& ball, double &offsetX, double &offsetY)
-{
-  constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 4;
-  constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 4;
-  constexpr unsigned int MIN_PIXEL_OFFSET = ImageProcessing::PIXEL_THRESHOLD / 2;
-  constexpr double MOTOR_UNITS_PER_PIXEL = -CameraHelpers::RADIANS_PER_PIXEL / std::numbers::pi;
-
-  // Calculate the offset from the center of the image
-  int pixelOffsetX = static_cast<int>(ball[0]) - CENTER_X;
-  int pixelOffsetY = static_cast<int>(ball[1]) - CENTER_Y;
-
-  if (std::abs(pixelOffsetX) > MIN_PIXEL_OFFSET)
-    offsetX = MOTOR_UNITS_PER_PIXEL * pixelOffsetX;
-  else
-    offsetX = 0.0;
-
-  if (std::abs(pixelOffsetY) > MIN_PIXEL_OFFSET)
-    offsetY = MOTOR_UNITS_PER_PIXEL * pixelOffsetY;
-  else
-    offsetY = 0.0;
-}
-
-void NewCalculateTargetPosition(const Vec3f& ball, double &offsetX, double &offsetY)
-{
-  constexpr unsigned int CENTER_X = CameraHelpers::IMAGE_WIDTH / 2;
-  constexpr unsigned int CENTER_Y = CameraHelpers::IMAGE_HEIGHT / 2;
-  constexpr unsigned int MIN_PIXEL_OFFSET = ImageProcessing::PIXEL_THRESHOLD;
-  constexpr double MOTOR_UNITS_PER_PIXEL = -CameraHelpers::RADIANS_PER_PIXEL / (2.0 * std::numbers::pi);
-
-  // Calculate the offset from the center of the image
-  int pixelOffsetX = static_cast<int>(ball[0]) - CENTER_X;
-  int pixelOffsetY = static_cast<int>(ball[1]) - CENTER_Y;
-
-  offsetX = (std::abs(pixelOffsetX) > MIN_PIXEL_OFFSET) ? MOTOR_UNITS_PER_PIXEL * pixelOffsetX : 0.0;
-  offsetY = (std::abs(pixelOffsetY) > MIN_PIXEL_OFFSET) ? MOTOR_UNITS_PER_PIXEL * pixelOffsetY : 0.0;
-}
-
 // --- Main Function ---
 int main()
 {
@@ -86,29 +51,19 @@ int main()
   cv::setNumThreads(0); // Turn off OpenCV threading
 
   int exitCode = 0;
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<> rand_x_dist(0, 319);
-  std::uniform_int_distribution<> rand_y_dist(0, 239);
-  int radius = 20;
-  auto randBall = [&]() -> cv::Vec3f {
-    return cv::Vec3f(static_cast<float>(rand_x_dist(gen)), static_cast<float>(rand_y_dist(gen)), static_cast<float>(radius));
-  };
 
-  for (int i = 0; i < 10; ++i)
+  RapidVector<RTTaskManager> taskManagers = RTTaskManager::Discover();
+  if (taskManagers.Size() == 0)
   {
-    cv::Vec3f ball = randBall();
-    double oldOffsetX = 0.0, oldOffsetY = 0.0;
-    OldCalculateTargetPosition(ball, oldOffsetX, oldOffsetY);
-    std::cout << "Old Version - Ball: " << ball << ", Offset: (" << oldOffsetX << ", " << oldOffsetY << ")" << std::endl;
-
-    ball *= 2.0f;
-    double newOffsetX = 0.0, newOffsetY = 0.0;
-    NewCalculateTargetPosition(ball, newOffsetX, newOffsetY);
-    std::cout << "New Version - Ball: " << ball << ", Offset: (" << newOffsetX << ", " << newOffsetY << ")" << std::endl;
-
-    // Print the difference in offsets
-    std::cout << "Difference - Offset: (" << (newOffsetX - oldOffsetX) << ", " << (newOffsetY - oldOffsetY) << ")" << std::endl;
+    std::cerr << "No RTTaskManager found." << std::endl;
+  }
+  else
+  {
+    for (auto& taskManager : taskManagers)
+    {
+      std::cout << "Found RTTaskManager: " << taskManager.IdGet() << std::endl;
+      exitCode = 0; // Set exit code to success if we found a task manager
+    }
   }
 
   MiscHelpers::PrintFooter(EXECUTABLE_NAME, exitCode);

@@ -53,7 +53,7 @@ RSI_TASK(Initialize)
   RTMultiAxisGet(0)->Abort();
   RTMultiAxisGet(0)->ClearFaults();
   RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
-  RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskNO_WAIT);
+  RTMultiAxisGet(0)->MotionAttributeMaskOnSet(RSIMotionAttrMask::RSIMotionAttrMaskNO_WAIT);
   RTMultiAxisGet(0)->AmpEnableSet(true);
 
   // Set the initial target positions to the current positions

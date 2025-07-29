@@ -14,9 +14,9 @@
     <string>EStopJerkPercent=50</string>
     <string>TriggeredModifyDeceleration=0.00014901161193847656</string>
     <string>TriggeredModifyJerkPercent=50</string>
-    <string>DefaultVelocity=2</string>
-    <string>DefaultAcceleration=20</string>
-    <string>DefaultDeceleration=20</string>
+    <string>DefaultVelocity=10</string>
+    <string>DefaultAcceleration=1000</string>
+    <string>DefaultDeceleration=1000</string>
     <string>DefaultJerkPercent=50</string>
     <string>DefaultPosition1=0</string>
     <string>DefaultPosition2=0.1</string>
