@@ -29,7 +29,7 @@ namespace RMPHelpers {
   std::string RSIStateToString(const RSI::RapidCode::RSIState& state);
 
   // Create a RTTaskManager with a safe shared pointer that will automatically shutdown and delete the manager
-  RSI::RapidCode::RealTimeTasks::RTTaskManager CreateRTTaskManager (const std::string& userLabel = "");
+  RSI::RapidCode::RealTimeTasks::RTTaskManager CreateRTTaskManager (const std::string& userLabel = "", int cpuCore = CPU_CORE);
 
   // Submit an RTTask with a safe shared pointer that will automatically stop and delete the task
   RSI::RapidCode::RealTimeTasks::RTTask SubmitRTTask(

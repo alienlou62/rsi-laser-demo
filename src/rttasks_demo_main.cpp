@@ -118,7 +118,8 @@ int main()
   // --- RMP Initialization ---
   MotionController *controller = RMPHelpers::GetController();
   MultiAxis* multiAxis = controller->LoadExistingMultiAxis(RMPHelpers::NUM_AXES);
-  RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking"));
+  RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking", 6));
+  RTTaskManager motion_manager(RMPHelpers::CreateRTTaskManager("MotionControl", 7));
 
   try
   {
@@ -140,9 +141,15 @@ int main()
     }
 
     RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0);
-    RTTask motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 0, TaskPriority::High);
+    RTTask motionTask = SubmitRepeatingTask(motion_manager, "MoveMotors", MOVE_TASK_PERIOD, 0, TaskPriority::High);
     FirmwareValue motionEnabled = {.Bool = true};
     manager.GlobalValueSet(motionEnabled, "motionEnabled");
+
+    // Reset timing after they have run a few times
+    ballDetectionTask.ExecutionCountAbsoluteWait(5, TASK_WAIT_TIMEOUT);
+    ballDetectionTask.TimingReset();
+    motionTask.ExecutionCountAbsoluteWait(5, TASK_WAIT_TIMEOUT);
+    motionTask.TimingReset();
 
     // --- Main Loop ---
     while (!g_shutdown)
@@ -209,6 +216,7 @@ int main()
 
   // --- Cleanup ---
   manager.Shutdown();
+  motion_manager.Shutdown();
   multiAxis->Abort();
   multiAxis->ClearFaults();
 

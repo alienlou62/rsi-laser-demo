@@ -83,12 +83,12 @@ namespace RMPHelpers {
     return "UNKNOWN";
   }
 
-  RTTaskManager CreateRTTaskManager(const std::string &userLabel)
+  RTTaskManager CreateRTTaskManager(const std::string &userLabel, int cpuCore)
   {
     RTTaskManagerCreationParameters params;
     std::strncpy(params.RTTaskDirectory, RMP_PATH, sizeof(params.RTTaskDirectory));
     std::strncpy(params.UserLabel, userLabel.c_str(), sizeof(params.UserLabel));
-    params.CpuCore = CPU_CORE;
+    params.CpuCore = cpuCore;
 
     RTTaskManager manager(RTTaskManager::Create(params));
     CheckErrors(&manager);
