@@ -69,7 +69,6 @@
                             Text="Real-time Laser Ball Tracker" />
                     </StackPanel>
 
-                    <!--  Center  -->
                     <!--  Button container  -->
                     <StackPanel
                         Margin="0"
@@ -98,15 +97,16 @@
                         <Button
                             HorizontalAlignment="Stretch"
                             Classes="theme-soft danger"
-                            Command="{Binding ProgramStopCommand}">
+                            Command="{Binding ProgramStopCommand}"
+                            ToolTip.Tip="RTTaskManager.Shutdown(taskManagerId) ">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <icons:MaterialIcon Kind="Skull" />
-                                <TextBlock VerticalAlignment="Center" Text="Kill Tasks" />
+                                <TextBlock VerticalAlignment="Center" Text="Kill Program" />
                             </StackPanel>
                         </Button>
 
                         <!--  Pause/Resume button  -->
-                        <Panel IsVisible="{Binding IsProgramRunning}">
+                        <Panel IsVisible="False">
                             <!--  Pause  -->
                             <Button
                                 HorizontalAlignment="Stretch"
@@ -137,6 +137,57 @@
                                 </StackPanel>
                             </Button>
                         </Panel>
+
+                        <!--  Separator  -->
+                        <Border
+                            Width="1"
+                            Height="24"
+                            Margin="6,0"
+                            Background="{StaticResource SubtleTextBrush}"
+                            Opacity="0.1" />
+
+                        <!--  Motion Enable/Disable Toggle  -->
+                        <ToggleButton
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-soft"
+                            Classes.danger="{Binding !Program_IsMotionEnabled}"
+                            Classes.success="{Binding Program_IsMotionEnabled}"
+                            Command="{Binding ToggleProgramMotionEnabledCommand}"
+                            IsChecked="{Binding Program_IsMotionEnabled}"
+                            IsEnabled="{Binding Program_IsMotionEnabled, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            IsVisible="{Binding IsProgramRunning}"
+                            ToolTip.Tip="Enable/Disable Motion Control">
+                            <ToggleButton.Styles>
+                                <!--  Unchecked (Motion Disabled)  -->
+                                <Style Selector="ToggleButton">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="MotionPause" />
+                                                <TextBlock VerticalAlignment="Center" Text="Motion OFF" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                                <!--  Checked (Motion Enabled)  -->
+                                <Style Selector="ToggleButton:checked">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="MotionPlay" />
+                                                <TextBlock VerticalAlignment="Center" Text="Motion ON" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                            </ToggleButton.Styles>
+                        </ToggleButton>
 
                     </StackPanel>
 
@@ -345,7 +396,11 @@
                                     <TextBox
                                         HorizontalAlignment="Stretch"
                                         Text="{Binding IpAddress}"
-                                        ToolTip.Tip="IP Address" />
+                                        ToolTip.Tip="IP Address">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Command="{Binding ConnectCommand}" Gesture="Enter" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
                                 </controls:LabeledControl>
 
                                 <!--  Port  -->
@@ -356,7 +411,11 @@
                                     <TextBox
                                         HorizontalAlignment="Stretch"
                                         Text="{Binding Port}"
-                                        ToolTip.Tip="Port" />
+                                        ToolTip.Tip="Port">
+                                        <TextBox.KeyBindings>
+                                            <KeyBinding Command="{Binding ConnectCommand}" Gesture="Enter" />
+                                        </TextBox.KeyBindings>
+                                    </TextBox>
                                 </controls:LabeledControl>
 
                                 <!--  Connection Buttons  -->
@@ -564,97 +623,6 @@
                         Effect="{x:Null}">
                         <Grid Background="#000000">
 
-                            <!--  Trapezoidal button container at top center  -->
-                            <Border
-                                Margin="8,-1,8,8"
-                                Padding="5,1,5,5"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Top"
-                                BorderThickness="1,0,1,1"
-                                Classes="card"
-                                CornerRadius="0 0 2 2"
-                                Effect="{x:Null}"
-                                IsVisible="False"
-                                ZIndex="10">
-
-                                <StackPanel>
-                                    <TextBlock
-                                        Margin="0,-6,0,4"
-                                        HorizontalAlignment="Center"
-                                        FontSize="14"
-                                        FontWeight="SemiBold"
-                                        Foreground="{StaticResource TextBrush}"
-                                        IsVisible="False"
-                                        Text="Program" />
-
-                                    <!--  Button container  -->
-                                    <UniformGrid
-                                        Margin="0"
-                                        ColumnSpacing="6"
-                                        Columns="3">
-
-                                        <!--  Start button  -->
-                                        <Button
-                                            Width="46"
-                                            Height="29"
-                                            HorizontalAlignment="Stretch"
-                                            Classes="theme-solid success"
-                                            Command="{Binding ProgramRunCommand}"
-                                            FontWeight="SemiBold"
-                                            IsVisible="{Binding !IsProgramRunning}"
-                                            ToolTip.Tip="{Binding SshRunCommand}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <icons:MaterialIcon
-                                                    Width="20"
-                                                    Height="20"
-                                                    Kind="Play" />
-                                                <TextBlock IsVisible="False" Text=" Run" />
-                                            </StackPanel>
-                                        </Button>
-
-                                        <!--  Kill button  -->
-                                        <Button
-                                            Width="46"
-                                            Height="29"
-                                            HorizontalAlignment="Stretch"
-                                            Classes="theme-soft danger"
-                                            Command="{Binding ProgramStopCommand}"
-                                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
-                                            IsEnabled="{Binding IsProgramRunning}">
-                                            <icons:MaterialIcon Kind="Skull" />
-                                        </Button>
-
-                                        <!--  Pause/Resume button  -->
-                                        <Panel IsVisible="{Binding IsProgramRunning}">
-                                            <!--  Pause  -->
-                                            <Button
-                                                Width="28"
-                                                Height="24"
-                                                Padding="2"
-                                                HorizontalAlignment="Stretch"
-                                                Classes="theme-soft accent"
-                                                Command="{Binding ToggleMotionPauseCommand}"
-                                                IsVisible="{Binding !IsProgramPaused}">
-                                                <icons:MaterialIcon Kind="Pause" />
-                                            </Button>
-
-                                            <!--  Resume  -->
-                                            <Button
-                                                Width="28"
-                                                Height="24"
-                                                Padding="2"
-                                                HorizontalAlignment="Stretch"
-                                                Classes="theme-soft success"
-                                                Command="{Binding ToggleMotionPauseCommand}"
-                                                IsVisible="{Binding IsProgramPaused}">
-                                                <icons:MaterialIcon Kind="PlayOutline" />
-                                            </Button>
-                                        </Panel>
-
-                                    </UniformGrid>
-
-                                </StackPanel>
-                            </Border>
 
                             <!--  Disconnected State Message  -->
                             <StackPanel
@@ -686,16 +654,16 @@
                             <!--  Connected State - Camera Feeds  -->
                             <Grid ColumnDefinitions="*" IsVisible="{Binding IsConnected}">
 
-                                <!--  Camera feed placeholder (640x480 aspect ratio)  -->
+                                <!--  render feed (640x480 aspect ratio)  -->
                                 <Border Grid.Column="0" Margin="8">
                                     <Grid>
-                                        <!--  Simulated camera feed background  -->
+                                        <!--  render canvas background  -->
                                         <Rectangle
                                             Width="640"
                                             Height="480"
                                             Fill="#2A2A2A" />
 
-                                        <!--  Ball detection circle overlay  -->
+                                        <!--  render canvas  -->
                                         <Canvas Width="640" Height="480">
 
                                             <!--  rendred ball - red ball  -->
@@ -791,18 +759,6 @@
                                                     Foreground="{StaticResource TextBrush}"
                                                     IsChecked="{Binding IsSimulatingBallPosition}"
                                                     IsVisible="{Binding !IsConnected}" />
-
-                                                <!--  Enable Motion  -->
-                                                <CheckBox
-                                                    Margin="0,4,0,0"
-                                                    Classes="size-xs"
-                                                    Command="{Binding ToggleProgramMotionEnabledCommand}"
-                                                    CommandParameter="{Binding $self.IsChecked}"
-                                                    Content="Enable Motion"
-                                                    FontSize="12"
-                                                    Foreground="{StaticResource TextBrush}"
-                                                    IsChecked="{Binding Program_IsMotionEnabled}"
-                                                    IsEnabled="{Binding Program_IsMotionEnabled, Converter={x:Static ObjectConverters.IsNotNull}}" />
                                             </StackPanel>
                                         </Border>
                                     </Grid>

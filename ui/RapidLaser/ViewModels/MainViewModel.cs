@@ -240,17 +240,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 LogMessage("Stopping task manager...");
                 var result = await _rmp.StopTaskManagerAsync();
-                IsProgramRunning = !result;
-                ProgramStatus = IsProgramRunning ? "SHUTDOWN ERROR" : "";
-
-                if (IsProgramRunning)
-                {
-                    LogMessage("Program stop failed: Task manager shutdown error");
-                }
-                else
-                {
-                    LogMessage("Program stopped successfully");
-                }
             }
             else
             {
@@ -502,7 +491,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (!IsSimulatingBallPosition)
             {
                 //tm status
-                try { TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null; }
+                try
+                {
+                    TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+
+                    IsProgramRunning = TaskManagerStatus != null && TaskManagerStatus.State == RTTaskManagerState.Running;
+                }
                 catch { TaskManagerStatus = null; }
 
                 //tm globals

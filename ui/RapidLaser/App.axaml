@@ -168,11 +168,11 @@
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Effect">
                 <DropShadowEffect
-                    BlurRadius="6"
+                    BlurRadius="3"
                     OffsetX="0"
                     OffsetY="0"
-                    Opacity="0"
-                    Color="#000" />
+                    Opacity=".75"
+                    Color="#0a0a0a" />
             </Setter>
         </Style>
 
