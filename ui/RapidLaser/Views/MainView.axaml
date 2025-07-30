@@ -99,7 +99,7 @@
                             Classes="theme-soft danger"
                             Command="{Binding ProgramStopCommand}"
                             IsVisible="{Binding IsProgramRunning}"
-                            ToolTip.Tip="RTTaskManager.Shutdown(taskManagerId) ">
+                            ToolTip.Tip="RTTaskManager.Shutdown() ">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <icons:MaterialIcon Kind="Skull" />
                                 <TextBlock VerticalAlignment="Center" Text="Kill Program" />
@@ -625,8 +625,7 @@
                         Effect="{x:Null}">
                         <Grid Background="#000000">
 
-
-                            <!--  Disconnected State Message  -->
+                            <!--  Disconnected Card  -->
                             <StackPanel
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
@@ -654,115 +653,108 @@
                             </StackPanel>
 
                             <!--  Connected State - Camera Feeds  -->
-                            <Grid ColumnDefinitions="*" IsVisible="{Binding IsConnected}">
+                            <Grid IsVisible="{Binding IsConnected}">
 
                                 <!--  render feed (640x480 aspect ratio)  -->
-                                <Border Grid.Column="0" Margin="8">
+                                <Border
+                                    Grid.Column="0"
+                                    Margin="8"
+                                    Padding="5,1,5,2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="#40555555"
+                                    CornerRadius="4">
                                     <Grid>
-                                        <!--  render canvas background  -->
-                                        <Rectangle
-                                            Width="640"
-                                            Height="480"
-                                            Fill="#2A2A2A" />
 
-                                        <!--  render canvas  -->
-                                        <Canvas Width="640" Height="480">
+                                        <Grid RowDefinitions="* auto *" RowSpacing="2">
 
-                                            <!--  rendred ball - red ball  -->
-                                            <Ellipse
-                                                Fill="Red"
-                                                Stroke="#000"
-                                                StrokeThickness="1">
-                                                <Ellipse.Resources>
-                                                    <actipro:MathConverter x:Key="MathConverter" />
-                                                </Ellipse.Resources>
+                                            <TextBlock
+                                                FontWeight="Bold"
+                                                Foreground="#00FF00"
+                                                Text="RENDER FEED" />
 
-                                                <!--  ellipse/all size  -->
-                                                <Ellipse.Width>
-                                                    <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                        <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                    </MultiBinding>
-                                                </Ellipse.Width>
-                                                <Ellipse.Height>
-                                                    <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                        <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                    </MultiBinding>
-                                                </Ellipse.Height>
+                                            <!--  render canvas  -->
+                                            <Canvas
+                                                Grid.Row="1"
+                                                Width="640"
+                                                Height="480"
+                                                Background="#2A2A2A">
 
-                                                <!--  canvas position  -->
-                                                <Canvas.Left>
-                                                    <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                        <Binding FallbackValue="320" Path="Program_BallX" />
-                                                        <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                    </MultiBinding>
-                                                </Canvas.Left>
-                                                <Canvas.Top>
-                                                    <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                        <Binding FallbackValue="240" Path="Program_BallY" />
-                                                        <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                    </MultiBinding>
-                                                </Canvas.Top>
-                                            </Ellipse>
+                                                <!--  rendred ball - red ball  -->
+                                                <Ellipse
+                                                    Fill="Red"
+                                                    Stroke="#000"
+                                                    StrokeThickness="1">
+                                                    <Ellipse.Resources>
+                                                        <actipro:MathConverter x:Key="MathConverter" />
+                                                    </Ellipse.Resources>
 
-                                            <!--  Center crosshair  -->
-                                            <Line
-                                                Stroke="#333333"
-                                                StrokeDashArray="5,5"
-                                                StrokeThickness="1"
-                                                StartPoint="0,240"
-                                                EndPoint="640,240" />
-                                            <Line
-                                                Stroke="#333333"
-                                                StrokeDashArray="5,5"
-                                                StrokeThickness="1"
-                                                StartPoint="320,0"
-                                                EndPoint="320,480" />
+                                                    <!--  ellipse/all size  -->
+                                                    <Ellipse.Width>
+                                                        <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
+                                                            <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                        </MultiBinding>
+                                                    </Ellipse.Width>
+                                                    <Ellipse.Height>
+                                                        <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
+                                                            <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                        </MultiBinding>
+                                                    </Ellipse.Height>
 
-                                        </Canvas>
+                                                    <!--  canvas position  -->
+                                                    <Canvas.Left>
+                                                        <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
+                                                            <Binding FallbackValue="320" Path="Program_BallX" />
+                                                            <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                        </MultiBinding>
+                                                    </Canvas.Left>
+                                                    <Canvas.Top>
+                                                        <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
+                                                            <Binding FallbackValue="240" Path="Program_BallY" />
+                                                            <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                        </MultiBinding>
+                                                    </Canvas.Top>
+                                                </Ellipse>
 
-                                        <!--  Overlay info  -->
-                                        <Border
-                                            Margin="12"
-                                            Padding="8"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Top"
-                                            Background="#80000000">
-                                            <StackPanel>
+                                                <!--  Center crosshair  -->
+                                                <Line
+                                                    Stroke="#333333"
+                                                    StrokeDashArray="5,5"
+                                                    StrokeThickness="1"
+                                                    StartPoint="0,240"
+                                                    EndPoint="640,240" />
+                                                <Line
+                                                    Stroke="#333333"
+                                                    StrokeDashArray="5,5"
+                                                    StrokeThickness="1"
+                                                    StartPoint="320,0"
+                                                    EndPoint="320,480" />
+
+                                            </Canvas>
+
+                                            <StackPanel
+                                                Grid.Row="2"
+                                                Margin="0,2,0,0"
+                                                Orientation="Horizontal">
                                                 <TextBlock
-                                                    FontSize="12"
-                                                    FontWeight="Bold"
-                                                    Foreground="#00FF00"
-                                                    Text="CAMERA FEED" />
-                                                <StackPanel Spacing="0">
-                                                    <TextBlock
-                                                        FontSize="10"
-                                                        Foreground="{StaticResource TextBrush}"
-                                                        Text="Ball Coordinates" />
-                                                    <TextBlock
-                                                        FontSize="12"
-                                                        Foreground="{StaticResource TextBrush}"
-                                                        Text="{Binding Program_BallX, StringFormat='{}X: {0:F0}'}" />
-                                                    <TextBlock
-                                                        FontSize="12"
-                                                        Foreground="{StaticResource TextBrush}"
-                                                        Text="{Binding Program_BallY, StringFormat='{}Y: {0:F0}'}" />
-                                                    <TextBlock
-                                                        FontSize="12"
-                                                        Foreground="{StaticResource TextBrush}"
-                                                        IsVisible="False"
-                                                        Text="{Binding DetectionConfidence, StringFormat='{}Confidence: {0:F0}%'}" />
-                                                </StackPanel>
-
-                                                <!--  Simulation Toggle  -->
-                                                <CheckBox
-                                                    Margin="0,4,0,0"
-                                                    Content="Simulate"
-                                                    FontSize="10"
+                                                    MinWidth="80"
+                                                    Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    IsChecked="{Binding IsSimulatingBallPosition}"
-                                                    IsVisible="{Binding !IsConnected}" />
+                                                    Text="{Binding Program_BallX, StringFormat='{}X: {0:F0}'}" />
+                                                <TextBlock
+                                                    MinWidth="80"
+                                                    Classes="Mono"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="{Binding Program_BallY, StringFormat='{}Y: {0:F0}'}" />
+                                                <TextBlock
+                                                    MinWidth="80"
+                                                    Classes="Mono"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="{Binding Program_BallRadius, StringFormat='{}Radius: {0:F0}'}" />
                                             </StackPanel>
-                                        </Border>
+
+                                        </Grid>
+
                                     </Grid>
                                 </Border>
 

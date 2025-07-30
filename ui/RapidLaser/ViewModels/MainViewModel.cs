@@ -97,13 +97,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     //program maps (these hold global values)
     [ObservableProperty]
-    private double? _program_BallX;
+    private double? _program_BallX = 320.0; // Default center position
 
     [ObservableProperty]
-    private double? _program_BallY;
+    private double? _program_BallY = 240.0; // Default center position
 
     [ObservableProperty]
-    private double? _program_BallRadius;
+    private double? _program_BallRadius = 10.0; // Default radius
 
     [ObservableProperty]
     private bool? _program_IsMotionEnabled;
