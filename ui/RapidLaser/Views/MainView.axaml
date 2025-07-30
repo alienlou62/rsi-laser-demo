@@ -98,6 +98,7 @@
                             HorizontalAlignment="Stretch"
                             Classes="theme-soft danger"
                             Command="{Binding ProgramStopCommand}"
+                            IsVisible="{Binding IsProgramRunning}"
                             ToolTip.Tip="RTTaskManager.Shutdown(taskManagerId) ">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <icons:MaterialIcon Kind="Skull" />
@@ -144,6 +145,7 @@
                             Height="24"
                             Margin="6,0"
                             Background="{StaticResource SubtleTextBrush}"
+                            IsVisible="{Binding IsProgramRunning}"
                             Opacity="0.1" />
 
                         <!--  Motion Enable/Disable Toggle  -->
