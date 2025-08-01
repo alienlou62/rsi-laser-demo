@@ -6,6 +6,7 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     <Platforms>AnyCPU;x64</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   
   <ItemGroup>
@@ -34,6 +35,7 @@
 		<Protobuf Include="$(RSIProtoPath)\rsienums.proto" GrpcServices="Client">
 			<Link>Assets\protos\rsienums.proto</Link>
 		</Protobuf>
+		<Protobuf Include="Assets\protos\camera_streaming.proto" GrpcServices="Client" />
 	</ItemGroup>
 
   <ItemGroup>

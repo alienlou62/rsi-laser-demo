@@ -30,7 +30,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /** FIELDS **/
     //polling
     private double _updateIntervalMs = 100;
-    private System.Timers.Timer _updateTimer;
+    private System.Timers.Timer? _updateTimer;
     private readonly Random _random = new();
 
     //rmp
@@ -128,11 +128,38 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private double _frameRate = 30.0;
 
+    [ObservableProperty] 
+    private double _cameraFps = 0.0;
+
+    [ObservableProperty]
+    private int _cameraFrameCount = 0;
+
     [ObservableProperty]
     private int _binaryThreshold = 128;
 
     [ObservableProperty]
     private int _objectsDetected = 1;
+
+    [ObservableProperty]
+    private WriteableBitmap? _cameraImage;
+    partial void OnCameraImageChanged(WriteableBitmap? value)
+    {
+        OnPropertyChanged(nameof(CameraImageSource));
+    }
+
+    // Alias for XAML binding compatibility
+    public WriteableBitmap? CameraImageSource => CameraImage;
+
+    [ObservableProperty]
+    private bool _isCameraStreaming = false;
+
+    [ObservableProperty]
+    private string _cameraStatus = "Disconnected";
+
+    [ObservableProperty]
+    private WriteableBitmap? _maskImage;
+
+    private CancellationTokenSource? _cameraStreamCancellation;
 
     //server
     [ObservableProperty]
@@ -298,6 +325,75 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     }
 
+    //camera
+    [RelayCommand]
+    private async Task StartCameraStreamAsync()
+    {
+        if (IsCameraStreaming) return;
+
+        try
+        {
+            // Initialize camera service
+            if (!_cameraService.IsInitialized)
+            {
+                CameraStatus = "Initializing...";
+                var initialized = await _cameraService.InitializeAsync();
+                if (!initialized)
+                {
+                    CameraStatus = "Failed to initialize";
+                    LogMessage("Camera: Failed to initialize gRPC camera service");
+                    return;
+                }
+            }
+
+            // Start grabbing frames
+            var started = await _cameraService.StartGrabbingAsync();
+            if (!started)
+            {
+                CameraStatus = "Failed to start";
+                LogMessage("Camera: Failed to start grabbing frames");
+                return;
+            }
+
+            IsCameraStreaming = true;
+            CameraStatus = "Streaming";
+            _cameraStreamCancellation = new CancellationTokenSource();
+
+            LogMessage("Camera: Started streaming");
+
+            // Start streaming frames
+            _ = Task.Run(async () => await StreamCameraFramesAsync(_cameraStreamCancellation.Token));
+        }
+        catch (Exception ex)
+        {
+            CameraStatus = $"Error: {ex.Message}";
+            LogMessage($"Camera Start Error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task StopCameraStreamAsync()
+    {
+        if (!IsCameraStreaming) return;
+
+        try
+        {
+            _cameraStreamCancellation?.Cancel();
+            await _cameraService.StopGrabbingAsync();
+            
+            IsCameraStreaming = false;
+            CameraStatus = "Stopped";
+            CameraImage = null;
+            MaskImage = null;
+
+            LogMessage("Camera: Stopped streaming");
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Camera Stop Error: {ex.Message}");
+        }
+    }
+
     //connection
     [RelayCommand]
     private async Task ConnectAsync()
@@ -376,6 +472,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            // Stop camera streaming if active
+            if (IsCameraStreaming)
+            {
+                await StopCameraStreamAsync();
+            }
+
             await _connectionManager.DisconnectAsync();
             IsConnected = false;
             IsSshAuthenticated = false;
@@ -469,8 +571,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         //services
         _connectionManager      = new ConnectionManagerService();
-        _cameraService          = new SimulatedCameraService();
-        _imageProcessingService = new SimulatedImageProcessingService();
+        _cameraService          = new GrpcCameraService(); // Use gRPC camera service
+        _imageProcessingService = new GrpcImageProcessingService(); // Use gRPC image processing service
 
         //connection
         UseMockService = _connectionManager.UseMockService;
@@ -539,6 +641,263 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         LogOutput += $"[{timestamp}] {message}\n";
+    }
+
+    //camera streaming
+    private async Task StreamCameraFramesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (_cameraService is not GrpcCameraService grpcCamera)
+            {
+                LogMessage("Camera: Service is not gRPC-enabled");
+                return;
+            }
+
+            // Use the streaming method from GrpcCameraService
+            await foreach (var frame in grpcCamera.StreamFramesAsync(
+                maxFps: (int)FrameRate, 
+                format: Rsi.Camera.ImageFormat.FormatRgb, 
+                quality: 85, 
+                cancellationToken: cancellationToken))
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                await ProcessCameraFrameAsync(frame);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when streaming is cancelled
+        }
+        catch (Exception ex)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                CameraStatus = $"Stream Error: {ex.Message}";
+                LogMessage($"Camera Stream Error: {ex.Message}");
+            });
+        }
+    }
+
+    private async Task ProcessCameraFrameAsync(Rsi.Camera.CameraFrame frame)
+    {
+        try
+        {
+            // Process the frame to get ball detection results
+            var detectionResult = await ((GrpcImageProcessingService)_imageProcessingService)
+                .ProcessCameraFrameAsync(frame);
+
+            // Update UI on the main thread
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                // Update detection properties
+                ObjectsDetected = detectionResult.ObjectsDetected;
+                DetectionConfidence = detectionResult.Confidence;
+
+                // Update ball position if detected
+                if (detectionResult.BallDetected)
+                {
+                    Program_BallX = detectionResult.CenterX;
+                    Program_BallY = detectionResult.CenterY;
+                    Program_BallRadius = Math.Sqrt(detectionResult.OffsetX * detectionResult.OffsetX + 
+                                                  detectionResult.OffsetY * detectionResult.OffsetY);
+                }
+
+                // Create camera image bitmap
+                if (frame.ImageData?.Length > 0)
+                {
+                    CameraImage = CreateBitmapFromImageData(
+                        frame.ImageData.ToByteArray(), 
+                        frame.Width, 
+                        frame.Height, 
+                        frame.Format);
+                }
+
+                // Create mask image bitmap if available
+                if (detectionResult.MaskImageData?.Length > 0)
+                {
+                    MaskImage = CreateBitmapFromMaskData(
+                        detectionResult.MaskImageData, 
+                        frame.Width, 
+                        frame.Height);
+                }
+
+                // Update frame rate
+                FrameRate = CalculateFrameRate();
+            });
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Camera Frame Processing Error: {ex.Message}");
+        }
+    }
+
+    private unsafe WriteableBitmap? CreateBitmapFromImageData(byte[] imageData, int width, int height, Rsi.Camera.ImageFormat format)
+    {
+        try
+        {
+            var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+
+            using (var buffer = bitmap.Lock())
+            {
+                var bufferSize = width * height * 4; // 4 bytes per pixel for BGRA
+                var span = new Span<byte>(buffer.Address.ToPointer(), bufferSize);
+
+                switch (format)
+                {
+                    case Rsi.Camera.ImageFormat.FormatRgb:
+                        ConvertRgbToBgra(imageData, span, width, height);
+                        break;
+                    case Rsi.Camera.ImageFormat.FormatYuyv:
+                        ConvertYuyvToBgra(imageData, span, width, height);
+                        break;
+                    default:
+                        // For other formats, try to decode as is or show placeholder
+                        LogMessage($"Unsupported image format: {format}");
+                        return null;
+                }
+            }
+
+            return bitmap;
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Bitmap Creation Error: {ex.Message}");
+            return null;
+        }
+    }
+
+    private unsafe WriteableBitmap? CreateBitmapFromMaskData(byte[] maskData, int width, int height)
+    {
+        try
+        {
+            var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
+
+            using (var buffer = bitmap.Lock())
+            {
+                var bufferSize = width * height * 4; // 4 bytes per pixel for BGRA
+                var span = new Span<byte>(buffer.Address.ToPointer(), bufferSize);
+                ConvertMaskToBgra(maskData, span, width, height);
+            }
+
+            return bitmap;
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Mask Bitmap Creation Error: {ex.Message}");
+            return null;
+        }
+    }
+
+    private static void ConvertRgbToBgra(byte[] rgbData, Span<byte> bgraSpan, int width, int height)
+    {
+        int rgbIndex = 0;
+        int bgraIndex = 0;
+
+        for (int i = 0; i < width * height; i++)
+        {
+            if (rgbIndex + 2 < rgbData.Length && bgraIndex + 3 < bgraSpan.Length)
+            {
+                bgraSpan[bgraIndex] = rgbData[rgbIndex + 2];     // B
+                bgraSpan[bgraIndex + 1] = rgbData[rgbIndex + 1]; // G
+                bgraSpan[bgraIndex + 2] = rgbData[rgbIndex];     // R
+                bgraSpan[bgraIndex + 3] = 255;                   // A
+            }
+            
+            rgbIndex += 3;
+            bgraIndex += 4;
+        }
+    }
+
+    private static void ConvertYuyvToBgra(byte[] yuyvData, Span<byte> bgraSpan, int width, int height)
+    {
+        // Simple YUYV to RGB conversion (basic implementation)
+        int yuyvIndex = 0;
+        int bgraIndex = 0;
+
+        for (int i = 0; i < width * height / 2; i++)
+        {
+            if (yuyvIndex + 3 < yuyvData.Length && bgraIndex + 7 < bgraSpan.Length)
+            {
+                byte y1 = yuyvData[yuyvIndex];
+                byte u = yuyvData[yuyvIndex + 1];
+                byte y2 = yuyvData[yuyvIndex + 2];
+                byte v = yuyvData[yuyvIndex + 3];
+
+                // Convert YUV to RGB for both pixels
+                ConvertYuvToRgb(y1, u, v, out byte r1, out byte g1, out byte b1);
+                ConvertYuvToRgb(y2, u, v, out byte r2, out byte g2, out byte b2);
+
+                // First pixel
+                bgraSpan[bgraIndex] = b1;
+                bgraSpan[bgraIndex + 1] = g1;
+                bgraSpan[bgraIndex + 2] = r1;
+                bgraSpan[bgraIndex + 3] = 255;
+
+                // Second pixel
+                bgraSpan[bgraIndex + 4] = b2;
+                bgraSpan[bgraIndex + 5] = g2;
+                bgraSpan[bgraIndex + 6] = r2;
+                bgraSpan[bgraIndex + 7] = 255;
+            }
+
+            yuyvIndex += 4;
+            bgraIndex += 8;
+        }
+    }
+
+    private static void ConvertYuvToRgb(byte y, byte u, byte v, out byte r, out byte g, out byte b)
+    {
+        int c = y - 16;
+        int d = u - 128;
+        int e = v - 128;
+
+        int red = (298 * c + 409 * e + 128) >> 8;
+        int green = (298 * c - 100 * d - 208 * e + 128) >> 8;
+        int blue = (298 * c + 516 * d + 128) >> 8;
+
+        r = (byte)Math.Clamp(red, 0, 255);
+        g = (byte)Math.Clamp(green, 0, 255);
+        b = (byte)Math.Clamp(blue, 0, 255);
+    }
+
+    private static void ConvertMaskToBgra(byte[] maskData, Span<byte> bgraSpan, int width, int height)
+    {
+        int maskIndex = 0;
+        int bgraIndex = 0;
+
+        for (int i = 0; i < width * height; i++)
+        {
+            if (maskIndex < maskData.Length && bgraIndex + 3 < bgraSpan.Length)
+            {
+                byte maskValue = maskData[maskIndex];
+                // Show mask as semi-transparent green overlay
+                bgraSpan[bgraIndex] = 0;                    // B
+                bgraSpan[bgraIndex + 1] = maskValue;        // G  
+                bgraSpan[bgraIndex + 2] = 0;                // R
+                bgraSpan[bgraIndex + 3] = (byte)(maskValue / 2); // A (semi-transparent)
+            }
+            
+            maskIndex++;
+            bgraIndex += 4;
+        }
+    }
+
+    private DateTime _lastFrameTime = DateTime.Now;
+    private double _currentFrameRate = 0;
+
+    private double CalculateFrameRate()
+    {
+        var now = DateTime.Now;
+        var elapsed = (now - _lastFrameTime).TotalSeconds;
+        if (elapsed > 0)
+        {
+            _currentFrameRate = 1.0 / elapsed;
+        }
+        _lastFrameTime = now;
+        return _currentFrameRate;
     }
 
     //globals
@@ -769,6 +1128,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Global_BallY      = settings["global_BallY"] ?? "";
         Global_BallRadius = settings["global_BallRadius"] ?? "";
         Global_IsMotionEnabled = settings["global_IsMotionEnabled"] ?? "";
+
+        //camera
+        FrameRate = double.TryParse(settings["camera_FrameRate"], out var frameRate) ? frameRate : 30.0;
+        BinaryThreshold = int.TryParse(settings["camera_BinaryThreshold"], out var threshold) ? threshold : 128;
     }
 
     private void StorageSave()
@@ -794,7 +1157,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     global_BallX = Global_BallX,
                     global_BallY = Global_BallY,
                     global_BallRadius = Global_BallRadius,
-                    global_IsMotionEnabled = Global_IsMotionEnabled
+                    global_IsMotionEnabled = Global_IsMotionEnabled,
+
+                    //camera
+                    camera_FrameRate = FrameRate.ToString(),
+                    camera_BinaryThreshold = BinaryThreshold.ToString()
                 }
             };
 
@@ -903,6 +1270,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         _updateTimer?.Stop();
         _updateTimer?.Dispose();
+
+        // Clean up camera streaming
+        _cameraStreamCancellation?.Cancel();
+        _cameraService?.Dispose();
 
         GC.SuppressFinalize(this);
     }

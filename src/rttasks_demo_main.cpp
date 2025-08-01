@@ -2,6 +2,7 @@
 #include <cmath>
 #include <csignal>
 #include <iostream>
+#include <thread>
 
 #include <pylon/PylonIncludes.h>
 
@@ -12,6 +13,7 @@
 #include "misc_helpers.h"
 #include "rmp_helpers.h"
 #include "camera_helpers.h"
+#include "camera_grpc_server.h"
 
 using namespace Pylon;
 
@@ -137,6 +139,17 @@ int main()
     {
       std::cerr << "Error: MultiAxis is not ready." << std::endl;
       return -1;
+    }
+
+    // --- Start gRPC Camera Server ---
+    CameraGrpcServer::CameraStreamServer grpcServer;
+    std::string serverAddress = "0.0.0.0:50061";
+    
+    if (!grpcServer.Start(serverAddress, &manager)) {
+      std::cerr << "Warning: Failed to start gRPC camera server on " << serverAddress << std::endl;
+      // Continue without gRPC server - this is not fatal
+    } else {
+      std::cout << "gRPC camera server started successfully on " << serverAddress << std::endl;
     }
 
     RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0);

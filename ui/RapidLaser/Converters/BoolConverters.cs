@@ -286,6 +286,26 @@ public static class BoolConverters
     /// </summary>
     public static readonly FuncValueConverter<bool, string> BoolToSizeInfoConverter =
         new(isResponsive => isResponsive ? "640×480 (Responsive)" : "640×480");
+
+    /// <summary>
+    /// Converts boolean to Yes/No string
+    /// </summary>
+    public static readonly FuncValueConverter<bool, string> BoolToYesNoConverter =
+        new(value => value ? "Yes" : "No");
+
+    /// <summary>
+    /// Converts boolean to streaming status string
+    /// </summary>
+    public static readonly FuncValueConverter<bool, string> BoolToStreamingStatusConverter =
+        new(isStreaming => isStreaming ? "Streaming" : "Stopped");
+
+    /// <summary>
+    /// Converts boolean to success/danger brush for status display
+    /// </summary>
+    public static readonly FuncValueConverter<bool, IBrush> BoolToSuccessDangerBrushConverter =
+        new(isSuccess => isSuccess
+            ? new SolidColorBrush(Color.FromRgb(76, 175, 80))   // Green for success
+            : new SolidColorBrush(Color.FromRgb(244, 67, 54))); // Red for danger
 }
 
 public static class StringConverters

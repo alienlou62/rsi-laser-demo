@@ -8,9 +8,11 @@
 #include "image_processing.h"
 #include "motion_control.h"
 #include "rmp_helpers.h"
+#include "camera_grpc_server.h"
 
 #include <iostream>
 #include <string>
+#include <chrono>
 
 using namespace Pylon;
 
@@ -100,6 +102,25 @@ RSI_TASK(DetectBall)
 
   // If frame grab failed due to a timeout, exit early but do not increment failure count
   if (!frameGrabbed) return;
+
+  // Store image data for gRPC streaming
+  size_t imageSize = g_ptrGrabResult->GetPayloadSize();
+  CameraGrpcServer::ImageBuffer& imgBuffer = CameraGrpcServer::ImageBuffer::GetInstance();
+  if (imgBuffer.IsInitialized()) {
+    static uint32_t sequenceNumber = 0;
+    sequenceNumber++;
+    
+    if (imgBuffer.StoreImage(g_ptrGrabResult->GetBuffer(), imageSize, sequenceNumber)) {
+      // Update image streaming globals
+      data->newImageAvailable = true;
+      data->frameTimestamp = std::chrono::duration_cast<std::chrono::microseconds>(
+          std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+      data->imageWidth = CameraHelpers::IMAGE_WIDTH;
+      data->imageHeight = CameraHelpers::IMAGE_HEIGHT;
+      data->imageSequenceNumber = sequenceNumber;
+      data->imageDataSize = static_cast<uint32_t>(imageSize);
+    }
+  }
 
   // Record the axis positions at the time of frame grab
   double initialX(RTAxisGet(0)->ActualPositionGet());

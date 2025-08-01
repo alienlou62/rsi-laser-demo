@@ -540,6 +540,104 @@
                     </StackPanel>
                 </Border>
 
+                <!--  Camera Card  -->
+                <Border Classes="card" IsEnabled="{Binding IsConnected}">
+
+                    <StackPanel Spacing="8">
+                        <Grid Margin="0,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock
+                                Grid.Column="0"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Foreground="{StaticResource TextBrush}"
+                                Text="Camera Stream" />
+
+                            <icons:MaterialIcon
+                                Grid.Column="1"
+                                Width="17"
+                                Height="17"
+                                VerticalAlignment="Center"
+                                Classes.is-camera-streaming="{Binding IsCameraStreaming}"
+                                Classes.is-camera-not-streaming="{Binding !IsCameraStreaming}">
+                                <icons:MaterialIcon.Styles>
+                                    <Style Selector="icons|MaterialIcon.is-camera-streaming">
+                                        <Setter Property="Kind" Value="VideoCheck" />
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                    </Style>
+                                    <Style Selector="icons|MaterialIcon.is-camera-not-streaming">
+                                        <Setter Property="Kind" Value="VideoOff" />
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                    </Style>
+                                </icons:MaterialIcon.Styles>
+                            </icons:MaterialIcon>
+                        </Grid>
+
+                        <StackPanel IsVisible="{Binding IsConnected}" Spacing="8">
+
+                            <!--  Camera Status  -->
+                            <controls:LabeledControl
+                                Label="Status"
+                                LabelWidth="60">
+                                <TextBlock 
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center"
+                                    Foreground="{Binding IsCameraStreaming, Converter={x:Static converters:BoolConverters.BoolToSuccessDangerBrushConverter}}"
+                                    Text="{Binding IsCameraStreaming, Converter={x:Static converters:BoolConverters.BoolToStreamingStatusConverter}}" />
+                            </controls:LabeledControl>
+
+                            <!--  Camera FPS  -->
+                            <controls:LabeledControl
+                                Label="FPS"
+                                LabelWidth="60">
+                                <TextBlock 
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center"
+                                    Text="{Binding CameraFps, StringFormat='{}{0:F1}', FallbackValue='0.0'}" />
+                            </controls:LabeledControl>
+
+                            <!--  Start/Stop Camera Button  -->
+                            <Button
+                                Margin="0,2,0,0"
+                                HorizontalAlignment="Right"
+                                Classes="theme-soft success"
+                                Command="{Binding StartCameraStreamCommand}"
+                                IsEnabled="{Binding IsConnected}"
+                                IsVisible="{Binding !IsCameraStreaming}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icons:MaterialIcon
+                                        Width="16"
+                                        Height="16"
+                                        Kind="VideoOutline" />
+                                    <TextBlock Text="Start Camera" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button
+                                Margin="0,2,0,0"
+                                HorizontalAlignment="Right"
+                                Classes="theme-soft danger"
+                                Command="{Binding StopCameraStreamCommand}"
+                                IsEnabled="{Binding IsConnected}"
+                                IsVisible="{Binding IsCameraStreaming}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <icons:MaterialIcon
+                                        Width="16"
+                                        Height="16"
+                                        Kind="VideoOffOutline" />
+                                    <TextBlock Text="Stop Camera" />
+                                </StackPanel>
+                            </Button>
+
+                        </StackPanel>
+
+                    </StackPanel>
+                </Border>
+
             </StackPanel>
 
             <!--  Output Card  -->
@@ -851,15 +949,62 @@
                                                     Height="480"
                                                     Background="#1A1A1A">
 
-                                                    <!--  Placeholder for camera image  -->
+                                                    <!--  Camera Image Display  -->
+                                                    <Image
+                                                        Name="CameraImage"
+                                                        Width="640"
+                                                        Height="480"
+                                                        Canvas.Left="0"
+                                                        Canvas.Top="0"
+                                                        Source="{Binding CameraImageSource}"
+                                                        Stretch="UniformToFill" />
+
+                                                    <!--  Ball Detection Overlay - only when ball is detected  -->
+                                                    <Ellipse
+                                                        Fill="Transparent"
+                                                        Stroke="Lime"
+                                                        StrokeThickness="3"
+                                                        IsVisible="{Binding Program_BallRadius, Converter={x:Static ObjectConverters.IsNotNull}}">
+
+                                                        <!--  ellipse size (diameter = radius * 2)  -->
+                                                        <Ellipse.Width>
+                                                            <Binding
+                                                                Converter="{x:Static converters:BoolConverters.RadiusToDiameterConverter}"
+                                                                FallbackValue="10"
+                                                                Path="Program_BallRadius" />
+                                                        </Ellipse.Width>
+                                                        <Ellipse.Height>
+                                                            <Binding
+                                                                Converter="{x:Static converters:BoolConverters.RadiusToDiameterConverter}"
+                                                                FallbackValue="10"
+                                                                Path="Program_BallRadius" />
+                                                        </Ellipse.Height>
+
+                                                        <!--  canvas position (center - radius for top-left positioning)  -->
+                                                        <Canvas.Left>
+                                                            <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
+                                                                <Binding FallbackValue="320" Path="Program_BallX" />
+                                                                <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                            </MultiBinding>
+                                                        </Canvas.Left>
+                                                        <Canvas.Top>
+                                                            <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
+                                                                <Binding FallbackValue="240" Path="Program_BallY" />
+                                                                <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                            </MultiBinding>
+                                                        </Canvas.Top>
+                                                    </Ellipse>
+
+                                                    <!--  Placeholder when no camera feed  -->
                                                     <Rectangle
                                                         Width="640"
                                                         Height="480"
                                                         Fill="#222222"
+                                                        IsVisible="{Binding CameraImageSource, Converter={x:Static ObjectConverters.IsNull}}"
                                                         Stroke="#80444444"
                                                         StrokeThickness="1" />
 
-                                                    <!--  Placeholder text  -->
+                                                    <!--  Placeholder text when no camera feed  -->
                                                     <TextBlock
                                                         Canvas.Left="320"
                                                         Canvas.Top="235"
@@ -867,23 +1012,25 @@
                                                         VerticalAlignment="Center"
                                                         FontSize="16"
                                                         Foreground="{StaticResource SubtleTextBrush}"
-                                                        IsVisible="False"
+                                                        IsVisible="{Binding CameraImageSource, Converter={x:Static ObjectConverters.IsNull}}"
                                                         Opacity="0.6"
-                                                        Text="CAMERA FEED"
+                                                        Text="NO CAMERA FEED"
                                                         TextAlignment="Center">
                                                         <TextBlock.RenderTransform>
-                                                            <TranslateTransform X="-50" Y="-8" />
+                                                            <TranslateTransform X="-70" Y="-8" />
                                                         </TextBlock.RenderTransform>
                                                     </TextBlock>
 
-                                                    <!--  Center crosshair  -->
+                                                    <!--  Center crosshair - shown when no camera feed  -->
                                                     <Line
+                                                        IsVisible="{Binding CameraImageSource, Converter={x:Static ObjectConverters.IsNull}}"
                                                         Stroke="#80444444"
                                                         StrokeDashArray="5,5"
                                                         StrokeThickness="1"
                                                         StartPoint="0,240"
                                                         EndPoint="640,240" />
                                                     <Line
+                                                        IsVisible="{Binding CameraImageSource, Converter={x:Static ObjectConverters.IsNull}}"
                                                         Stroke="#80444444"
                                                         StrokeDashArray="5,5"
                                                         StrokeThickness="1"
@@ -900,18 +1047,33 @@
                                                 <TextBlock
                                                     MinWidth="80"
                                                     Classes="Mono"
-                                                    Foreground="{StaticResource TextBrush}"
-                                                    Text="Live: No" />
+                                                    Foreground="{StaticResource TextBrush}">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="Live: {0}">
+                                                            <Binding Path="IsCameraStreaming" Converter="{x:Static converters:BoolConverters.BoolToYesNoConverter}" FallbackValue="No" />
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
                                                 <TextBlock
                                                     MinWidth="80"
                                                     Classes="Mono"
-                                                    Foreground="{StaticResource TextBrush}"
-                                                    Text="FPS: 0" />
+                                                    Foreground="{StaticResource TextBrush}">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="FPS: {0:F1}">
+                                                            <Binding Path="CameraFps" FallbackValue="0" />
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
                                                 <TextBlock
                                                     MinWidth="80"
                                                     Classes="Mono"
-                                                    Foreground="{StaticResource TextBrush}"
-                                                    Text="Frame: -" />
+                                                    Foreground="{StaticResource TextBrush}">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="Frame: {0}">
+                                                            <Binding Path="CameraFrameCount" FallbackValue="-" />
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
                                             </StackPanel>
 
                                         </Grid>
