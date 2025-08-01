@@ -654,11 +654,15 @@
                             </StackPanel>
 
                             <!--  Connected State - Camera Feeds  -->
-                            <Grid ColumnDefinitions="* *" IsVisible="{Binding IsConnected}">
+                            <Grid
+                                ClipToBounds="True"
+                                ColumnDefinitions="*, Auto, *, Auto, *"
+                                Grid.IsSharedSizeScope="True"
+                                IsVisible="{Binding IsConnected}">
 
                                 <!--  Responsive/Fixed toggle at top right with black background  -->
                                 <Border
-                                    Grid.ColumnSpan="2"
+                                    Grid.ColumnSpan="5"
                                     Margin="0"
                                     Padding="8"
                                     HorizontalAlignment="Right"
@@ -679,10 +683,13 @@
                                     </StackPanel>
                                 </Border>
 
+                                <!--  Left spacing column  -->
+                                <Border Grid.Column="0" />
+
                                 <!--  render feed (640x480 aspect ratio)  -->
                                 <Border
-                                    Grid.Column="0"
-                                    Margin="8"
+                                    Grid.Column="1"
+                                    Margin="8,8,4,8"
                                     Padding="4,0,4,2"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
@@ -799,10 +806,13 @@
                                     </Grid>
                                 </Border>
 
+                                <!--  Middle spacing column  -->
+                                <Border Grid.Column="2" />
+
                                 <!--  camera feed (640x480 aspect ratio)  -->
                                 <Border
-                                    Grid.Column="1"
-                                    Margin="8"
+                                    Grid.Column="3"
+                                    Margin="4,8,8,8"
                                     Padding="4,0,4,2"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
@@ -908,6 +918,9 @@
 
                                     </Grid>
                                 </Border>
+
+                                <!--  Right spacing column  -->
+                                <Border Grid.Column="4" />
 
                             </Grid>
                         </Grid>

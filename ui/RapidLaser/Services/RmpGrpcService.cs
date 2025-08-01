@@ -49,7 +49,7 @@ public class RmpGrpcService : IRmpGrpcService
 
             // Check if the channel is valid
             _serverClient = new ServerControlServiceClient(_channel);
-            var reply = await _serverClient.GetInfoAsync(new(), options: new CallOptions(deadline: DateTime.UtcNow.AddSeconds(2)));
+            var reply = await _serverClient.GetInfoAsync(new(), options: new CallOptions(deadline: DateTime.UtcNow.AddSeconds(5)));
 
             _isConnected = (reply != null);
 
@@ -116,7 +116,7 @@ public class RmpGrpcService : IRmpGrpcService
             {
                 Action = new RTTaskManagerAction { Discover = new() },
                 Header = infoOptimizationHeader
-            }, 
+            },
                 options: new CallOptions(deadline: DateTime.UtcNow.AddSeconds(10))
             );
 
@@ -134,7 +134,7 @@ public class RmpGrpcService : IRmpGrpcService
         var status = response.Status;
         return status;
     }
-    
+
     public async Task<bool> StopTaskManagerAsync()
     {
         if (!_isConnected)
