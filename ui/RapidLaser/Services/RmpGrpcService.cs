@@ -49,7 +49,7 @@ public class RmpGrpcService : IRmpGrpcService
 
             // Check if the channel is valid
             _serverClient = new ServerControlServiceClient(_channel);
-            var reply = await _serverClient.GetInfoAsync(new(), options: new CallOptions(deadline: DateTime.UtcNow.AddSeconds(5)));
+            var reply = await _serverClient.GetInfoAsync(new(), options: new CallOptions(deadline: DateTime.UtcNow.AddSeconds(2)));
 
             _isConnected = (reply != null);
 

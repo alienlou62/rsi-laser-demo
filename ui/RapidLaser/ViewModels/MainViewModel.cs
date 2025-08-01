@@ -30,7 +30,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     /** FIELDS **/
     //polling
     private double _updateIntervalMs = 100;
-    private readonly System.Timers.Timer _updateTimer;
+    private System.Timers.Timer _updateTimer;
     private readonly Random _random = new();
 
     //rmp
@@ -143,6 +143,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private bool _isConnected = false;
+    partial void OnIsConnectedChanged(bool value)
+    {
+        if (value)
+        {
+            // start polling
+            _updateTimer = new System.Timers.Timer(_updateIntervalMs);
+            _updateTimer.Elapsed += OnUpdateTimerElapsed;
+            _updateTimer.Start();
+        }
+        else
+        {
+            // stop polling
+            _updateTimer?.Stop();
+            _updateTimer = null;
+        }
+    }
 
     [ObservableProperty]
     private bool _useMockService = true; // Start with mock for testing
@@ -459,11 +475,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         //connection
         UseMockService = _connectionManager.UseMockService;
         IsConnected    = _connectionManager.IsConnected;
-
-        //polling
-        _updateTimer = new System.Timers.Timer(_updateIntervalMs);
-        _updateTimer.Elapsed += OnUpdateTimerElapsed;
-        _updateTimer.Start();
     }
 
 
