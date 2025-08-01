@@ -111,6 +111,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private double _detectionConfidence = 95.0;
 
+    [ObservableProperty]
+    private bool _isCanvasResponsive = true; // Default to responsive mode
+
     //program
     [ObservableProperty]
     private bool _isProgramPaused = false;

@@ -654,7 +654,30 @@
                             </StackPanel>
 
                             <!--  Connected State - Camera Feeds  -->
-                            <Grid IsVisible="{Binding IsConnected}">
+                            <Grid ColumnDefinitions="* *" IsVisible="{Binding IsConnected}">
+
+                                <!--  Responsive/Fixed toggle at top right with black background  -->
+                                <Border
+                                    Grid.ColumnSpan="2"
+                                    Margin="0"
+                                    Padding="8"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Background="Transparent"
+                                    ZIndex="10">
+
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock
+                                            Margin="0,-1,0,0"
+                                            FontSize="12"
+                                            Foreground="{StaticResource SubtleTextBrush}"
+                                            Text="Responsive Size" />
+                                        <CheckBox
+                                            Classes="theme-solid accent"
+                                            IsChecked="{Binding IsCanvasResponsive}"
+                                            ToolTip.Tip="Toggle between responsive and fixed canvas size" />
+                                    </StackPanel>
+                                </Border>
 
                                 <!--  render feed (640x480 aspect ratio)  -->
                                 <Border
@@ -667,71 +690,88 @@
                                     CornerRadius="2">
                                     <Grid>
 
-                                        <Grid RowDefinitions="* auto *" RowSpacing="2">
+                                        <Grid RowDefinitions="auto * auto *" RowSpacing="2">
 
-                                            <TextBlock
-                                                FontWeight="Bold"
-                                                Foreground="#00FF00"
-                                                Text="RENDER FEED" />
+                                            <!--  Header with size info  -->
+                                            <Grid Grid.Row="0" ColumnDefinitions="* auto">
+                                                <TextBlock
+                                                    Grid.Column="0"
+                                                    FontWeight="Bold"
+                                                    Foreground="#00FF00"
+                                                    Text="RENDER FEED" />
 
-                                            <!--  render canvas  -->
-                                            <Canvas
+                                                <!--  Size information  -->
+                                                <TextBlock
+                                                    Grid.Column="1"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="10"
+                                                    Foreground="{StaticResource SubtleTextBrush}"
+                                                    Opacity="0.8"
+                                                    Text="{Binding IsCanvasResponsive, Converter={x:Static converters:BoolConverters.BoolToSizeInfoConverter}}" />
+                                            </Grid>
+
+                                            <!--  render canvas with viewbox for scaling  -->
+                                            <Viewbox
                                                 Grid.Row="1"
-                                                Width="640"
-                                                Height="480"
-                                                Background="#2A2A2A">
+                                                Stretch="{Binding IsCanvasResponsive, Converter={x:Static converters:BoolConverters.ResponsiveStretchConverter}}"
+                                                StretchDirection="Both">
+                                                <Canvas
+                                                    Name="RenderCanvas"
+                                                    Width="640"
+                                                    Height="480"
+                                                    Background="#2A2A2A">
 
-                                                <!--  rendred ball - red ball  -->
-                                                <Ellipse
-                                                    Fill="Red"
-                                                    Stroke="#000"
-                                                    StrokeThickness="1">
-                                                    <Ellipse.Resources>
-                                                        <actipro:MathConverter x:Key="MathConverter" />
-                                                    </Ellipse.Resources>
+                                                    <!--  rendered ball - red ball  -->
+                                                    <Ellipse
+                                                        Fill="Red"
+                                                        Stroke="#000"
+                                                        StrokeThickness="1">
 
-                                                    <!--  ellipse/all size  -->
-                                                    <Ellipse.Width>
-                                                        <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                            <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                        </MultiBinding>
-                                                    </Ellipse.Width>
-                                                    <Ellipse.Height>
-                                                        <MultiBinding Converter="{StaticResource MathConverter}" ConverterParameter="x * 2">
-                                                            <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                        </MultiBinding>
-                                                    </Ellipse.Height>
+                                                        <!--  ellipse size (diameter = radius * 2)  -->
+                                                        <Ellipse.Width>
+                                                            <Binding
+                                                                Converter="{x:Static converters:BoolConverters.RadiusToDiameterConverter}"
+                                                                FallbackValue="10"
+                                                                Path="Program_BallRadius" />
+                                                        </Ellipse.Width>
+                                                        <Ellipse.Height>
+                                                            <Binding
+                                                                Converter="{x:Static converters:BoolConverters.RadiusToDiameterConverter}"
+                                                                FallbackValue="10"
+                                                                Path="Program_BallRadius" />
+                                                        </Ellipse.Height>
 
-                                                    <!--  canvas position  -->
-                                                    <Canvas.Left>
-                                                        <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                            <Binding FallbackValue="320" Path="Program_BallX" />
-                                                            <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                        </MultiBinding>
-                                                    </Canvas.Left>
-                                                    <Canvas.Top>
-                                                        <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                            <Binding FallbackValue="240" Path="Program_BallY" />
-                                                            <Binding FallbackValue="10" Path="Program_BallRadius" />
-                                                        </MultiBinding>
-                                                    </Canvas.Top>
-                                                </Ellipse>
+                                                        <!--  canvas position (center - radius for top-left positioning)  -->
+                                                        <Canvas.Left>
+                                                            <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
+                                                                <Binding FallbackValue="320" Path="Program_BallX" />
+                                                                <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                            </MultiBinding>
+                                                        </Canvas.Left>
+                                                        <Canvas.Top>
+                                                            <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
+                                                                <Binding FallbackValue="240" Path="Program_BallY" />
+                                                                <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                            </MultiBinding>
+                                                        </Canvas.Top>
+                                                    </Ellipse>
 
-                                                <!--  Center crosshair  -->
-                                                <Line
-                                                    Stroke="#333333"
-                                                    StrokeDashArray="5,5"
-                                                    StrokeThickness="1"
-                                                    StartPoint="0,240"
-                                                    EndPoint="640,240" />
-                                                <Line
-                                                    Stroke="#333333"
-                                                    StrokeDashArray="5,5"
-                                                    StrokeThickness="1"
-                                                    StartPoint="320,0"
-                                                    EndPoint="320,480" />
+                                                    <!--  Center crosshair  -->
+                                                    <Line
+                                                        Stroke="#333333"
+                                                        StrokeDashArray="5,5"
+                                                        StrokeThickness="1"
+                                                        StartPoint="0,240"
+                                                        EndPoint="640,240" />
+                                                    <Line
+                                                        Stroke="#333333"
+                                                        StrokeDashArray="5,5"
+                                                        StrokeThickness="1"
+                                                        StartPoint="320,0"
+                                                        EndPoint="320,480" />
 
-                                            </Canvas>
+                                                </Canvas>
+                                            </Viewbox>
 
                                             <StackPanel
                                                 Grid.Row="2"
@@ -759,63 +799,113 @@
                                     </Grid>
                                 </Border>
 
-                                <!--  Image mask placeholder (640x480 aspect ratio, black and white)  -->
+                                <!--  camera feed (640x480 aspect ratio)  -->
                                 <Border
                                     Grid.Column="1"
-                                    Margin="0,8,8,8"
-                                    IsVisible="False">
+                                    Margin="8"
+                                    Padding="4,0,4,2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Background="#40555555"
+                                    CornerRadius="2">
                                     <Grid>
-                                        <!--  Simulated image mask  -->
-                                        <Rectangle
-                                            Width="640"
-                                            Height="480"
-                                            Fill="#000000" />
 
-                                        <!--  White regions representing detected areas  -->
-                                        <Canvas Width="640" Height="480">
-                                            <!--  Ball mask region - bound to actual ball position  -->
-                                            <Ellipse
-                                                Width="40"
-                                                Height="40"
-                                                Fill="#FFFFFF">
-                                                <Canvas.Left>
-                                                    <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                        <Binding FallbackValue="320" Path="Program_BallX" />
-                                                        <Binding FallbackValue="12.5" Path="Program_BallRadius" />
-                                                    </MultiBinding>
-                                                </Canvas.Left>
-                                                <Canvas.Top>
-                                                    <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                        <Binding FallbackValue="240" Path="Program_BallY" />
-                                                        <Binding FallbackValue="12.5" Path="Program_BallRadius" />
-                                                    </MultiBinding>
-                                                </Canvas.Top>
-                                            </Ellipse>
-                                        </Canvas>
+                                        <Grid RowDefinitions="auto * auto *" RowSpacing="2">
 
-                                        <!--  Overlay info  -->
-                                        <Border
-                                            Margin="12"
-                                            Padding="8"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Top"
-                                            Background="#80000000">
-                                            <StackPanel>
+                                            <!--  Header with size info  -->
+                                            <Grid Grid.Row="0" ColumnDefinitions="* auto">
                                                 <TextBlock
-                                                    FontSize="12"
+                                                    Grid.Column="0"
                                                     FontWeight="Bold"
-                                                    Foreground="#FFFFFF"
-                                                    Text="IMAGE MASK" />
+                                                    Foreground="#0080FF"
+                                                    Text="CAMERA FEED" />
+
+                                                <!--  Size information  -->
                                                 <TextBlock
+                                                    Grid.Column="1"
+                                                    VerticalAlignment="Center"
                                                     FontSize="10"
-                                                    Foreground="{StaticResource TextBrush}"
-                                                    Text="{Binding BinaryThreshold, StringFormat=Binary Threshold: {0}}" />
+                                                    Foreground="{StaticResource SubtleTextBrush}"
+                                                    Opacity="0.8"
+                                                    Text="{Binding IsCanvasResponsive, Converter={x:Static converters:BoolConverters.BoolToSizeInfoConverter}}" />
+                                            </Grid>
+
+                                            <!--  camera canvas with viewbox for scaling  -->
+                                            <Viewbox
+                                                Grid.Row="1"
+                                                Stretch="{Binding IsCanvasResponsive, Converter={x:Static converters:BoolConverters.ResponsiveStretchConverter}}"
+                                                StretchDirection="Both">
+                                                <Canvas
+                                                    Name="CameraCanvas"
+                                                    Width="640"
+                                                    Height="480"
+                                                    Background="#1A1A1A">
+
+                                                    <!--  Placeholder for camera image  -->
+                                                    <Rectangle
+                                                        Width="640"
+                                                        Height="480"
+                                                        Fill="#222222"
+                                                        Stroke="#80444444"
+                                                        StrokeThickness="1" />
+
+                                                    <!--  Placeholder text  -->
+                                                    <TextBlock
+                                                        Canvas.Left="320"
+                                                        Canvas.Top="235"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="16"
+                                                        Foreground="{StaticResource SubtleTextBrush}"
+                                                        IsVisible="False"
+                                                        Opacity="0.6"
+                                                        Text="CAMERA FEED"
+                                                        TextAlignment="Center">
+                                                        <TextBlock.RenderTransform>
+                                                            <TranslateTransform X="-50" Y="-8" />
+                                                        </TextBlock.RenderTransform>
+                                                    </TextBlock>
+
+                                                    <!--  Center crosshair  -->
+                                                    <Line
+                                                        Stroke="#80444444"
+                                                        StrokeDashArray="5,5"
+                                                        StrokeThickness="1"
+                                                        StartPoint="0,240"
+                                                        EndPoint="640,240" />
+                                                    <Line
+                                                        Stroke="#80444444"
+                                                        StrokeDashArray="5,5"
+                                                        StrokeThickness="1"
+                                                        StartPoint="320,0"
+                                                        EndPoint="320,480" />
+
+                                                </Canvas>
+                                            </Viewbox>
+
+                                            <StackPanel
+                                                Grid.Row="2"
+                                                Margin="0,2,0,0"
+                                                Orientation="Horizontal">
                                                 <TextBlock
-                                                    FontSize="10"
+                                                    MinWidth="80"
+                                                    Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    Text="{Binding ObjectsDetected, StringFormat=Objects: {0}}" />
+                                                    Text="Live: No" />
+                                                <TextBlock
+                                                    MinWidth="80"
+                                                    Classes="Mono"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="FPS: 0" />
+                                                <TextBlock
+                                                    MinWidth="80"
+                                                    Classes="Mono"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="Frame: -" />
                                             </StackPanel>
-                                        </Border>
+
+                                        </Grid>
+
                                     </Grid>
                                 </Border>
 

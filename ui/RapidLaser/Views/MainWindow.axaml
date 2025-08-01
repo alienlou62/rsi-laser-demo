@@ -8,19 +8,22 @@
     xmlns:views="clr-namespace:RapidLaser.Views"
     xmlns:vm="using:RapidLaser.ViewModels"
     Title="RapidLaser"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    Width="1920"
+    Height="1080"
     Background="Transparent"
     CanResize="True"
-    ExtendClientAreaChromeHints="NoChrome" 
-    ExtendClientAreaToDecorationsHint="True" 
     CornerRadius="{StaticResource StandardCornerRadius}"
+    ExtendClientAreaChromeHints="NoChrome"
+    ExtendClientAreaToDecorationsHint="True"
     Icon="/Assets/avalonia-logo.ico"
     SystemDecorations="None"
     mc:Ignorable="d">
     <Grid>
         <!--  Sleek dark gradient background using Actipro MeshGradientPresenter  -->
-        <actipro:MeshGradientPresenter VerticalAlignment="Stretch" CornerRadius="{StaticResource StandardCornerRadius}" Background="{StaticResource DarkBackgroundColor}">
+        <actipro:MeshGradientPresenter
+            VerticalAlignment="Stretch"
+            Background="{StaticResource DarkBackgroundColor}"
+            CornerRadius="{StaticResource StandardCornerRadius}">
             <actipro:MeshGradientNode Center="0%, 0%" Color="#FF121212" />
             <actipro:MeshGradientNode Center="100%, 0%" Color="#FF1E1E1E" />
             <actipro:MeshGradientNode Center="0%, 100%" Color="#FF1A1A1A" />

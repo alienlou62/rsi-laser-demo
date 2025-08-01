@@ -103,6 +103,11 @@
             <Setter Property="CornerRadius" Value="0" />
         </Style>
 
+        <Style Selector="CheckBox">
+            <Setter Property="CornerRadius" Value="{StaticResource StandardCornerRadius}" />
+        </Style>
+
+
         <!--  we need to adjust the baselineoffset of the Saira font  -->
         <Style Selector="Label, TextBlock, TextBox /template/ TextPresenter, Button /template/ TextPresenter, CheckBox /template/ TextPresenter, RadioButton /template/ TextPresenter">
             <Setter Property="RenderTransform">
