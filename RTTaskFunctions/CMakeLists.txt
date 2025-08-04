@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-# Enable C++20
+# Use C++20
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -42,10 +42,16 @@ target_include_directories(RTTaskFunctions PRIVATE
   ${CMAKE_SOURCE_DIR}/include/helpers
   ${OpenCV_INCLUDE_DIRS}
   ${PYLON_INCLUDE_DIRS}
+  /opt/pylon/include
 )
 target_link_libraries(RTTaskFunctions PUBLIC 
   ${OpenCV_LIBRARIES}
-  pylon::pylon
+  pylonbase
+  GenApi_gcc_v3_1_Basler_pylon_v3
+  GCBase_gcc_v3_1_Basler_pylon_v3
+  Log_gcc_v3_1_Basler_pylon_v3
+  MathParser_gcc_v3_1_Basler_pylon_v3
+  NodeMapData_gcc_v3_1_Basler_pylon_v3
 )
 target_compile_definitions(RTTaskFunctions PRIVATE CONFIG_FILE="${CMAKE_SOURCE_DIR}/acA640-300gc_22441779.pfs")
 target_compile_options(RTTaskFunctions PRIVATE "-Wno-deprecated-enum-enum-conversion")

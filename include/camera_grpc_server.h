@@ -48,6 +48,11 @@ public:
     bool StoreImage(const void* imageData, size_t size, uint32_t sequenceNumber);
     bool GetLatestImage(void* buffer, size_t& size, uint32_t& sequenceNumber) const;
     
+    // Real-time safe operations
+    bool HasActiveClients() const { return m_activeClients.load(); }
+    bool TryStoreImageNonBlocking(const void* imageData, size_t size, uint32_t sequenceNumber);
+    void SetActiveClients(bool active) { m_activeClients.store(active); }
+    
     size_t GetBufferSize() const { return m_bufferSize; }
     bool IsInitialized() const { return m_buffer != nullptr; }
 
@@ -56,6 +61,7 @@ private:
     ~ImageBuffer() { Cleanup(); }
     
     mutable std::mutex m_mutex;
+    std::atomic<bool> m_activeClients{false};
     void* m_buffer = nullptr;
     size_t m_bufferSize = 0;
     size_t m_currentSize = 0;

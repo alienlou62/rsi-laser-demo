@@ -117,15 +117,17 @@ int main()
 
   // SetupCamera();
 
-  // --- RMP Initialization ---
+  /*** RMP INIT ***/
   MotionController *controller = RMPHelpers::GetController();
   MultiAxis* multiAxis = controller->LoadExistingMultiAxis(RMPHelpers::NUM_AXES);
   RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking", 6));
 
   try
   {
-    // std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
-    SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
+    
+    /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
+    //SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
     FirmwareValue cameraReady = manager.GlobalValueGet("cameraReady");
     if (!cameraReady.Bool)
@@ -141,7 +143,14 @@ int main()
       return -1;
     }
 
-    // --- Start gRPC Camera Server ---
+    // Initialize ImageBuffer for gRPC streaming
+    CameraGrpcServer::ImageBuffer& imgBuffer = CameraGrpcServer::ImageBuffer::GetInstance();
+    size_t bufferSize = CameraHelpers::IMAGE_WIDTH * CameraHelpers::IMAGE_HEIGHT * 2; // YUYV format
+    if (!imgBuffer.Initialize(bufferSize)) {
+      std::cerr << "Warning: Failed to initialize image buffer for gRPC streaming" << std::endl;
+    }
+
+    /*** START gRPC CAMERA SERVER ***/
     CameraGrpcServer::CameraStreamServer grpcServer;
     std::string serverAddress = "0.0.0.0:50061";
     
@@ -152,18 +161,20 @@ int main()
       std::cout << "gRPC camera server started successfully on " << serverAddress << std::endl;
     }
 
-    RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0);
-    RTTask motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 0, TaskPriority::High);
     FirmwareValue motionEnabled = {.Bool = true};
     manager.GlobalValueSet(motionEnabled, "motionEnabled");
 
+    /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
+    // RTTask ballDetectionTask = SubmitRepeatingTask(manager, "DetectBall", DETECTION_TASK_PERIOD, 0);
+    // motionTask = SubmitRepeatingTask(manager, "MoveMotors", MOVE_TASK_PERIOD, 0, TaskPriority::High);
+    
     // Reset timing after they have run a few times
-    ballDetectionTask.ExecutionCountAbsoluteWait(5, TASK_WAIT_TIMEOUT);
-    ballDetectionTask.TimingReset();
-    motionTask.ExecutionCountAbsoluteWait(5, TASK_WAIT_TIMEOUT);
-    motionTask.TimingReset();
+    // ballDetectionTask.ExecutionCountAbsoluteWait(5, TASK_WAIT_TIMEOUT);
+    // ballDetectionTask.TimingReset();
+    // motionTask.ExecutionCountAbsoluteWait(5, TASK_WAIT_TIMEOUT);
+    // motionTask.TimingReset();
 
-    // --- Main Loop ---
+    /*** MAIN LOOP ***/
     while (!g_shutdown)
     {
       RateLimiter rateLimiter(LOOP_INTERVAL);
@@ -173,17 +184,17 @@ int main()
       
       std::cout << "Target X: " << targetX.Double << ", Target Y: " << targetY.Double << std::endl;
 
-      if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))
-      {
-        g_shutdown = true;
-        exitCode = 1;
-      }
-
-      if (!CheckRTTaskStatus(motionTask, "Motion Task"))
-      {
-        g_shutdown = true;
-        exitCode = 1;
-      }
+      /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
+      // if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))
+      // {
+      //   g_shutdown = true;
+      //   exitCode = 1;
+      // }
+      // if (!CheckRTTaskStatus(motionTask, "Motion Task"))
+      // {
+      //   g_shutdown = true;
+      //   exitCode = 1;
+      // }
 
       // Check if the MultiAxis is in an error state
       try
@@ -197,8 +208,7 @@ int main()
 
       // Check if the MultiAxis is in an error state and print the source of the error
       RSIState state = multiAxis->StateGet();
-      if (state == RSIState::RSIStateERROR ||
-          state == RSIState::RSIStateSTOPPING_ERROR)
+      if (state == RSIState::RSIStateERROR || state == RSIState::RSIStateSTOPPING_ERROR)
       {
         std::cout << "MultiAxis is in state: " << RMPHelpers::RSIStateToString(state) << std::endl;
         RSISource source = multiAxis->SourceGet();
@@ -206,9 +216,10 @@ int main()
       }
     }
 
+    /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
     // Print task timing information
-    PrintTaskTiming(motionTask, "Motion Task");
-    PrintTaskTiming(ballDetectionTask, "Ball Detection Task");
+    //PrintTaskTiming(motionTask, "Motion Task");
+    //PrintTaskTiming(ballDetectionTask, "Ball Detection Task");
   }
   catch (const RsiError &e)
   {
@@ -226,8 +237,8 @@ int main()
     exitCode = 1;
   }
 
-  // --- Cleanup ---
-  manager.Shutdown();
+  /*** CLEANUP ***/
+  // manager.Shutdown();
   multiAxis->Abort();
   multiAxis->ClearFaults();
 

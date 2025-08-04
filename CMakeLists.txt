@@ -1,135 +1,151 @@
-cmake_minimum_required(VERSION 3.15)
-
-set(CMAKE_CXX_STANDARD 20)
-
+cmake_minimum_required(VERSION 3.10)
 project(LaserDemo)
 
-# Include the RapidSoftware.cmake file, which defines paths to RapidSoftware headers and libraries
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/RapidSoftware.cmake)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find OpenCV
+# Include our RapidSoftware utilities
+include(cmake/RapidSoftware.cmake)
+
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(OpenCV REQUIRED opencv4)
+find_package(OpenCV REQUIRED)
 
-# Find Pylon library
-find_package(PYLON REQUIRED)
-set(PYLON_INCLUDE_DIRS /opt/pylon/include)
-
-# Find gRPC and Protobuf
+# Use find_package for gRPC system packages (Ubuntu)
 find_package(Protobuf REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GRPC REQUIRED grpc++)
-pkg_check_modules(GRPC_CPP REQUIRED grpc++_reflection)
+find_library(GRPC_GRPCPP_LIBRARY grpc++ REQUIRED)
+find_library(GRPC_LIBRARY grpc REQUIRED)
+find_library(GRPC_GPR_LIBRARY gpr REQUIRED)
+find_library(GRPC_ADDRESS_SORTING_LIBRARY address_sorting REQUIRED)
+
+# Set gRPC libraries
+set(GRPC_LIBRARIES 
+    ${GRPC_GRPCPP_LIBRARY}
+    ${GRPC_LIBRARY}  
+    ${GRPC_GPR_LIBRARY}
+    ${GRPC_ADDRESS_SORTING_LIBRARY}
+    ${Protobuf_LIBRARIES}
+)
+
+# Add Pylon library directory
+link_directories(/opt/pylon/lib)
 
 # Generate protobuf files
 set(PROTO_FILES
     ${CMAKE_CURRENT_LIST_DIR}/ui/RapidLaser/Assets/protos/camera_streaming.proto
 )
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
+find_program(PROTOBUF_PROTOC_EXECUTABLE protoc REQUIRED)
+find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin REQUIRED)
+
+# Generate protobuf files
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/camera_streaming.pb.cc
+           ${CMAKE_CURRENT_BINARY_DIR}/camera_streaming.pb.h
+    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
+    ARGS --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
+         -I${CMAKE_CURRENT_LIST_DIR}/ui/RapidLaser/Assets/protos
+         ${CMAKE_CURRENT_LIST_DIR}/ui/RapidLaser/Assets/protos/camera_streaming.proto
+    DEPENDS ${PROTO_FILES}
+    COMMENT "Generating protobuf files"
+)
 
 # Generate gRPC files
-find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin)
-if(NOT GRPC_CPP_PLUGIN)
-    message(FATAL_ERROR "grpc_cpp_plugin not found!")
-endif()
-
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/camera_streaming.grpc.pb.cc
            ${CMAKE_CURRENT_BINARY_DIR}/camera_streaming.grpc.pb.h
-    COMMAND protobuf::protoc
+    COMMAND ${PROTOBUF_PROTOC_EXECUTABLE}
     ARGS --grpc_out=${CMAKE_CURRENT_BINARY_DIR}
-         --cpp_out=${CMAKE_CURRENT_BINARY_DIR}
          --plugin=protoc-gen-grpc=${GRPC_CPP_PLUGIN}
          -I${CMAKE_CURRENT_LIST_DIR}/ui/RapidLaser/Assets/protos
          ${CMAKE_CURRENT_LIST_DIR}/ui/RapidLaser/Assets/protos/camera_streaming.proto
-    DEPENDS ${CMAKE_CURRENT_LIST_DIR}/ui/RapidLaser/Assets/protos/camera_streaming.proto
+    DEPENDS ${PROTO_FILES}
     COMMENT "Generating gRPC files"
 )
 
-set(GRPC_SRCS 
+# Include directories
+include_directories(include)
+include_directories(include/helpers)
+include_directories(sandbox/helpers)
+include_directories(RTTaskFunctions/src)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${Protobuf_INCLUDE_DIRS})
+include_directories(/opt/pylon/include)
+
+# Create a library for the generated protobuf/grpc files
+add_library(proto_grpc
+    ${CMAKE_CURRENT_BINARY_DIR}/camera_streaming.pb.cc
     ${CMAKE_CURRENT_BINARY_DIR}/camera_streaming.grpc.pb.cc
-    ${CMAKE_CURRENT_BINARY_DIR}/camera_streaming.grpc.pb.h
 )
 
-# Setup the target that doesn't use RTTasks
-add_executable(LaserDemo 
-  ${CMAKE_CURRENT_LIST_DIR}/src/demo_main.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/image_processing.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/motion_control.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/camera_helpers.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/rmp_helpers.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/misc_helpers.cpp
-)
-setup_rmp_target(LaserDemo)
-target_include_directories(LaserDemo PRIVATE 
-  ${CMAKE_CURRENT_LIST_DIR}/include
-  ${CMAKE_CURRENT_LIST_DIR}/include/helpers
-  ${OpenCV_INCLUDE_DIRS}
-  ${PYLON_INCLUDE_DIRS}
-)
-target_link_libraries(LaserDemo PRIVATE 
-  ${OpenCV_LIBRARIES}
-  pylon::pylon
-)
-target_compile_definitions(LaserDemo PRIVATE CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs")
-target_compile_options(LaserDemo PRIVATE "-Wno-deprecated-enum-enum-conversion")
+target_link_libraries(proto_grpc ${GRPC_LIBRARIES})
 
-# Setup the target that uses RTTasks
-add_subdirectory(RTTaskFunctions)
-add_executable(LaserDemoRTTasks 
-  ${CMAKE_CURRENT_LIST_DIR}/src/rttasks_demo_main.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/camera_grpc_server.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/rmp_helpers.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/misc_helpers.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/camera_helpers.cpp
-  ${PROTO_SRCS}
-  ${GRPC_SRCS}
-)
-setup_rmp_target(LaserDemoRTTasks)
-target_include_directories(LaserDemoRTTasks PRIVATE 
-  ${CMAKE_CURRENT_LIST_DIR}/include
-  ${CMAKE_CURRENT_LIST_DIR}/include/helpers
-  ${CMAKE_CURRENT_BINARY_DIR}  # For generated protobuf files
-  ${PYLON_INCLUDE_DIRS}
-)
-target_link_libraries(LaserDemoRTTasks PRIVATE 
-  pylon::pylon
-  protobuf::libprotobuf
-  ${GRPC_LIBRARIES}
-  ${GRPC_CPP_LIBRARIES}
+# Primary executable
+add_executable(LaserDemo
+    src/demo_main.cpp
+    src/camera_grpc_server.cpp
+    src/image_processing.cpp
+    src/motion_control.cpp
+    src/helpers/camera_helpers.cpp
+    src/helpers/misc_helpers.cpp
+    src/helpers/rmp_helpers.cpp
 )
 
-# Link rt library on Linux for shared memory functions
-if(UNIX AND NOT APPLE)
-    target_link_libraries(LaserDemoRTTasks PRIVATE rt)
+target_link_libraries(LaserDemo
+    proto_grpc
+    ${GRPC_LIBRARIES}
+    ${OpenCV_LIBS}
+    pylonbase
+    GenApi_gcc_v3_1_Basler_pylon_v3
+    GCBase_gcc_v3_1_Basler_pylon_v3
+    Log_gcc_v3_1_Basler_pylon_v3
+    MathParser_gcc_v3_1_Basler_pylon_v3
+    NodeMapData_gcc_v3_1_Basler_pylon_v3
+    pthread
+)
+
+# RTTask version
+add_executable(LaserDemoRTTasks
+    src/rttasks_demo_main.cpp
+    src/camera_grpc_server.cpp
+    src/image_processing.cpp
+    src/motion_control.cpp
+    src/helpers/camera_helpers.cpp
+    src/helpers/misc_helpers.cpp
+    src/helpers/rmp_helpers.cpp
+)
+
+target_link_libraries(LaserDemoRTTasks
+    proto_grpc
+    ${GRPC_LIBRARIES}
+    ${OpenCV_LIBS}
+    pylonbase
+    GenApi_gcc_v3_1_Basler_pylon_v3
+    GCBase_gcc_v3_1_Basler_pylon_v3
+    Log_gcc_v3_1_Basler_pylon_v3
+    MathParser_gcc_v3_1_Basler_pylon_v3
+    NodeMapData_gcc_v3_1_Basler_pylon_v3
+    pthread
+    RTTaskFunctions
+)
+
+# Sandbox executable (disabled temporarily due to header issues)
+# add_executable(Sandbox
+#     sandbox/sandbox_main.cpp
+#     sandbox/helpers/image_helpers.cpp
+# )
+
+# target_link_libraries(Sandbox
+#     ${OpenCV_LIBS}
+#     pylonbase
+#     GenApi_gcc_v3_1_Basler_pylon_v3
+#     GCBase_gcc_v3_1_Basler_pylon_v3
+#     Log_gcc_v3_1_Basler_pylon_v3
+#     MathParser_gcc_v3_1_Basler_pylon_v3
+#     NodeMapData_gcc_v3_1_Basler_pylon_v3
+#     pthread
+# )
+
+# Add subdirectory for RTTaskFunctions (this will be conditional)
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/RTTaskFunctions")
+    add_subdirectory(RTTaskFunctions)
 endif()
-target_compile_definitions(LaserDemoRTTasks PRIVATE 
-  CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs"
-)
-
-# Setup the testing (sandbox) target
-add_executable(Sandbox
-  ${CMAKE_CURRENT_LIST_DIR}/sandbox/sandbox_main.cpp 
-  ${CMAKE_CURRENT_LIST_DIR}/sandbox/helpers/image_helpers.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/image_processing.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/motion_control.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/camera_helpers.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/rmp_helpers.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/src/helpers/misc_helpers.cpp
-)
-setup_rmp_target(Sandbox)
-target_include_directories(Sandbox PRIVATE 
-  ${CMAKE_CURRENT_LIST_DIR}/include
-  ${CMAKE_CURRENT_LIST_DIR}/include/helpers
-  ${CMAKE_CURRENT_LIST_DIR}/sandbox
-  ${CMAKE_CURRENT_LIST_DIR}/sandbox/helpers
-  ${OpenCV_INCLUDE_DIRS}
-  ${PYLON_INCLUDE_DIRS}
-)
-target_link_libraries(Sandbox PRIVATE 
-  ${OpenCV_LIBRARIES}
-  pylon::pylon
-)
-target_compile_definitions(Sandbox PRIVATE SANDBOX_DIR="${CMAKE_CURRENT_LIST_DIR}/sandbox/")
-target_compile_options(Sandbox PRIVATE "-Wno-deprecated-enum-enum-conversion")

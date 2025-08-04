@@ -1,21 +1,19 @@
-// --- Camera and Image Processing Headers ---
+//camera
 #include <opencv2/opencv.hpp>
 #include <pylon/PylonIncludes.h>
-
+//src
 #include "rttaskglobals.h"
-
 #include "camera_helpers.h"
 #include "image_processing.h"
 #include "motion_control.h"
 #include "rmp_helpers.h"
 #include "camera_grpc_server.h"
-
+//system
 #include <iostream>
 #include <string>
 #include <chrono>
 
 using namespace Pylon;
-
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
@@ -103,18 +101,22 @@ RSI_TASK(DetectBall)
   // If frame grab failed due to a timeout, exit early but do not increment failure count
   if (!frameGrabbed) return;
 
-  // Store image data for gRPC streaming
-  size_t imageSize = g_ptrGrabResult->GetPayloadSize();
+  // Store image data for gRPC streaming - ONLY if clients are connected to avoid timing impact
+  static uint32_t sequenceNumber = 0;
+  sequenceNumber++;
+  
   CameraGrpcServer::ImageBuffer& imgBuffer = CameraGrpcServer::ImageBuffer::GetInstance();
-  if (imgBuffer.IsInitialized()) {
-    static uint32_t sequenceNumber = 0;
-    sequenceNumber++;
+
+  if (imgBuffer.IsInitialized() && imgBuffer.HasActiveClients()) 
+  {
+    size_t imageSize = g_ptrGrabResult->GetPayloadSize();
     
-    if (imgBuffer.StoreImage(g_ptrGrabResult->GetBuffer(), imageSize, sequenceNumber)) {
+    // Fast non-blocking store - skip if would block to maintain timing
+    if (imgBuffer.TryStoreImageNonBlocking(g_ptrGrabResult->GetBuffer(), imageSize, sequenceNumber)) 
+    {
       // Update image streaming globals
       data->newImageAvailable = true;
-      data->frameTimestamp = std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+      data->frameTimestamp = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
       data->imageWidth = CameraHelpers::IMAGE_WIDTH;
       data->imageHeight = CameraHelpers::IMAGE_HEIGHT;
       data->imageSequenceNumber = sequenceNumber;
@@ -127,9 +129,9 @@ RSI_TASK(DetectBall)
   double initialY(RTAxisGet(1)->ActualPositionGet());
 
   // Convert the grabbed frame to a CV mat format for processing
-  cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(
-      static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()),
-      CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
+  cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()), 
+                                                      CameraHelpers::IMAGE_WIDTH, 
+                                                      CameraHelpers::IMAGE_HEIGHT);
 
   // Detect the ball in the YUYV frame
   cv::Vec3f ball(0.0, 0.0, 0.0);

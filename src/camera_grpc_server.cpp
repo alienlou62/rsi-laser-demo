@@ -38,6 +38,9 @@ public:
         const rsi::camera::StreamRequest* request,
         grpc::ServerWriter<rsi::camera::CameraFrame>* writer) override {
         
+        // Mark that we have active streaming clients
+        ImageBuffer::GetInstance().SetActiveClients(true);
+        
         uint32_t lastSequenceNumber = 0;
         auto maxFps = request->max_fps();
         auto frameInterval = maxFps > 0 ? 
@@ -64,6 +67,9 @@ public:
                 break;
             }
         }
+        
+        // Mark that streaming client disconnected
+        ImageBuffer::GetInstance().SetActiveClients(false);
         
         std::cout << "Camera stream ended" << std::endl;
         return grpc::Status::OK;
@@ -124,7 +130,7 @@ private:
             }
 
             // Calculate expected image size for YUYV format
-            size_t expectedSize = imageWidth.Int * imageHeight.Int * 2; // 2 bytes per pixel for YUYV
+            size_t expectedSize = imageWidth.Int32 * imageHeight.Int32 * 2; // 2 bytes per pixel for YUYV
             std::vector<uint8_t> imageData(expectedSize);
             size_t actualSize;
             uint32_t sequenceNumber;
@@ -141,12 +147,12 @@ private:
             // Set frame metadata
             frame.set_timestamp_us(frameTimestamp.Int64);
             frame.set_frame_number(sequenceNumber);
-            frame.set_width(imageWidth.Int);
-            frame.set_height(imageHeight.Int);
+            frame.set_width(imageWidth.Int32);
+            frame.set_height(imageHeight.Int32);
 
             // Convert and set image data based on requested format
             std::vector<uint8_t> outputData;
-            if (ConvertImageFormat(imageData, actualSize, imageWidth.Int, imageHeight.Int, 
+            if (ConvertImageFormat(imageData, actualSize, imageWidth.Int32, imageHeight.Int32, 
                                  format, quality, outputData)) {
                 frame.set_image_data(outputData.data(), outputData.size());
                 frame.set_format(format);
@@ -166,8 +172,8 @@ private:
 
             // Set processing stats
             auto* stats = frame.mutable_stats();
-            stats->set_grab_failures(frameGrabFailures.Int);
-            stats->set_detection_failures(ballDetectionFailures.Int);
+            stats->set_grab_failures(frameGrabFailures.Int32);
+            stats->set_detection_failures(ballDetectionFailures.Int32);
             // TODO: Add actual timing measurements
             stats->set_grab_time_ms(1.0);
             stats->set_process_time_ms(15.0);
@@ -348,6 +354,26 @@ void ImageBuffer::Cleanup() {
 
 bool ImageBuffer::StoreImage(const void* imageData, size_t size, uint32_t sequenceNumber) {
     std::lock_guard<std::mutex> lock(m_mutex);
+    
+    if (!m_buffer || size > m_bufferSize) {
+        return false;
+    }
+    
+    std::memcpy(m_buffer, imageData, size);
+    m_currentSize = size;
+    m_sequenceNumber = sequenceNumber;
+    
+    return true;
+}
+
+bool ImageBuffer::TryStoreImageNonBlocking(const void* imageData, size_t size, uint32_t sequenceNumber) {
+    // Try to acquire lock without blocking - critical for real-time safety
+    std::unique_lock<std::mutex> lock(m_mutex, std::try_to_lock);
+    
+    if (!lock.owns_lock()) {
+        // Could not acquire lock immediately - skip to maintain timing
+        return false;
+    }
     
     if (!m_buffer || size > m_bufferSize) {
         return false;
