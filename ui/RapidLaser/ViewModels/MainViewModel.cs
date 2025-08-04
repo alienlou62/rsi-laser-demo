@@ -128,7 +128,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private double _frameRate = 30.0;
 
-    [ObservableProperty] 
+    [ObservableProperty]
     private double _cameraFps = 0.0;
 
     [ObservableProperty]
@@ -380,7 +380,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             _cameraStreamCancellation?.Cancel();
             await _cameraService.StopGrabbingAsync();
-            
+
             IsCameraStreaming = false;
             CameraStatus = "Stopped";
             CameraImage = null;
@@ -656,9 +656,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
             // Use the streaming method from GrpcCameraService
             await foreach (var frame in grpcCamera.StreamFramesAsync(
-                maxFps: (int)FrameRate, 
-                format: Rsi.Camera.ImageFormat.FormatRgb, 
-                quality: 85, 
+                maxFps: (int)FrameRate,
+                format: Rsi.Camera.ImageFormat.FormatRgb,
+                quality: 85,
                 cancellationToken: cancellationToken))
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -701,7 +701,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 {
                     Program_BallX = detectionResult.CenterX;
                     Program_BallY = detectionResult.CenterY;
-                    Program_BallRadius = Math.Sqrt(detectionResult.OffsetX * detectionResult.OffsetX + 
+                    Program_BallRadius = Math.Sqrt(detectionResult.OffsetX * detectionResult.OffsetX +
                                                   detectionResult.OffsetY * detectionResult.OffsetY);
                 }
 
@@ -709,9 +709,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 if (frame.ImageData?.Length > 0)
                 {
                     CameraImage = CreateBitmapFromImageData(
-                        frame.ImageData.ToByteArray(), 
-                        frame.Width, 
-                        frame.Height, 
+                        frame.ImageData.ToByteArray(),
+                        frame.Width,
+                        frame.Height,
                         frame.Format);
                 }
 
@@ -719,8 +719,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 if (detectionResult.MaskImageData?.Length > 0)
                 {
                     MaskImage = CreateBitmapFromMaskData(
-                        detectionResult.MaskImageData, 
-                        frame.Width, 
+                        detectionResult.MaskImageData,
+                        frame.Width,
                         frame.Height);
                 }
 
@@ -805,7 +805,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 bgraSpan[bgraIndex + 2] = rgbData[rgbIndex];     // R
                 bgraSpan[bgraIndex + 3] = 255;                   // A
             }
-            
+
             rgbIndex += 3;
             bgraIndex += 4;
         }
@@ -879,7 +879,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 bgraSpan[bgraIndex + 2] = 0;                // R
                 bgraSpan[bgraIndex + 3] = (byte)(maskValue / 2); // A (semi-transparent)
             }
-            
+
             maskIndex++;
             bgraIndex += 4;
         }

@@ -562,8 +562,8 @@
                                 Width="17"
                                 Height="17"
                                 VerticalAlignment="Center"
-                                Classes.is-camera-streaming="{Binding IsCameraStreaming}"
-                                Classes.is-camera-not-streaming="{Binding !IsCameraStreaming}">
+                                Classes.is-camera-not-streaming="{Binding !IsCameraStreaming}"
+                                Classes.is-camera-streaming="{Binding IsCameraStreaming}">
                                 <icons:MaterialIcon.Styles>
                                     <Style Selector="icons|MaterialIcon.is-camera-streaming">
                                         <Setter Property="Kind" Value="VideoCheck" />
@@ -580,10 +580,8 @@
                         <StackPanel IsVisible="{Binding IsConnected}" Spacing="8">
 
                             <!--  Camera Status  -->
-                            <controls:LabeledControl
-                                Label="Status"
-                                LabelWidth="60">
-                                <TextBlock 
+                            <controls:LabeledControl Label="Status" LabelWidth="60">
+                                <TextBlock
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Center"
                                     Foreground="{Binding IsCameraStreaming, Converter={x:Static converters:BoolConverters.BoolToSuccessDangerBrushConverter}}"
@@ -591,10 +589,8 @@
                             </controls:LabeledControl>
 
                             <!--  Camera FPS  -->
-                            <controls:LabeledControl
-                                Label="FPS"
-                                LabelWidth="60">
-                                <TextBlock 
+                            <controls:LabeledControl Label="FPS" LabelWidth="60">
+                                <TextBlock
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Center"
                                     Text="{Binding CameraFps, StringFormat='{}{0:F1}', FallbackValue='0.0'}" />
@@ -952,19 +948,19 @@
                                                     <!--  Camera Image Display  -->
                                                     <Image
                                                         Name="CameraImage"
-                                                        Width="640"
-                                                        Height="480"
                                                         Canvas.Left="0"
                                                         Canvas.Top="0"
+                                                        Width="640"
+                                                        Height="480"
                                                         Source="{Binding CameraImageSource}"
                                                         Stretch="UniformToFill" />
 
                                                     <!--  Ball Detection Overlay - only when ball is detected  -->
                                                     <Ellipse
                                                         Fill="Transparent"
+                                                        IsVisible="{Binding Program_BallRadius, Converter={x:Static ObjectConverters.IsNotNull}}"
                                                         Stroke="Lime"
-                                                        StrokeThickness="3"
-                                                        IsVisible="{Binding Program_BallRadius, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                                        StrokeThickness="3">
 
                                                         <!--  ellipse size (diameter = radius * 2)  -->
                                                         <Ellipse.Width>
@@ -1050,7 +1046,10 @@
                                                     Foreground="{StaticResource TextBrush}">
                                                     <TextBlock.Text>
                                                         <MultiBinding StringFormat="Live: {0}">
-                                                            <Binding Path="IsCameraStreaming" Converter="{x:Static converters:BoolConverters.BoolToYesNoConverter}" FallbackValue="No" />
+                                                            <Binding
+                                                                Converter="{x:Static converters:BoolConverters.BoolToYesNoConverter}"
+                                                                FallbackValue="No"
+                                                                Path="IsCameraStreaming" />
                                                         </MultiBinding>
                                                     </TextBlock.Text>
                                                 </TextBlock>
@@ -1060,7 +1059,7 @@
                                                     Foreground="{StaticResource TextBrush}">
                                                     <TextBlock.Text>
                                                         <MultiBinding StringFormat="FPS: {0:F1}">
-                                                            <Binding Path="CameraFps" FallbackValue="0" />
+                                                            <Binding FallbackValue="0" Path="CameraFps" />
                                                         </MultiBinding>
                                                     </TextBlock.Text>
                                                 </TextBlock>
@@ -1070,7 +1069,7 @@
                                                     Foreground="{StaticResource TextBrush}">
                                                     <TextBlock.Text>
                                                         <MultiBinding StringFormat="Frame: {0}">
-                                                            <Binding Path="CameraFrameCount" FallbackValue="-" />
+                                                            <Binding FallbackValue="-" Path="CameraFrameCount" />
                                                         </MultiBinding>
                                                     </TextBlock.Text>
                                                 </TextBlock>

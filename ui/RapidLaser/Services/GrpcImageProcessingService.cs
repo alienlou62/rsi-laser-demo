@@ -26,7 +26,7 @@ public class GrpcImageProcessingService : IImageProcessingService
             if (ballDetection.Detected)
             {
                 maskData = GenerateBinaryMaskFromDetection(
-                    cameraFrame.Width, 
+                    cameraFrame.Width,
                     cameraFrame.Height,
                     (int)ballDetection.CenterX,
                     (int)ballDetection.CenterY,
@@ -51,7 +51,7 @@ public class GrpcImageProcessingService : IImageProcessingService
         catch (Exception ex)
         {
             Console.WriteLine($"Error processing camera frame: {ex.Message}");
-            
+
             // Return empty result on error
             return Task.FromResult(new BallDetectionResult
             {

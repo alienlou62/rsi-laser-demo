@@ -23,17 +23,17 @@ public class GrpcCameraService : ICameraService
             // Create gRPC channel to camera server
             _channel = GrpcChannel.ForAddress($"http://{_serverAddress}");
             _client = new CameraStreamService.CameraStreamServiceClient(_channel);
-            
+
             // Test connection by trying to get a frame
             var frameRequest = new FrameRequest
             {
                 Format = ImageFormat.FormatRgb,
                 CompressionQuality = 85
             };
-            
-            var response = await _client.GetLatestFrameAsync(frameRequest, 
+
+            var response = await _client.GetLatestFrameAsync(frameRequest,
                 deadline: DateTime.UtcNow.AddSeconds(5));
-            
+
             if (response != null)
             {
                 ImageWidth = response.Width;
@@ -46,7 +46,7 @@ public class GrpcCameraService : ICameraService
         {
             Console.WriteLine($"Failed to initialize gRPC camera service: {ex.Message}");
         }
-        
+
         return false;
     }
 
@@ -77,11 +77,11 @@ public class GrpcCameraService : ICameraService
                 Format = ImageFormat.FormatRgb,
                 CompressionQuality = 85
             };
-            
-            var response = await _client.GetLatestFrameAsync(frameRequest, 
+
+            var response = await _client.GetLatestFrameAsync(frameRequest,
                 deadline: DateTime.UtcNow.AddSeconds(1),
                 cancellationToken: cancellationToken);
-            
+
             if (response?.ImageData != null && response.ImageData.Length > 0)
             {
                 return (true, response.ImageData.ToByteArray(), response.Width, response.Height);
@@ -110,8 +110,8 @@ public class GrpcCameraService : ICameraService
 
     // Additional method for streaming
     public async IAsyncEnumerable<CameraFrame> StreamFramesAsync(
-        int maxFps = 30, 
-        ImageFormat format = ImageFormat.FormatRgb, 
+        int maxFps = 30,
+        ImageFormat format = ImageFormat.FormatRgb,
         int quality = 85,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -126,7 +126,7 @@ public class GrpcCameraService : ICameraService
         };
 
         using var streamingCall = _client.StreamCameraFrames(streamRequest, cancellationToken: cancellationToken);
-        
+
         await foreach (var frame in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
             yield return frame;
