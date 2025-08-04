@@ -99,6 +99,11 @@ target_link_libraries(LaserDemoRTTasks PRIVATE
   ${GRPC_LIBRARIES}
   ${GRPC_CPP_LIBRARIES}
 )
+
+# Link rt library on Linux for shared memory functions
+if(UNIX AND NOT APPLE)
+    target_link_libraries(LaserDemoRTTasks PRIVATE rt)
+endif()
 target_compile_definitions(LaserDemoRTTasks PRIVATE 
   CONFIG_FILE="${CMAKE_CURRENT_LIST_DIR}/acA640-300gc_22441779.pfs"
 )

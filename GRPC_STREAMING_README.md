@@ -28,9 +28,11 @@ This implementation provides real-time camera image streaming from C++ real-time
    - Updates RT task globals with detection results
 
 2. **ImageBuffer** (`src/camera_grpc_server.cpp`)
-   - Windows shared memory management
+   - Cross-platform shared memory management (Windows/Linux)
    - Thread-safe image storage and retrieval
    - 1MB buffer for camera frames
+   - Uses Windows CreateFileMapping/MapViewOfFile on Windows
+   - Uses POSIX shm_open/mmap on Linux
 
 3. **CameraStreamServer** (`src/camera_grpc_server.cpp`)
    - gRPC server implementation
@@ -93,13 +95,26 @@ This implementation provides real-time camera image streaming from C++ real-time
 ## Building
 
 ### Prerequisites
+
 - gRPC C++ library
 - Protocol Buffers C++ library
 - OpenCV
 - Pylon SDK
 - .NET 9.0 SDK
 
+#### Linux-Specific Requirements
+
+On Linux, you'll also need the POSIX real-time library for shared memory support:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install librt-dev
+
+# The rt library is usually included in glibc, but CMake will link it explicitly
+```
+
 ### C++ Build
+
 ```bash
 mkdir build && cd build
 cmake ..
@@ -107,6 +122,7 @@ make LaserDemoRTTasks
 ```
 
 ### C# Build
+
 ```bash
 cd ui
 dotnet build
@@ -136,7 +152,9 @@ dotnet build
 1. **gRPC Connection Failed**: Check that C++ server is running and port 50051 is available
 2. **No Image Data**: Verify camera is connected and RT tasks are running
 3. **Format Conversion Errors**: Check OpenCV installation and image dimensions
-4. **Shared Memory Issues**: Ensure proper Windows permissions for shared memory access
+4. **Shared Memory Issues**: 
+   - Windows: Ensure proper Windows permissions for shared memory access
+   - Linux: Check that `/dev/shm` is mounted and accessible (usually mounted by default)
 
 ## Future Enhancements
 

@@ -4,6 +4,16 @@
 echo "=== RSI Laser Demo - gRPC Camera Streaming Test ==="
 echo
 
+echo "Platform: This solution works on both Windows and Linux"
+echo "Current dependencies for Linux:"
+echo "  - gRPC C++ library (libgrpc++-dev)"
+echo "  - Protocol Buffers (libprotobuf-dev)" 
+echo "  - OpenCV (libopencv-dev)"
+echo "  - POSIX RT library (included in glibc)"
+echo "  - Pylon SDK for Linux"
+echo "Run './scripts/verify_linux_deps.sh' to check dependencies on Linux"
+echo
+
 echo "1. Building C++ project with gRPC support..."
 echo "   - Make sure you have gRPC and protobuf installed"
 echo "   - Run: mkdir build && cd build"

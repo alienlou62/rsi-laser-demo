@@ -61,7 +61,7 @@ private:
     size_t m_currentSize = 0;
     uint32_t m_sequenceNumber = 0;
     
-    // Windows shared memory handles
+    // Platform-specific shared memory handle
     void* m_memoryHandle = nullptr;
 };
 
