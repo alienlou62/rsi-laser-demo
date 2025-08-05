@@ -6,7 +6,7 @@ public interface IRmpGrpcService
     bool IsConnected { get; }
 
     //grpc connection
-    Task<bool> ConnectAsync(string serverAddress);
+    Task<bool> ConnectAsync(string ip, int port);
     Task DisconnectAsync();
 
     //controller
@@ -40,12 +40,12 @@ public class RmpGrpcService : IRmpGrpcService
 
     /** METHODS **/
     //grpc network
-    public async Task<bool> ConnectAsync(string serverAddress)
+    public async Task<bool> ConnectAsync(string ip, int port)
     {
         try
         {
             // Create gRPC channel
-            _channel = GrpcChannel.ForAddress($"http://{serverAddress}");
+            _channel = GrpcChannel.ForAddress($"http://{ip}:{port}");
 
             // Check if the channel is valid
             _serverClient = new ServerControlServiceClient(_channel);

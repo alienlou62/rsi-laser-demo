@@ -7,7 +7,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
 
     /** SERVICES **/
-    private readonly IConnectionManagerService _connectionManager;
+    private readonly ISshService _sshService;
+    private readonly IRmpGrpcService _rmpGrpcService;
     private readonly ICameraService _cameraService;
 
 
@@ -233,7 +234,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var rmp = _connectionManager.RmpGrpcService;
+            var rmp = _sshService.RmpGrpcService;
             if (rmp != null)
             {
                 LogMessage("Stopping task manager...");
@@ -264,7 +265,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var rmp = _connectionManager.RmpGrpcService;
+            var rmp = _sshService.RmpGrpcService;
             if (string.IsNullOrEmpty(Global_IsMotionEnabled) || rmp == null)
                 return;
 
@@ -372,7 +373,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             IsConnecting = true;
             LastError = string.Empty;
 
-            var success = await _connectionManager.ConnectAsync(IpAddress, Port);
+            var success = await _rmpGrpcService.ConnectAsync(IpAddress, Port);
 
             if (success)
             {
@@ -423,7 +424,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 await StopCameraStreamAsync();
             }
 
-            await _connectionManager.DisconnectAsync();
+            await _rmpGrpcService.DisconnectAsync();
             IsConnected = false;
             IsSshAuthenticated = false;
         }
@@ -504,11 +505,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         StorageLoad();
 
         //services
-        _connectionManager = new ConnectionManagerService();
-        _cameraService = new HttpCameraService("http://localhost:50080"); // Independent camera for JSON frame reading
+        _sshService     = new SshService();
+        _cameraService  = new HttpCameraService("http://localhost:50080");
+        _rmpGrpcService = new RmpGrpcService();
 
         //connection
-        IsConnected = _connectionManager.IsConnected;
+        IsConnected = _rmpGrpcService.IsConnected;
     }
 
 
@@ -524,18 +526,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             // checks
-            if (!IsConnected || !_connectionManager.IsRunning)
+            if (!IsConnected)
                 return;
-
-            var rmp = _connectionManager.RmpGrpcService;
 
             //controller status - we'll implement this later when we have motion control
             // For now, just simulate some data
-            try { ControllerStatus = await rmp.GetControllerStatusAsync(); }
+            try { ControllerStatus = await _rmpGrpcService.GetControllerStatusAsync(); }
             catch { ControllerStatus = null; }
 
             //network status
-            try { NetworkStatus = (ControllerStatus != null) ? await rmp.GetNetworkStatusAsync() : null; }
+            try { NetworkStatus = (ControllerStatus != null) ? await _rmpGrpcService.GetNetworkStatusAsync() : null; }
             catch { NetworkStatus = null; }
 
             // ball positions
@@ -544,7 +544,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 //tm status
                 try
                 {
-                    TaskManagerStatus = (ControllerStatus != null) ? await rmp.GetTaskManagerStatusAsync() : null;
+                    TaskManagerStatus = (ControllerStatus != null) ? await _rmpGrpcService.GetTaskManagerStatusAsync() : null;
 
                     IsProgramRunning = TaskManagerStatus != null && TaskManagerStatus.State == RTTaskManagerState.Running;
                 }
@@ -750,8 +750,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     //globals
     private async Task UpdateGlobalValues()
     {
-        var rmp = _connectionManager.RmpGrpcService;
-        if (rmp == null) return;
+        if (_rmpGrpcService == null) return;
 
         // Update global value names if task manager status is available
         await UpdateGlobalValuesAsync();
@@ -1085,7 +1084,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 LogMessage($"SSH: Running command '{command}'...");
             }
 
-            var result = await _connectionManager.RunSshCommandAsync(command, SshUser, SshPassword);
+            var result = await _sshService.RunSshCommandAsync(command, SshUser, SshPassword);
 
             if (updateSshOutput)
             {
