@@ -27,7 +27,8 @@ class TripleBufferManager {
 public:
   TripleBufferManager(TripleBuffer<T>* triple, bool is_writer = false)
     : triple_(triple), 
-      index_(is_writer ? 1 : 2)
+      index_(is_writer ? 1 : 2),
+      is_writer_(is_writer)
   {
     lock_ = is_writer ? std::unique_lock<std::mutex>(triple_->writer_mutex, std::try_to_lock) 
                       : std::unique_lock<std::mutex>(triple_->reader_mutex, std::try_to_lock);
@@ -43,7 +44,8 @@ public:
   TripleBufferManager(TripleBufferManager&& other) noexcept
     : triple_(std::move(other.triple_)),
       lock_(std::move(other.lock_)),
-      index_(other.index_)
+      index_(other.index_),
+      is_writer_(other.is_writer_)
   {
     other.index_ = -1;
   }
@@ -58,10 +60,24 @@ public:
     index_ = old_spare;
   }
 
+  void write(const T& data) {
+    if (!is_writer_) {
+      throw std::runtime_error("Cannot write to TripleBufferManager that is not a writer");
+    }
+    memcpy(&triple_->buffers[index_], &data, sizeof(T));
+    swap_buffer();
+  }
+
+  void read(T& data) {
+    swap_buffer();
+    memcpy(&data, &triple_->buffers[index_], sizeof(T));
+  }
+
 protected:
   TripleBuffer<T>* triple_;
   std::unique_lock<std::mutex> lock_;
   int index_;
+  bool is_writer_ = false;
 };
 
 template<typename T>

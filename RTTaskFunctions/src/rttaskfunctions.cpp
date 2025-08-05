@@ -8,9 +8,14 @@
 #include "image_processing.h"
 #include "motion_control.h"
 #include "rmp_helpers.h"
+#include "shared_memory_helpers.h"
 
 #include <iostream>
 #include <string>
+
+#ifndef SHARED_MEMORY_NAME
+#define SHARED_MEMORY_NAME "/LASER_DEMO"
+#endif // SHARED_MEMORY_NAME
 
 using namespace Pylon;
 
@@ -21,6 +26,8 @@ using namespace RSI::RapidCode::RealTimeTasks;
 PylonAutoInitTerm g_PylonAutoInitTerm;
 CInstantCamera g_camera;
 CGrabResultPtr g_ptrGrabResult;
+SharedMemoryTripleBuffer<CameraHelpers::YUYVFrame> g_sharedMemory(SHARED_MEMORY_NAME, true);
+TripleBufferManager<CameraHelpers::YUYVFrame> g_tripleBufferManager(g_sharedMemory.get(), true);
 
 // Initializes the global data structure and sets up the camera and multi-axis.
 RSI_TASK(Initialize)
@@ -100,6 +107,9 @@ RSI_TASK(DetectBall)
 
   // If frame grab failed due to a timeout, exit early but do not increment failure count
   if (!frameGrabbed) return;
+
+  // Copy the grabbed frame to shared memory
+  g_tripleBufferManager.write(*static_cast<CameraHelpers::YUYVFrame *>(g_ptrGrabResult->GetBuffer()));
 
   // Record the axis positions at the time of frame grab
   double initialX(RTAxisGet(0)->ActualPositionGet());
