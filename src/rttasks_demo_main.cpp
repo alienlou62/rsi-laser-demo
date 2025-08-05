@@ -23,7 +23,7 @@ using namespace Pylon;
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
-constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
+constexpr std::chrono::milliseconds LOOP_INTERVAL(10); // milliseconds (100 FPS)
 constexpr int32_t TASK_WAIT_TIMEOUT = 1000;            // 1 seconds, for task execution wait
 constexpr int32_t INIT_TIMEOUT = 15000;                // 15 seconds, initialization can take a while
 constexpr int32_t DETECTION_TASK_PERIOD = 1;
