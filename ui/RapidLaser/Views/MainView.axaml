@@ -575,21 +575,16 @@
                         <StackPanel IsVisible="{Binding IsConnected}" Spacing="8">
 
                             <!--  Camera Status  -->
-                            <controls:LabeledControl Label="Status" LabelWidth="60">
-                                <TextBlock
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Center"
-                                    Foreground="{Binding IsCameraStreaming, Converter={x:Static converters:BoolConverters.BoolToSuccessDangerBrushConverter}}"
-                                    Text="{Binding IsCameraStreaming, Converter={x:Static converters:BoolConverters.BoolToStreamingStatusConverter}}" />
-                            </controls:LabeledControl>
+                            <controls:StatusLabel
+                                Title="Status"
+                                IsActive="{Binding IsCameraStreaming}"
+                                Value="{Binding IsCameraStreaming, Converter={x:Static converters:BoolConverters.BoolToStreamingStatusConverter}}" />
 
                             <!--  Camera FPS  -->
-                            <controls:LabeledControl Label="FPS" LabelWidth="60">
-                                <TextBlock
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Center"
-                                    Text="{Binding CameraFps, StringFormat='{}{0:F1}', FallbackValue='0.0'}" />
-                            </controls:LabeledControl>
+                            <controls:StatusLabel
+                                Title="FPS"
+                                IsMonoFont="True"
+                                Value="{Binding CameraFps, StringFormat='{}{0:F1}', FallbackValue='0.0'}" />
 
                             <!--  Start/Stop Camera Button  -->
                             <Button
