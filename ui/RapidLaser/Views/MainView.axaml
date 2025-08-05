@@ -102,8 +102,8 @@
                             ToolTip.Tip="RTTaskManager.Shutdown() ">
                             <StackPanel Orientation="Horizontal" Spacing="4">
                                 <icons:MaterialIcon
-                                    Width="15"
-                                    Height="15"
+                                    Width="16"
+                                    Height="16"
                                     Kind="Skull" />
                                 <TextBlock VerticalAlignment="Center" Text="Kill Program" />
                             </StackPanel>
@@ -433,14 +433,6 @@
                                     Content="Connect"
                                     IsEnabled="{Binding !IsConnecting}"
                                     IsVisible="{Binding !IsConnected}" />
-
-                                <!--  Mock Service Toggle  -->
-                                <controls:LabeledControl
-                                    IsVisible="False"
-                                    Label="Use Mock Server"
-                                    LabelWidth="45">
-                                    <CheckBox Classes="size-xs" IsChecked="{Binding UseMockService}" />
-                                </controls:LabeledControl>
                             </StackPanel>
 
                             <Button

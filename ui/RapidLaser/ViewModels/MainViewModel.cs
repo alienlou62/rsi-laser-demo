@@ -1,20 +1,6 @@
 ﻿namespace RapidLaser.ViewModels;
 
-public partial class GlobalValueItem : ObservableObject
-{
-    [ObservableProperty]
-    private string _name = string.Empty;
-
-    [ObservableProperty]
-    private string _value = string.Empty;
-
-    [ObservableProperty]
-    private bool _isNumeric = true;
-
-    public override string ToString() => Name;
-}
-
-public partial class MainViewModel : ViewModelBase, IDisposable
+public partial class MainViewModel : ObservableObject, IDisposable
 {
     /** UI **/
     private Window? _mainWindow;
@@ -22,7 +8,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     /** SERVICES **/
     private readonly IConnectionManagerService _connectionManager;
-    private readonly ICameraService _independentCameraService; // Independent camera service
+    private readonly ICameraService _cameraService;
 
 
     /** FIELDS **/
@@ -93,7 +79,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private bool _global_IsMotionEnabledValid;
 
-    //program maps (these hold global values)
+    //program mappings (these hold global values)
     [ObservableProperty]
     private double? _program_BallX = 320.0; // Default center position
 
@@ -124,6 +110,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     //camera
     [ObservableProperty]
+    private WriteableBitmap? _cameraImage;
+
+    [ObservableProperty]
     private double _frameRate = 30.0;
 
     [ObservableProperty]
@@ -136,19 +125,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private int _binaryThreshold = 128;
 
     [ObservableProperty]
-    private int _objectsDetected = 1;
-
-    [ObservableProperty]
-    private WriteableBitmap? _cameraImage;
-
-    [ObservableProperty]
     private bool _isCameraStreaming = false;
 
     [ObservableProperty]
     private string _cameraStatus = "Disconnected";
-
-    [ObservableProperty]
-    private WriteableBitmap? _maskImage;
 
     private CancellationTokenSource? _cameraStreamCancellation;
 
@@ -179,30 +159,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     }
 
     [ObservableProperty]
-    private bool _useMockService = true; // Start with mock for testing
-
-    [ObservableProperty]
     private bool _isConnecting = false;
 
     [ObservableProperty]
     private string _lastError = string.Empty;
-
-    //state
-    [ObservableProperty]
-    private string _managerState = "Stopped";
-
-    [ObservableProperty]
-    private string _tasksActive = "0/2";
-
-    [ObservableProperty]
-    private string _ballDetectionStatus = "Inactive";
-
-    [ObservableProperty]
-    private string _motionControlStatus = "Inactive";
-
-    //display
-    [ObservableProperty]
-    private string _isProgramPausedDisplay = string.Empty;
 
     //mocks
     [ObservableProperty]
@@ -273,7 +233,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            var rmp = _connectionManager.GrpcService;
+            var rmp = _connectionManager.RmpGrpcService;
             if (rmp != null)
             {
                 LogMessage("Stopping task manager...");
@@ -304,7 +264,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            var rmp = _connectionManager.GrpcService;
+            var rmp = _connectionManager.RmpGrpcService;
             if (string.IsNullOrEmpty(Global_IsMotionEnabled) || rmp == null)
                 return;
 
@@ -327,10 +287,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             // Initialize independent camera service
-            if (!_independentCameraService.IsInitialized)
+            if (!_cameraService.IsInitialized)
             {
                 CameraStatus = "Initializing...";
-                var initialized = await _independentCameraService.InitializeAsync();
+                var initialized = await _cameraService.InitializeAsync();
                 if (!initialized)
                 {
                     CameraStatus = "Failed to initialize";
@@ -340,7 +300,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             }
 
             // Start grabbing frames
-            var started = await _independentCameraService.StartGrabbingAsync();
+            var started = await _cameraService.StartGrabbingAsync();
             if (!started)
             {
                 CameraStatus = "Failed to start";
@@ -373,12 +333,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             _cameraStreamCancellation?.Cancel();
 
-            await _independentCameraService.StopGrabbingAsync();
+            await _cameraService.StopGrabbingAsync();
 
             IsCameraStreaming = false;
             CameraStatus = "Stopped";
             CameraImage = null;
-            MaskImage = null;
 
             LogMessage("Camera: Stopped streaming");
         }
@@ -412,9 +371,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             IsConnecting = true;
             LastError = string.Empty;
-
-            // Update connection manager settings
-            _connectionManager.UseMockService = UseMockService;
 
             var success = await _connectionManager.ConnectAsync(IpAddress, Port);
 
@@ -476,17 +432,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             LastError = ex.Message;
             LogMessage($"Disconnect Error: {ex.Message}");
         }
-    }
-
-    [RelayCommand]
-    private void ToggleMockService()
-    {
-        _connectionManager.SetMockMode(UseMockService);
-    }
-
-    partial void OnUseMockServiceChanged(bool value)
-    {
-        _connectionManager.SetMockMode(value);
     }
 
     //ssh
@@ -559,12 +504,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         StorageLoad();
 
         //services
-        _connectionManager      = new ConnectionManagerService();
-        _independentCameraService = new HttpCameraService("http://localhost:50080"); // Independent camera for JSON frame reading
+        _connectionManager = new ConnectionManagerService();
+        _cameraService = new HttpCameraService("http://localhost:50080"); // Independent camera for JSON frame reading
 
         //connection
-        UseMockService = _connectionManager.UseMockService;
-        IsConnected    = _connectionManager.IsConnected;
+        IsConnected = _connectionManager.IsConnected;
     }
 
 
@@ -583,7 +527,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             if (!IsConnected || !_connectionManager.IsRunning)
                 return;
 
-            var rmp = _connectionManager.GrpcService;
+            var rmp = _connectionManager.RmpGrpcService;
 
             //controller status - we'll implement this later when we have motion control
             // For now, just simulate some data
@@ -655,7 +599,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 try
                 {
                     // For HttpCameraService, bypass the IsProgramRunning check since it has its own RT task verification
-                    if (_independentCameraService is not HttpCameraService)
+                    if (_cameraService is not HttpCameraService)
                     {
                         // Only stream if program is running for non-HTTP camera services
                         if (!IsProgramRunning)
@@ -666,7 +610,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     }
 
                     // Check server status before attempting to grab frame
-                    var serverStatus = await _independentCameraService.CheckServerStatusAsync(cancellationToken);
+                    var serverStatus = await _cameraService.CheckServerStatusAsync(cancellationToken);
                     if (!serverStatus)
                     {
                         // Server is not responding, stop streaming and update status
@@ -682,7 +626,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     }
 
                     // Get frame from independent camera service
-                    var (success, imageData, width, height) = await _independentCameraService.TryGrabFrameAsync(cancellationToken);
+                    var (success, imageData, width, height) = await _cameraService.TryGrabFrameAsync(cancellationToken);
 
                     if (success && imageData.Length > 0)
                     {
@@ -756,7 +700,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                         CameraStatus = "Stopped";
                     }
                     CameraImage = null;
-                    MaskImage = null;
                 }
             });
         }
@@ -807,7 +750,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     //globals
     private async Task UpdateGlobalValues()
     {
-        var rmp = _connectionManager.GrpcService;
+        var rmp = _connectionManager.RmpGrpcService;
         if (rmp == null) return;
 
         // Update global value names if task manager status is available
@@ -1178,7 +1121,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         // Clean up camera streaming
         _cameraStreamCancellation?.Cancel();
-        _independentCameraService?.Dispose();
+        _cameraService?.Dispose();
 
         GC.SuppressFinalize(this);
     }
