@@ -7,6 +7,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <random>
+#include <atomic>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <stdexcept>
+#include <string>
+#include <sys/wait.h>
 
 // --- Camera and Image Processing Headers ---
 #include <opencv2/opencv.hpp>
@@ -24,6 +31,7 @@
 #include "rmp_helpers.h"
 #include "timing_helpers.h"
 #include "image_helpers.h"
+#include "shared_memory_helpers.h"
 
 #ifndef SANDBOX_DIR
 #define SANDBOX_DIR ""
@@ -42,6 +50,47 @@ void sigint_handler(int signal)
   g_shutdown = true;
 }
 
+struct Frame { int value; };
+
+int SharedMemoryTest()
+{
+  const std::string SHM_NAME = "/triple_buffer_test";
+  SharedMemoryTripleBuffer<Frame> shm(SHM_NAME, true);
+  pid_t pid = fork();
+  if (pid != 0)
+  { // reader
+    SharedMemoryTripleBuffer<Frame> shm_reader(SHM_NAME);
+    TripleBufferManager<Frame> reader(shm_reader.get());
+    int index = 0;
+    while (index < 100 && !g_shutdown) {
+      reader.swap_buffer();
+      int value = reader->value;
+
+      std::cout << "Read " << value << std::endl;
+      usleep(16667);
+      ++index;
+    }
+    return 0;
+  } 
+  else
+  { // writer
+    TripleBufferManager<Frame> writer(shm.get(), true);
+    int index = 0;
+    while (index < 500 && !g_shutdown)
+    {
+      writer->value = index;
+      writer.swap_buffer();
+      // std::cout << "Wrote " << index << std::endl;
+
+      usleep(5000);
+      ++index;
+    }
+    
+    wait(nullptr);
+  }
+  return 0;
+}
+
 // --- Main Function ---
 int main()
 {
@@ -52,19 +101,7 @@ int main()
 
   int exitCode = 0;
 
-  RapidVector<RTTaskManager> taskManagers = RTTaskManager::Discover();
-  if (taskManagers.Size() == 0)
-  {
-    std::cerr << "No RTTaskManager found." << std::endl;
-  }
-  else
-  {
-    for (auto& taskManager : taskManagers)
-    {
-      std::cout << "Found RTTaskManager: " << taskManager.IdGet() << std::endl;
-      exitCode = 0; // Set exit code to success if we found a task manager
-    }
-  }
+  exitCode = SharedMemoryTest();
 
   MiscHelpers::PrintFooter(EXECUTABLE_NAME, exitCode);
   return exitCode;
