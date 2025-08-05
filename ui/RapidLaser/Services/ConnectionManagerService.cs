@@ -43,7 +43,7 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
     // CONSTRUCTOR
     public ConnectionManagerService()
     {
-        _httpCameraService = new HttpCameraService("http://localhost:8080");
+        _httpCameraService = new HttpCameraService("http://localhost:50080");
         _realGrpcService = new RmpGrpcService();
         _mockGrpcService = new RmpGrpcService_Mock();
 

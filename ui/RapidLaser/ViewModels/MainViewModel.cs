@@ -560,7 +560,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         //services
         _connectionManager      = new ConnectionManagerService();
-        _independentCameraService = new HttpCameraService("http://localhost:8080"); // Independent camera for JSON frame reading
+        _independentCameraService = new HttpCameraService("http://localhost:50080"); // Independent camera for JSON frame reading
 
         //connection
         UseMockService = _connectionManager.UseMockService;
@@ -641,9 +641,17 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         {
             var frameCounter = 0;
             var frameTimeTracker = DateTime.Now;
+            var lastFrameTime = DateTime.Now;
+
+            // Calculate target frame interval with reasonable limits
+            // Cap at 60 FPS (16.67ms) for human eye processing and resource efficiency
+            var targetFrameRate = Math.Min(FrameRate, 60.0);
+            var targetFrameIntervalMs = (int)(1000.0 / targetFrameRate);
 
             while (!cancellationToken.IsCancellationRequested && IsCameraStreaming)
             {
+                var frameStartTime = DateTime.Now;
+
                 try
                 {
                     // For HttpCameraService, bypass the IsProgramRunning check since it has its own RT task verification
@@ -657,24 +665,28 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                         }
                     }
 
+                    // Check server status before attempting to grab frame
+                    var serverStatus = await _independentCameraService.CheckServerStatusAsync(cancellationToken);
+                    if (!serverStatus)
+                    {
+                        // Server is not responding, stop streaming and update status
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            CameraStatus = "Server not responding";
+                            LogMessage("Camera: HTTP server is not responding, stopping stream");
+                        });
+
+                        // Stop streaming gracefully
+                        IsCameraStreaming = false;
+                        break;
+                    }
+
                     // Get frame from independent camera service
                     var (success, imageData, width, height) = await _independentCameraService.TryGrabFrameAsync(cancellationToken);
 
                     if (success && imageData.Length > 0)
                     {
-                        Console.WriteLine($"MainViewModel: Frame received, size: {imageData.Length} bytes");
-
-                        // Check if RT task is running from camera service data
-                        if (_independentCameraService is HttpCameraService httpCamera &&
-                            httpCamera.LastFrameData != null &&
-                            !httpCamera.LastFrameData.RtTaskRunning)
-                        {
-                            Console.WriteLine("MainViewModel: RT task not running, waiting...");
-                            await Task.Delay(100, cancellationToken); // Wait if RT task is not running
-                            continue;
-                        }
-
-                        Console.WriteLine($"MainViewModel: Processing frame {imageData.Length} bytes, {width}x{height}");
+                        // Process the frame
                         await ProcessHttpCameraFrameAsync(imageData, width, height);
 
                         // Update frame count and FPS
@@ -694,11 +706,22 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                             frameTimeTracker = now;
                         }
                     }
-                    else
+
+                    // Calculate how long this frame took to process
+                    var processingTime = (DateTime.Now - frameStartTime).TotalMilliseconds;
+
+                    // Calculate delay needed to maintain target frame rate
+                    var remainingTime = targetFrameIntervalMs - processingTime;
+
+                    if (remainingTime > 0)
                     {
-                        Console.WriteLine($"MainViewModel: Frame grab failed - success: {success}, imageData length: {imageData?.Length ?? 0}");
-                        // Wait a bit before trying again if frame grab failed
-                        await Task.Delay(33, cancellationToken); // ~30 FPS
+                        // Wait the remaining time to maintain target frame rate
+                        await Task.Delay((int)remainingTime, cancellationToken);
+                    }
+                    else if (!success)
+                    {
+                        // If frame grab failed and we have no remaining time, add a small delay to prevent tight loop
+                        await Task.Delay(Math.Min(targetFrameIntervalMs, 33), cancellationToken);
                     }
                 }
                 catch (Exception ex) when (!(ex is OperationCanceledException))
@@ -720,13 +743,29 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 LogMessage($"Camera Stream Error: {ex.Message}");
             });
         }
+        finally
+        {
+            // Ensure proper cleanup when streaming stops
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (IsCameraStreaming)
+                {
+                    IsCameraStreaming = false;
+                    if (CameraStatus != "Server not responding")
+                    {
+                        CameraStatus = "Stopped";
+                    }
+                    CameraImage = null;
+                    MaskImage = null;
+                }
+            });
+        }
     }
 
     private async Task ProcessHttpCameraFrameAsync(byte[] imageData, int width, int height)
     {
         try
         {
-            Console.WriteLine($"ProcessHttpCameraFrameAsync: Processing {imageData.Length} bytes, {width}x{height}");
             // For HTTP camera service, imageData is a JPEG byte array
             // We can load it directly into a bitmap
 
@@ -734,11 +773,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 try
                 {
-                    Console.WriteLine("ProcessHttpCameraFrameAsync: Creating bitmap from JPEG data");
                     using var stream = new MemoryStream(imageData);
                     var bitmap = new Bitmap(stream);
-
-                    Console.WriteLine($"ProcessHttpCameraFrameAsync: Bitmap created {bitmap.PixelSize.Width}x{bitmap.PixelSize.Height}");
 
                     // Convert to WriteableBitmap for UI binding
                     var writeableBitmap = new WriteableBitmap(
@@ -751,14 +787,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     bitmap.CopyPixels(new PixelRect(0, 0, bitmap.PixelSize.Width, bitmap.PixelSize.Height),
                         lockedBitmap.Address, lockedBitmap.RowBytes * bitmap.PixelSize.Height, lockedBitmap.RowBytes);
 
-                    Console.WriteLine("ProcessHttpCameraFrameAsync: Setting CameraImage");
                     CameraImage = writeableBitmap;
 
-                    // Get ball detection data from the HTTP camera service
-                    if (_independentCameraService is HttpCameraService httpCamera && httpCamera.LastFrameData != null)
-                    {
-                        var frameData = httpCamera.LastFrameData;
-                    }
+                    // Note: Ball detection data is now handled separately from camera image data
                 }
                 catch (Exception ex)
                 {
@@ -771,9 +802,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             LogMessage($"Frame Processing Error: {ex.Message}");
         }
     }
-
-    private DateTime _lastFrameTime = DateTime.Now;
-    private double _currentFrameRate = 0;
 
     //globals
     private async Task UpdateGlobalValues()

@@ -1,6 +1,5 @@
 using System.Net.Http;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace RapidLaser.Services;
 
@@ -16,10 +15,7 @@ public class HttpCameraService : ICameraService
     public int ImageWidth { get; private set; } = 640;
     public int ImageHeight { get; private set; } = 480;
 
-    // Expose the latest frame data for ball detection
-    public CameraFrameData? LastFrameData { get; private set; }
-
-    public HttpCameraService(string serverUrl = "http://localhost:8080")
+    public HttpCameraService(string serverUrl = "http://localhost:50080")
     {
         _httpClient = new HttpClient();
         _httpClient.Timeout = TimeSpan.FromSeconds(5);
@@ -30,14 +26,16 @@ public class HttpCameraService : ICameraService
     {
         try
         {
+            Console.WriteLine($"HttpCameraService: Attempting to connect to {_serverUrl}/status");
             // Test connection to camera server
             var response = await _httpClient.GetAsync($"{_serverUrl}/status");
             _isInitialized = response.IsSuccessStatusCode;
+            Console.WriteLine($"HttpCameraService: Connection test result - StatusCode: {response.StatusCode}, IsSuccess: {response.IsSuccessStatusCode}");
             return _isInitialized;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to initialize HTTP camera service: {ex.Message}");
+            Console.WriteLine($"Failed to initialize HTTP camera service to {_serverUrl}: {ex.Message}");
             _isInitialized = false;
             return false;
         }
@@ -56,6 +54,19 @@ public class HttpCameraService : ICameraService
     {
         _isGrabbing = false;
         return Task.CompletedTask;
+    }
+
+    public async Task<bool> CheckServerStatusAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var response = await _httpClient.GetAsync($"{_serverUrl}/status", cancellationToken);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public async Task<(bool success, byte[] imageData, int width, int height)> TryGrabFrameAsync(CancellationToken cancellationToken = default)
@@ -80,32 +91,35 @@ public class HttpCameraService : ICameraService
             Console.WriteLine($"HttpCameraService: Received JSON response length: {jsonContent.Length}");
             Console.WriteLine($"HttpCameraService: JSON content preview: {jsonContent.Substring(0, Math.Min(200, jsonContent.Length))}");
 
-            var frameData = JsonSerializer.Deserialize<CameraFrameData>(jsonContent);
-            Console.WriteLine($"HttpCameraService: Deserialized frameData - Width: {frameData?.Width}, Height: {frameData?.Height}, ImageData null: {frameData?.ImageData == null}");
+            var jsonDocument = JsonDocument.Parse(jsonContent);
+            var imageData = jsonDocument.RootElement.GetProperty("imageData").GetString();
+            Console.WriteLine($"HttpCameraService: Deserialized imageData - null: {imageData == null}");
 
-            if (frameData?.ImageData == null)
+            if (string.IsNullOrEmpty(imageData))
             {
-                Console.WriteLine($"HttpCameraService: No image data in response (frameData={frameData}, ImageData={(frameData?.ImageData != null ? "not null" : "null")})");
+                Console.WriteLine($"HttpCameraService: No image data in response");
                 return (false, Array.Empty<byte>(), 0, 0);
             }
 
-            // Store frame data for ball detection access
-            LastFrameData = frameData;
-
             // Convert base64 JPEG to byte array
-            var base64Data = frameData.ImageData;
+            var base64Data = imageData;
             if (base64Data.StartsWith("data:image/jpeg;base64,"))
             {
                 base64Data = base64Data.Substring("data:image/jpeg;base64,".Length);
             }
             var imageBytes = Convert.FromBase64String(base64Data);
 
-            // Update dimensions from frame data
-            ImageWidth = frameData.Width;
-            ImageHeight = frameData.Height;
+            // For mock data, use default dimensions since we only have a minimal JPEG header
+            // In real implementation, you would decode the image to get actual dimensions
+            const int defaultWidth = 640;
+            const int defaultHeight = 480;
 
-            Console.WriteLine($"HttpCameraService: Successfully grabbed frame {frameData.Width}x{frameData.Height}, image bytes: {imageBytes.Length}");
-            return (true, imageBytes, frameData.Width, frameData.Height);
+            // Update dimensions
+            ImageWidth = defaultWidth;
+            ImageHeight = defaultHeight;
+
+            Console.WriteLine($"HttpCameraService: Successfully grabbed frame {defaultWidth}x{defaultHeight}, image bytes: {imageBytes.Length}");
+            return (true, imageBytes, defaultWidth, defaultHeight);
         }
         catch (Exception ex)
         {
@@ -120,50 +134,4 @@ public class HttpCameraService : ICameraService
         _isInitialized = false;
         _httpClient?.Dispose();
     }
-}
-
-// Data model matching the JSON structure from SimpleCameraServer.cs
-public class CameraFrameData
-{
-    [JsonPropertyName("width")]
-    public int Width { get; set; }
-
-    [JsonPropertyName("height")]
-    public int Height { get; set; }
-
-    [JsonPropertyName("centerX")]
-    public double CenterX { get; set; }
-
-    [JsonPropertyName("centerY")]
-    public double CenterY { get; set; }
-
-    [JsonPropertyName("ballDetected")]
-    public bool BallDetected { get; set; }
-
-    [JsonPropertyName("imageData")]
-    public string? ImageData { get; set; }
-
-    [JsonPropertyName("timestamp")]
-    public long Timestamp { get; set; }
-
-    [JsonPropertyName("confidence")]
-    public double Confidence { get; set; }
-
-    [JsonPropertyName("targetX")]
-    public double TargetX { get; set; }
-
-    [JsonPropertyName("targetY")]
-    public double TargetY { get; set; }
-
-    [JsonPropertyName("rtTaskRunning")]
-    public bool RtTaskRunning { get; set; }
-
-    [JsonPropertyName("format")]
-    public string? Format { get; set; }
-
-    [JsonPropertyName("imageSize")]
-    public int ImageSize { get; set; }
-
-    [JsonPropertyName("frameNumber")]
-    public int FrameNumber { get; set; }
 }

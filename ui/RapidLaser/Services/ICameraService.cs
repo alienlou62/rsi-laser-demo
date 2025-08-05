@@ -10,6 +10,7 @@ public interface ICameraService
     Task<bool> InitializeAsync();
     Task<bool> StartGrabbingAsync();
     Task StopGrabbingAsync();
+    Task<bool> CheckServerStatusAsync(CancellationToken cancellationToken = default);
     Task<(bool success, byte[] imageData, int width, int height)> TryGrabFrameAsync(CancellationToken cancellationToken = default);
     void Dispose();
 }

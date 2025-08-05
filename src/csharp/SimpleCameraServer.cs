@@ -36,10 +36,13 @@ Console.CancelKeyPress += (sender, e) =>
     Console.WriteLine("SIGINT received, setting shutdown flag...");
     shutdown = true;
     // Attempt to stop and dispose the listener if possible
-    try {
+    try
+    {
         httpListener?.Stop();
         httpListener?.Close();
-    } catch (Exception ex) {
+    }
+    catch (Exception ex)
+    {
         Console.WriteLine($"Error disposing HttpListener: {ex.Message}");
     }
 };
@@ -51,7 +54,7 @@ try
     httpListener = new HttpListener();
     httpListener.Prefixes.Add("http://localhost:50080/");
     httpListener.Start();
-    
+
     Console.WriteLine("HTTP camera server started successfully on http://localhost:50080/");
     Console.WriteLine("Endpoints:");
     Console.WriteLine("  GET /camera/frame - Get latest camera frame");
@@ -73,7 +76,7 @@ try
         {
             Console.WriteLine($"Error reading RT task data: {ex.Message}");
         }
-        
+
         return CreateMockFrame();
     }
 
@@ -82,23 +85,10 @@ try
         // Create a simple 1x1 red pixel as mock image data
         var mockImageBytes = new byte[] { 0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01 }; // JPEG header
         var base64Image = Convert.ToBase64String(mockImageBytes);
-        
-        return new 
+
+        return new
         {
-            timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            frameNumber = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() % int.MaxValue),
-            width = 640,
-            height = 480,
-            format = "jpeg",
-            imageData = $"data:image/jpeg;base64,{base64Image}",
-            imageSize = mockImageBytes.Length,
-            ballDetected = false,
-            centerX = 0.0,
-            centerY = 0.0,
-            confidence = 0.0,
-            targetX = 0.0,
-            targetY = 0.0,
-            rtTaskRunning = File.Exists(RT_TASK_RUNNING_FLAG)
+            imageData = $"data:image/jpeg;base64,{base64Image}"
         };
     }
 
@@ -112,17 +102,17 @@ try
                 var context = await httpListener.GetContextAsync();
                 var response = context.Response;
                 var url = context.Request.Url?.AbsolutePath ?? "";
-                
+
                 Console.WriteLine($"Request: {url}");
-                
+
                 if (url == "/camera/frame")
                 {
                     // Get data from RT tasks via shared data file
                     var frameData = GetCameraDataFromRTTasks();
-                    
+
                     var json = JsonConvert.SerializeObject(frameData, Formatting.Indented);
                     var buffer = System.Text.Encoding.UTF8.GetBytes(json);
-                    
+
                     response.ContentType = "application/json";
                     response.ContentLength64 = buffer.Length;
                     await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
@@ -132,7 +122,7 @@ try
                     var status = new { status = "running", server = EXECUTABLE_NAME };
                     var json = JsonConvert.SerializeObject(status);
                     var buffer = System.Text.Encoding.UTF8.GetBytes(json);
-                    
+
                     response.ContentType = "application/json";
                     response.ContentLength64 = buffer.Length;
                     await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
@@ -144,7 +134,7 @@ try
                     response.ContentLength64 = error.Length;
                     await response.OutputStream.WriteAsync(error, 0, error.Length);
                 }
-                
+
                 response.Close();
             }
             catch (Exception ex) when (!shutdown)
@@ -163,7 +153,7 @@ try
     }
 
     Console.WriteLine("\nShutdown initiated...");
-    
+
     httpListener.Stop();
     httpListener.Close();
     httpListener = new HttpListener();

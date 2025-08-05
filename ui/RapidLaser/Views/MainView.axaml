@@ -960,7 +960,7 @@
                                                         Fill="Transparent"
                                                         IsVisible="{Binding Program_BallRadius, Converter={x:Static ObjectConverters.IsNotNull}}"
                                                         Stroke="Lime"
-                                                        StrokeThickness="3">
+                                                        StrokeThickness="1">
 
                                                         <!--  ellipse size (diameter = radius * 2)  -->
                                                         <Ellipse.Width>
