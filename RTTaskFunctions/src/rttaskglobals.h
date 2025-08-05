@@ -78,6 +78,16 @@ struct GlobalData
   RSI_GLOBAL(double, ballCenterY);
   RSI_GLOBAL(double, ballRadius);
 
+  // Image data for streaming
+  RSI_GLOBAL(bool, newImageAvailable);
+  RSI_GLOBAL(int64_t, frameTimestamp);
+  RSI_GLOBAL(int, imageWidth);
+  RSI_GLOBAL(int, imageHeight);
+  RSI_GLOBAL(uint32_t, imageSequenceNumber);
+  RSI_GLOBAL(uint32_t, imageDataSize);
+  // Note: Actual image data will be stored in a separate shared memory region
+  // since RSI globals have size limitations
+
   // Multi-axis and motion control state
   RSI_GLOBAL(bool, multiAxisReady);
   RSI_GLOBAL(bool, motionEnabled);
@@ -102,6 +112,14 @@ inline constexpr GlobalMetadataMap<RSI::RapidCode::RealTimeTasks::GlobalMaxSize>
   REGISTER_GLOBAL(ballCenterX),
   REGISTER_GLOBAL(ballCenterY),
   REGISTER_GLOBAL(ballRadius),
+
+  // Image streaming state
+  REGISTER_GLOBAL(newImageAvailable),
+  REGISTER_GLOBAL(frameTimestamp),
+  REGISTER_GLOBAL(imageWidth),
+  REGISTER_GLOBAL(imageHeight),
+  REGISTER_GLOBAL(imageSequenceNumber),
+  REGISTER_GLOBAL(imageDataSize),
 
   // Multi-axis and motion control state
   REGISTER_GLOBAL(multiAxisReady),

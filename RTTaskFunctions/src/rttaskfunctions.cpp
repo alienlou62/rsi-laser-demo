@@ -1,24 +1,28 @@
-// --- Camera and Image Processing Headers ---
+//camera
 #include <opencv2/opencv.hpp>
 #include <pylon/PylonIncludes.h>
-
+//src
 #include "rttaskglobals.h"
-
 #include "camera_helpers.h"
 #include "image_processing.h"
 #include "motion_control.h"
 #include "rmp_helpers.h"
 #include "shared_memory_helpers.h"
 
+//system
 #include <iostream>
 #include <string>
+#include <chrono>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <iomanip>
 
 #ifndef SHARED_MEMORY_NAME
 #define SHARED_MEMORY_NAME "/LASER_DEMO"
 #endif // SHARED_MEMORY_NAME
 
 using namespace Pylon;
-
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
@@ -28,6 +32,83 @@ CInstantCamera g_camera;
 CGrabResultPtr g_ptrGrabResult;
 SharedMemoryTripleBuffer<CameraHelpers::YUYVFrame> g_sharedMemory(SHARED_MEMORY_NAME, true);
 TripleBufferManager<CameraHelpers::YUYVFrame> g_tripleBufferManager(g_sharedMemory.get(), true);
+
+// Function to convert image data to base64 for JSON embedding
+std::string EncodeBase64(const std::vector<uint8_t>& data) {
+    static const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string result;
+    int val = 0, valb = -6;
+    for (uint8_t c : data) {
+        val = (val << 8) + c;
+        valb += 8;
+        while (valb >= 0) {
+            result.push_back(chars[(val >> valb) & 0x3F]);
+            valb -= 6;
+        }
+    }
+    if (valb > -6) result.push_back(chars[((val << 8) >> (valb + 8)) & 0x3F]);
+    while (result.size() % 4) result.push_back('=');
+    return result;
+}
+
+// Function to write camera frame data as JSON for C# UI
+void WriteCameraFrameJSON(const cv::Mat& frame, int frameNumber, double timestamp,
+                         bool ballDetected, double centerX, double centerY, double confidence,
+                         double targetX, double targetY) {
+    try {
+        // Convert frame to JPEG for efficient transmission
+        std::vector<uint8_t> jpegBuffer;
+        cv::Mat rgbFrame;
+        
+        // Convert YUYV to RGB for JPEG encoding
+        cv::cvtColor(frame, rgbFrame, cv::COLOR_YUV2RGB_YUYV);
+        
+        // Encode as JPEG with quality 80
+        std::vector<int> jpegParams = {cv::IMWRITE_JPEG_QUALITY, 80};
+        cv::imencode(".jpg", rgbFrame, jpegBuffer, jpegParams);
+        
+        // Convert to base64
+        std::string base64Image = EncodeBase64(jpegBuffer);
+        
+        // Write JSON with frame data
+        std::ostringstream json;
+        json << "{\n";
+        json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << timestamp << ",\n";
+        json << "  \"frameNumber\": " << frameNumber << ",\n";
+        json << "  \"width\": " << frame.cols << ",\n";
+        json << "  \"height\": " << frame.rows << ",\n";
+        json << "  \"format\": \"jpeg\",\n";
+        json << "  \"imageData\": \"data:image/jpeg;base64," << base64Image << "\",\n";
+        json << "  \"imageSize\": " << jpegBuffer.size() << ",\n";
+        json << "  \"ballDetected\": " << (ballDetected ? "true" : "false") << ",\n";
+        json << "  \"centerX\": " << std::fixed << std::setprecision(2) << centerX << ",\n";
+        json << "  \"centerY\": " << std::fixed << std::setprecision(2) << centerY << ",\n";
+        json << "  \"confidence\": " << std::fixed << std::setprecision(3) << confidence << ",\n";
+        json << "  \"targetX\": " << std::fixed << std::setprecision(2) << targetX << ",\n";
+        json << "  \"targetY\": " << std::fixed << std::setprecision(2) << targetY << ",\n";
+        json << "  \"rtTaskRunning\": true\n";
+        json << "}";
+        
+        // Write to file atomically
+        std::ofstream dataFile("/tmp/rsi_camera_data.json.tmp");
+        if (dataFile.is_open()) {
+            dataFile << json.str();
+            dataFile.close();
+            // Atomic rename to prevent partial reads
+            std::rename("/tmp/rsi_camera_data.json.tmp", "/tmp/rsi_camera_data.json");
+        }
+        
+        // Create running flag file
+        std::ofstream flagFile("/tmp/rsi_rt_task_running");
+        if (flagFile.is_open()) {
+            flagFile << "1";
+            flagFile.close();
+        }
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Error writing camera frame JSON: " << e.what() << std::endl;
+    }
+}
 
 // Initializes the global data structure and sets up the camera and multi-axis.
 RSI_TASK(Initialize)
@@ -110,15 +191,30 @@ RSI_TASK(DetectBall)
 
   // Copy the grabbed frame to shared memory
   g_tripleBufferManager.write(*static_cast<CameraHelpers::YUYVFrame *>(g_ptrGrabResult->GetBuffer()));
+  
+  // Store image data for JSON file - for C# server communication
+  static uint32_t sequenceNumber = 0;
+  sequenceNumber++;
+  
+  // Get current frame timestamp
+  auto frameTimestamp = std::chrono::duration_cast<std::chrono::microseconds>(
+    std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+  
+  // Update image streaming globals
+  data->newImageAvailable = true;
+  data->frameTimestamp = frameTimestamp;
+  data->imageWidth = CameraHelpers::IMAGE_WIDTH;
+  data->imageHeight = CameraHelpers::IMAGE_HEIGHT;
+  data->imageSequenceNumber = sequenceNumber;
 
   // Record the axis positions at the time of frame grab
   double initialX(RTAxisGet(0)->ActualPositionGet());
   double initialY(RTAxisGet(1)->ActualPositionGet());
 
   // Convert the grabbed frame to a CV mat format for processing
-  cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(
-      static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()),
-      CameraHelpers::IMAGE_WIDTH, CameraHelpers::IMAGE_HEIGHT);
+  cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()), 
+                                                      CameraHelpers::IMAGE_WIDTH, 
+                                                      CameraHelpers::IMAGE_HEIGHT);
 
   // Detect the ball in the YUYV frame
   cv::Vec3f ball(0.0, 0.0, 0.0);
@@ -130,17 +226,27 @@ RSI_TASK(DetectBall)
   data->ballRadius = ball[2];
   data->ballDetected = ballDetected;
 
-  // If no ball was detected, increment the failure count and exit early
-  if (!ballDetected)
-  {
-    data->ballDetectionFailures++;
-    return;
-  }
+  // Calculate confidence based on ball radius (larger = more confident)
+  double confidence = ballDetected ? std::min(ball[2] / 50.0, 1.0) : 0.0;
 
   // Calculate the target positions based on the offsets and the position at the time of frame grab
   double offsetX(0.0), offsetY(0.0);
-  ImageProcessing::CalculateTargetPosition(ball, offsetX, offsetY);
-  data->targetX = initialX + offsetX;
-  data->targetY = initialY + offsetY;
+  if (ballDetected) {
+    ImageProcessing::CalculateTargetPosition(ball, offsetX, offsetY);
+    data->targetX = initialX + offsetX;
+    data->targetY = initialY + offsetY;
+  }
+
+  // Write camera frame data to JSON for C# UI (includes actual image data)
+  WriteCameraFrameJSON(yuyvFrame, data->imageSequenceNumber, 
+                      static_cast<double>(data->frameTimestamp),
+                      ballDetected, ball[0], ball[1], confidence,
+                      data->targetX, data->targetY);
+
+  // If no ball was detected, increment the failure count
+  if (!ballDetected)
+  {
+    data->ballDetectionFailures++;
+  }
   data->newTarget = true;
 }

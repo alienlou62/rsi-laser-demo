@@ -286,6 +286,64 @@ public static class BoolConverters
     /// </summary>
     public static readonly FuncValueConverter<bool, string> BoolToSizeInfoConverter =
         new(isResponsive => isResponsive ? "640×480 (Responsive)" : "640×480");
+
+    /// <summary>
+    /// Converts boolean to Yes/No string
+    /// </summary>
+    public static readonly FuncValueConverter<bool, string> BoolToYesNoConverter =
+        new(value => value ? "Yes" : "No");
+
+    /// <summary>
+    /// Converts boolean to streaming status string
+    /// </summary>
+    public static readonly FuncValueConverter<bool, string> BoolToStreamingStatusConverter =
+        new(isStreaming => isStreaming ? "Streaming" : "Stopped");
+
+    /// <summary>
+    /// Converts boolean to success/danger brush for status display
+    /// </summary>
+    public static readonly FuncValueConverter<bool, IBrush> BoolToSuccessDangerBrushConverter =
+        new(isSuccess => isSuccess
+            ? new SolidColorBrush(Color.FromRgb(76, 175, 80))   // Green for success
+            : new SolidColorBrush(Color.FromRgb(244, 67, 54))); // Red for danger
+
+    /// <summary>
+    /// Converts string representation of boolean to actual boolean
+    /// Handles "True", "true", "False", "false", and numeric representations
+    /// Returns null for null/empty strings so binding doesn't apply
+    /// </summary>
+    public static readonly IValueConverter StringToBoolConverter = new FuncValueConverter<string?, object?>((str) =>
+    {
+        if (string.IsNullOrEmpty(str)) return null;
+
+        // Handle direct boolean string representations
+        if (bool.TryParse(str, out bool result)) return result;
+
+        // Handle numeric representations (0 = false, non-zero = true)
+        if (double.TryParse(str, out double numericResult)) return numericResult != 0;
+
+        // Default to null for unrecognized values
+        return null;
+    });
+
+    /// <summary>
+    /// Converts string representation of boolean to negated boolean
+    /// Handles "True", "true", "False", "false", and numeric representations
+    /// Returns null for null/empty strings so binding doesn't apply
+    /// </summary>
+    public static readonly IValueConverter StringToNotBoolConverter = new FuncValueConverter<string?, object?>((str) =>
+    {
+        if (string.IsNullOrEmpty(str)) return null;
+
+        // Handle direct boolean string representations
+        if (bool.TryParse(str, out bool result)) return !result;
+
+        // Handle numeric representations (0 = true, non-zero = false)
+        if (double.TryParse(str, out double numericResult)) return numericResult == 0;
+
+        // Default to null for unrecognized values
+        return null;
+    });
 }
 
 public static class StringConverters

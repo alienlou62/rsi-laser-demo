@@ -3,15 +3,15 @@ namespace RapidLaser.Services;
 public interface IConnectionManagerService
 {
     bool IsConnected { get; }
+    bool IsRunning { get; }
     bool UseMockService { get; set; }
 
+    ICameraService CameraService { get; }
     IRmpGrpcService GrpcService { get; }
 
-    // grpc
     Task<bool> ConnectAsync(string ipAddress, int port);
     Task DisconnectAsync();
     void SetMockMode(bool useMock);
-    // ssh
     Task<string> RunSshCommandAsync(string command, string sshUser, string sshPass);
 }
 
@@ -24,25 +24,32 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
     [ObservableProperty]
     private bool _useMockService = false;
 
-    //
     [ObservableProperty]
     private bool _isConnected = false;
 
     [ObservableProperty]
+    private bool _isRunning = false;
+
+    [ObservableProperty]
+    private ICameraService _cameraService;
+
+    [ObservableProperty]
     private IRmpGrpcService _grpcService;
 
-    private readonly RmpGrpcService _realService;
-    private readonly RmpGrpcService_Mock _mockService;
-
+    private readonly HttpCameraService _httpCameraService;
+    private readonly RmpGrpcService _realGrpcService;
+    private readonly RmpGrpcService_Mock _mockGrpcService;
 
     // CONSTRUCTOR
     public ConnectionManagerService()
     {
-        _realService = new RmpGrpcService();
-        _mockService = new RmpGrpcService_Mock();
-        _grpcService = _mockService; // Start with mock service
-    }
+        _httpCameraService = new HttpCameraService("http://localhost:50080");
+        _realGrpcService = new RmpGrpcService();
+        _mockGrpcService = new RmpGrpcService_Mock();
 
+        _cameraService = _httpCameraService; // Always use HTTP camera service
+        _grpcService = _mockGrpcService; // Start with mock gRPC service
+    }
 
     // METHODS
     public async Task<bool> ConnectAsync(string ip, int port)
@@ -54,25 +61,35 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
         {
             if (UseMockService)
             {
-                GrpcService = _mockService;
+                // Use mock gRPC service only
+                GrpcService = _mockGrpcService;
                 IsConnected = true;
+                IsRunning = true;
                 return true;
             }
             else
             {
+                // Only connect gRPC service (to the specified IP/port)
                 var serverAddress = $"{_latestIpAddress}:{_latestPort}";
-                var connected = await _realService.ConnectAsync(serverAddress);
-                if (connected)
+                var grpcConnected = await _realGrpcService.ConnectAsync(serverAddress);
+
+                if (grpcConnected)
                 {
-                    GrpcService = _realService;
+                    GrpcService = _realGrpcService;
                     IsConnected = true;
+                    IsRunning = true;
+                    return true;
                 }
-                return connected;
+                else
+                {
+                    return false;
+                }
             }
         }
         catch (Exception)
         {
             IsConnected = false;
+            IsRunning = false;
             return false;
         }
     }
@@ -85,6 +102,7 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
         }
 
         IsConnected = false;
+        IsRunning = false;
     }
 
     public void SetMockMode(bool useMock)
@@ -93,7 +111,7 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
 
         if (useMock)
         {
-            GrpcService = _mockService;
+            GrpcService = _mockGrpcService;
         }
     }
 

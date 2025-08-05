@@ -21,16 +21,14 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
 
     /** SERVICES **/
-    private readonly ICameraService _cameraService;
-    private readonly IImageProcessingService _imageProcessingService;
     private readonly IConnectionManagerService _connectionManager;
-    private IRmpGrpcService? _rmp = null;
+    private readonly ICameraService _independentCameraService; // Independent camera service
 
 
     /** FIELDS **/
     //polling
     private double _updateIntervalMs = 100;
-    private System.Timers.Timer _updateTimer;
+    private System.Timers.Timer? _updateTimer;
     private readonly Random _random = new();
 
     //rmp
@@ -129,10 +127,30 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     private double _frameRate = 30.0;
 
     [ObservableProperty]
+    private double _cameraFps = 0.0;
+
+    [ObservableProperty]
+    private int _cameraFrameCount = 0;
+
+    [ObservableProperty]
     private int _binaryThreshold = 128;
 
     [ObservableProperty]
     private int _objectsDetected = 1;
+
+    [ObservableProperty]
+    private WriteableBitmap? _cameraImage;
+
+    [ObservableProperty]
+    private bool _isCameraStreaming = false;
+
+    [ObservableProperty]
+    private string _cameraStatus = "Disconnected";
+
+    [ObservableProperty]
+    private WriteableBitmap? _maskImage;
+
+    private CancellationTokenSource? _cameraStreamCancellation;
 
     //server
     [ObservableProperty]
@@ -255,10 +273,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            if (_rmp != null)
+            var rmp = _connectionManager.GrpcService;
+            if (rmp != null)
             {
                 LogMessage("Stopping task manager...");
-                var result = await _rmp.StopTaskManagerAsync();
+                var result = await rmp.StopTaskManagerAsync();
             }
             else
             {
@@ -285,10 +304,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            if (string.IsNullOrEmpty(Global_IsMotionEnabled) || _rmp == null)
+            var rmp = _connectionManager.GrpcService;
+            if (string.IsNullOrEmpty(Global_IsMotionEnabled) || rmp == null)
                 return;
 
-            var response = await _rmp.SetBoolGlobalValueAsync(Global_IsMotionEnabled, (bool)isMotionEnabled);
+            var response = await rmp.SetBoolGlobalValueAsync(Global_IsMotionEnabled, (bool)isMotionEnabled);
             LogMessage($"Motion enabled set to: {(bool)isMotionEnabled}");
         }
         catch (Exception ex)
@@ -296,6 +316,76 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             LogMessage($"Motion Control Error: {ex.Message}");
         }
 
+    }
+
+    //camera
+    [RelayCommand]
+    private async Task StartCameraStreamAsync()
+    {
+        if (IsCameraStreaming) return;
+
+        try
+        {
+            // Initialize independent camera service
+            if (!_independentCameraService.IsInitialized)
+            {
+                CameraStatus = "Initializing...";
+                var initialized = await _independentCameraService.InitializeAsync();
+                if (!initialized)
+                {
+                    CameraStatus = "Failed to initialize";
+                    LogMessage("Camera: Failed to initialize HTTP camera service");
+                    return;
+                }
+            }
+
+            // Start grabbing frames
+            var started = await _independentCameraService.StartGrabbingAsync();
+            if (!started)
+            {
+                CameraStatus = "Failed to start";
+                LogMessage("Camera: Failed to start grabbing frames");
+                return;
+            }
+
+            IsCameraStreaming = true;
+            CameraStatus = "Streaming";
+            _cameraStreamCancellation = new CancellationTokenSource();
+
+            LogMessage("Camera: Started streaming");
+
+            // Start streaming frames
+            _ = Task.Run(async () => await StreamCameraFramesAsync(_cameraStreamCancellation.Token));
+        }
+        catch (Exception ex)
+        {
+            CameraStatus = $"Error: {ex.Message}";
+            LogMessage($"Camera Start Error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task StopCameraStreamAsync()
+    {
+        if (!IsCameraStreaming) return;
+
+        try
+        {
+            _cameraStreamCancellation?.Cancel();
+
+            await _independentCameraService.StopGrabbingAsync();
+
+            IsCameraStreaming = false;
+            CameraStatus = "Stopped";
+            CameraImage = null;
+            MaskImage = null;
+
+            LogMessage("Camera: Stopped streaming");
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Camera Stop Error: {ex.Message}");
+        }
     }
 
     //connection
@@ -332,18 +422,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 IsConnected = true;
 
-                // rmp service
-                _rmp = _connectionManager.GrpcService;
-
                 // Test SSH authentication after successful server connection
                 await TestSshAuthenticationAsync();
             }
             else
             {
-                // rmp service
-                _rmp = null;
-                LastError = "Failed to connect to server";
-                LogMessage("Connection failed: Failed to connect to server");
+                LastError = "Failed to connect to camera system";
+                LogMessage("Connection failed: Failed to connect to camera system");
                 IsSshAuthenticated = false;
             }
         }
@@ -376,6 +461,12 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            // Stop camera streaming if active
+            if (IsCameraStreaming)
+            {
+                await StopCameraStreamAsync();
+            }
+
             await _connectionManager.DisconnectAsync();
             IsConnected = false;
             IsSshAuthenticated = false;
@@ -469,8 +560,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         //services
         _connectionManager      = new ConnectionManagerService();
-        _cameraService          = new SimulatedCameraService();
-        _imageProcessingService = new SimulatedImageProcessingService();
+        _independentCameraService = new HttpCameraService("http://localhost:50080"); // Independent camera for JSON frame reading
 
         //connection
         UseMockService = _connectionManager.UseMockService;
@@ -490,15 +580,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             // checks
-            if (!IsConnected || _rmp == null)
+            if (!IsConnected || !_connectionManager.IsRunning)
                 return;
 
-            //controller status
-            try { ControllerStatus = await _rmp.GetControllerStatusAsync(); }
+            var rmp = _connectionManager.GrpcService;
+
+            //controller status - we'll implement this later when we have motion control
+            // For now, just simulate some data
+            try { ControllerStatus = await rmp.GetControllerStatusAsync(); }
             catch { ControllerStatus = null; }
 
             //network status
-            try { NetworkStatus = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null; }
+            try { NetworkStatus = (ControllerStatus != null) ? await rmp.GetNetworkStatusAsync() : null; }
             catch { NetworkStatus = null; }
 
             // ball positions
@@ -507,7 +600,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 //tm status
                 try
                 {
-                    TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+                    TaskManagerStatus = (ControllerStatus != null) ? await rmp.GetTaskManagerStatusAsync() : null;
 
                     IsProgramRunning = TaskManagerStatus != null && TaskManagerStatus.State == RTTaskManagerState.Running;
                 }
@@ -541,10 +634,181 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         LogOutput += $"[{timestamp}] {message}\n";
     }
 
+    //camera streaming
+    private async Task StreamCameraFramesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var frameCounter = 0;
+            var frameTimeTracker = DateTime.Now;
+            var lastFrameTime = DateTime.Now;
+
+            // Calculate target frame interval with reasonable limits
+            // Cap at 60 FPS (16.67ms) for human eye processing and resource efficiency
+            var targetFrameRate = Math.Min(FrameRate, 60.0);
+            var targetFrameIntervalMs = (int)(1000.0 / targetFrameRate);
+
+            while (!cancellationToken.IsCancellationRequested && IsCameraStreaming)
+            {
+                var frameStartTime = DateTime.Now;
+
+                try
+                {
+                    // For HttpCameraService, bypass the IsProgramRunning check since it has its own RT task verification
+                    if (_independentCameraService is not HttpCameraService)
+                    {
+                        // Only stream if program is running for non-HTTP camera services
+                        if (!IsProgramRunning)
+                        {
+                            await Task.Delay(100, cancellationToken); // Wait and check again
+                            continue;
+                        }
+                    }
+
+                    // Check server status before attempting to grab frame
+                    var serverStatus = await _independentCameraService.CheckServerStatusAsync(cancellationToken);
+                    if (!serverStatus)
+                    {
+                        // Server is not responding, stop streaming and update status
+                        await Dispatcher.UIThread.InvokeAsync(() =>
+                        {
+                            CameraStatus = "Server not responding";
+                            LogMessage("Camera: HTTP server is not responding, stopping stream");
+                        });
+
+                        // Stop streaming gracefully
+                        IsCameraStreaming = false;
+                        break;
+                    }
+
+                    // Get frame from independent camera service
+                    var (success, imageData, width, height) = await _independentCameraService.TryGrabFrameAsync(cancellationToken);
+
+                    if (success && imageData.Length > 0)
+                    {
+                        // Process the frame
+                        await ProcessHttpCameraFrameAsync(imageData, width, height);
+
+                        // Update frame count and FPS
+                        frameCounter++;
+                        if (frameCounter % 10 == 0) // Update FPS every 10 frames
+                        {
+                            var now = DateTime.Now;
+                            var elapsed = (now - frameTimeTracker).TotalSeconds;
+                            if (elapsed > 0)
+                            {
+                                await Dispatcher.UIThread.InvokeAsync(() =>
+                                {
+                                    CameraFps = 10.0 / elapsed;
+                                    CameraFrameCount = frameCounter;
+                                });
+                            }
+                            frameTimeTracker = now;
+                        }
+                    }
+
+                    // Calculate how long this frame took to process
+                    var processingTime = (DateTime.Now - frameStartTime).TotalMilliseconds;
+
+                    // Calculate delay needed to maintain target frame rate
+                    var remainingTime = targetFrameIntervalMs - processingTime;
+
+                    if (remainingTime > 0)
+                    {
+                        // Wait the remaining time to maintain target frame rate
+                        await Task.Delay((int)remainingTime, cancellationToken);
+                    }
+                    else if (!success)
+                    {
+                        // If frame grab failed and we have no remaining time, add a small delay to prevent tight loop
+                        await Task.Delay(Math.Min(targetFrameIntervalMs, 33), cancellationToken);
+                    }
+                }
+                catch (Exception ex) when (!(ex is OperationCanceledException))
+                {
+                    LogMessage($"Camera Frame Error: {ex.Message}");
+                    await Task.Delay(100, cancellationToken); // Wait before retrying
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when streaming is cancelled
+        }
+        catch (Exception ex)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                CameraStatus = $"Stream Error: {ex.Message}";
+                LogMessage($"Camera Stream Error: {ex.Message}");
+            });
+        }
+        finally
+        {
+            // Ensure proper cleanup when streaming stops
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (IsCameraStreaming)
+                {
+                    IsCameraStreaming = false;
+                    if (CameraStatus != "Server not responding")
+                    {
+                        CameraStatus = "Stopped";
+                    }
+                    CameraImage = null;
+                    MaskImage = null;
+                }
+            });
+        }
+    }
+
+    private async Task ProcessHttpCameraFrameAsync(byte[] imageData, int width, int height)
+    {
+        try
+        {
+            // For HTTP camera service, imageData is a JPEG byte array
+            // We can load it directly into a bitmap
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                try
+                {
+                    using var stream = new MemoryStream(imageData);
+                    var bitmap = new Bitmap(stream);
+
+                    // Convert to WriteableBitmap for UI binding
+                    // Use Rgba8888 format to maintain RGB color order instead of Bgra8888
+                    var writeableBitmap = new WriteableBitmap(
+                        new PixelSize(bitmap.PixelSize.Width, bitmap.PixelSize.Height),
+                        new Vector(96, 96),
+                        PixelFormat.Rgba8888,  // Changed from Bgra8888 to Rgba8888 to fix color channel swap
+                        AlphaFormat.Premul);
+
+                    using var lockedBitmap = writeableBitmap.Lock();
+                    bitmap.CopyPixels(new PixelRect(0, 0, bitmap.PixelSize.Width, bitmap.PixelSize.Height),
+                        lockedBitmap.Address, lockedBitmap.RowBytes * bitmap.PixelSize.Height, lockedBitmap.RowBytes);
+
+                    CameraImage = writeableBitmap;
+
+                    // Note: Ball detection data is now handled separately from camera image data
+                }
+                catch (Exception ex)
+                {
+                    LogMessage($"Image Processing Error: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Frame Processing Error: {ex.Message}");
+        }
+    }
+
     //globals
     private async Task UpdateGlobalValues()
     {
-        if (_rmp == null) return;
+        var rmp = _connectionManager.GrpcService;
+        if (rmp == null) return;
 
         // Update global value names if task manager status is available
         await UpdateGlobalValuesAsync();
@@ -769,6 +1033,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         Global_BallY      = settings["global_BallY"] ?? "";
         Global_BallRadius = settings["global_BallRadius"] ?? "";
         Global_IsMotionEnabled = settings["global_IsMotionEnabled"] ?? "";
+
+        //camera
+        FrameRate = double.TryParse(settings["camera_FrameRate"], out var frameRate) ? frameRate : 30.0;
+        BinaryThreshold = int.TryParse(settings["camera_BinaryThreshold"], out var threshold) ? threshold : 128;
     }
 
     private void StorageSave()
@@ -794,7 +1062,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     global_BallX = Global_BallX,
                     global_BallY = Global_BallY,
                     global_BallRadius = Global_BallRadius,
-                    global_IsMotionEnabled = Global_IsMotionEnabled
+                    global_IsMotionEnabled = Global_IsMotionEnabled,
+
+                    //camera
+                    camera_FrameRate = FrameRate.ToString(),
+                    camera_BinaryThreshold = BinaryThreshold.ToString()
                 }
             };
 
@@ -903,6 +1175,10 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         _updateTimer?.Stop();
         _updateTimer?.Dispose();
+
+        // Clean up camera streaming
+        _cameraStreamCancellation?.Cancel();
+        _independentCameraService?.Dispose();
 
         GC.SuppressFinalize(this);
     }

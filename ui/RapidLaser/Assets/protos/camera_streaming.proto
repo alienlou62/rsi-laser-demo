@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package rsi.camera;
+
+// Camera image streaming service
+service CameraStreamService {
+    // Server-side streaming RPC for live camera feed
+    rpc StreamCameraFrames(StreamRequest) returns (stream CameraFrame);
+    
+    // Get latest frame (unary RPC)
+    rpc GetLatestFrame(FrameRequest) returns (CameraFrame);
+}
+
+// Request message for streaming
+message StreamRequest {
+    // Frame rate limit (frames per second, 0 = no limit)
+    int32 max_fps = 1;
+    
+    // Image format requested
+    ImageFormat format = 2;
+    
+    // Compression quality (0-100, higher = better quality)
+    int32 compression_quality = 3;
+}
+
+// Request message for single frame
+message FrameRequest {
+    ImageFormat format = 1;
+    int32 compression_quality = 2;
+}
+
+// Camera frame message
+message CameraFrame {
+    // Frame metadata
+    int64 timestamp_us = 1;        // Microseconds since epoch
+    int32 frame_number = 2;        // Sequential frame number
+    int32 width = 3;               // Image width in pixels
+    int32 height = 4;              // Image height in pixels
+    ImageFormat format = 5;        // Image format
+    
+    // Image data
+    bytes image_data = 6;          // Compressed or raw image bytes
+    
+    // Ball detection overlay data (optional)
+    BallDetection ball_detection = 7;
+    
+    // Processing stats
+    ProcessingStats stats = 8;
+}
+
+// Ball detection information
+message BallDetection {
+    bool detected = 1;
+    double center_x = 2;
+    double center_y = 3;
+    double radius = 4;
+    double confidence = 5;
+}
+
+// Processing performance statistics
+message ProcessingStats {
+    double grab_time_ms = 1;      // Time to grab frame
+    double process_time_ms = 2;   // Time to process frame
+    int32 grab_failures = 3;      // Total grab failures
+    int32 detection_failures = 4; // Total detection failures
+}
+
+// Supported image formats
+enum ImageFormat {
+    FORMAT_UNKNOWN = 0;
+    FORMAT_YUYV = 1;              // YUV 4:2:2 format (raw)
+    FORMAT_RGB = 2;               // RGB 24-bit
+    FORMAT_JPEG = 3;              // JPEG compressed
+    FORMAT_PNG = 4;               // PNG compressed
+    FORMAT_GRAYSCALE = 5;         // 8-bit grayscale
+}

@@ -33,15 +33,15 @@ Navigate to the `scripts/` folder and run the appropriate script for your platfo
 **Windows**  
 
 1. Open a Unix-style shell like (Git Bash)
-2. Run command: `./rapidlaser_ui_run.sh`  
+2. Run command: `./ui_run.sh`  
 
 **Linux**  
 
 1. Open terminal
-2. Make file executable: `chmod +x rapidlaser_ui_run.sh`
-3. Run command: `./rapidlaser_ui_run.sh` 
+2. Make file executable: `chmod +x ui_run.sh`
+3. Run command: `./ui_run.sh` 
 
-**Note**: the `rapidlaser_ui_run.sh` script will call dotnet publish only if it does not locate an executable in the temp/ folder
+**Note**: the `ui_run.sh` script will call dotnet publish only if it does not locate an executable in the temp/ folder
 
 ## ⏱️ Performance Metrics
 
