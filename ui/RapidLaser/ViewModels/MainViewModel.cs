@@ -758,11 +758,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     if (_independentCameraService is HttpCameraService httpCamera && httpCamera.LastFrameData != null)
                     {
                         var frameData = httpCamera.LastFrameData;
-                        ObjectsDetected = frameData.BallDetected ? 1 : 0;
-                        DetectionConfidence = frameData.Confidence;
-                        Program_BallX = frameData.CenterX;
-                        Program_BallY = frameData.CenterY;
-                        Program_BallRadius = 10.0; // Default radius since it's not in the JSON
                     }
                 }
                 catch (Exception ex)
@@ -779,18 +774,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     private DateTime _lastFrameTime = DateTime.Now;
     private double _currentFrameRate = 0;
-
-    private double CalculateFrameRate()
-    {
-        var now = DateTime.Now;
-        var elapsed = (now - _lastFrameTime).TotalSeconds;
-        if (elapsed > 0)
-        {
-            _currentFrameRate = 1.0 / elapsed;
-        }
-        _lastFrameTime = now;
-        return _currentFrameRate;
-    }
 
     //globals
     private async Task UpdateGlobalValues()
