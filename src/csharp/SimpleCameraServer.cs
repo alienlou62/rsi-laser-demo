@@ -27,22 +27,32 @@ Console.WriteLine();
 const string DATA_FILE_PATH = "/tmp/rsi_camera_data.json";
 const string RT_TASK_RUNNING_FLAG = "/tmp/rsi_rt_task_running";
 
+// Declare httpListener so it's in scope for both the handler and the try block
+HttpListener httpListener = null;
 // Handle Ctrl+C gracefully
 Console.CancelKeyPress += (sender, e) =>
 {
     e.Cancel = true;
     Console.WriteLine("SIGINT received, setting shutdown flag...");
     shutdown = true;
+    // Attempt to stop and dispose the listener if possible
+    try {
+        httpListener?.Stop();
+        httpListener?.Close();
+    } catch (Exception ex) {
+        Console.WriteLine($"Error disposing HttpListener: {ex.Message}");
+    }
 };
-
 try
 {
     // Simple HTTP server for camera data
-    var httpListener = new HttpListener();
-    httpListener.Prefixes.Add("http://localhost:8080/");
+    httpListener?.Stop();
+    httpListener?.Close();
+    httpListener = new HttpListener();
+    httpListener.Prefixes.Add("http://localhost:50080/");
     httpListener.Start();
     
-    Console.WriteLine("HTTP camera server started successfully on http://localhost:8080/");
+    Console.WriteLine("HTTP camera server started successfully on http://localhost:50080/");
     Console.WriteLine("Endpoints:");
     Console.WriteLine("  GET /camera/frame - Get latest camera frame");
     Console.WriteLine("  GET /status - Server status");
@@ -145,15 +155,20 @@ try
     });
 
     // Main monitoring loop
+    string serverAddress = "http://localhost:50080/";
     while (!shutdown)
     {
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Server running...");
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Server running at {serverAddress}");
         await Task.Delay(5000); // Check every 5 seconds
     }
 
     Console.WriteLine("\nShutdown initiated...");
     
     httpListener.Stop();
+    httpListener.Close();
+    httpListener = new HttpListener();
+    httpListener.Prefixes.Add("http://localhost:50080/");
+    httpListener.Start();
     await httpTask;
     Console.WriteLine("HTTP server shutdown complete");
 }
