@@ -777,10 +777,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     var bitmap = new Bitmap(stream);
 
                     // Convert to WriteableBitmap for UI binding
+                    // Use Rgba8888 format to maintain RGB color order instead of Bgra8888
                     var writeableBitmap = new WriteableBitmap(
                         new PixelSize(bitmap.PixelSize.Width, bitmap.PixelSize.Height),
                         new Vector(96, 96),
-                        PixelFormat.Bgra8888,
+                        PixelFormat.Rgba8888,  // Changed from Bgra8888 to Rgba8888 to fix color channel swap
                         AlphaFormat.Premul);
 
                     using var lockedBitmap = writeableBitmap.Lock();
