@@ -15,6 +15,8 @@
 #include "misc_helpers.h"
 #include "rmp_helpers.h"
 #include "camera_helpers.h"
+#include "image_processing.h"
+#include "shared_memory_helpers.h"
 
 using namespace Pylon;
 
@@ -32,6 +34,79 @@ void sigint_handler(int signal)
 {
   std::cout << "SIGINT handler ran, setting shutdown flag..." << std::endl;
   g_shutdown = true;
+}
+
+// Function to convert image data to base64 for JSON embedding
+std::string EncodeBase64(const std::vector<uint8_t>& data) {
+  static const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  std::string result;
+  int val = 0, valb = -6;
+  for (uint8_t c : data) {
+    val = (val << 8) + c;
+    valb += 8;
+    while (valb >= 0) {
+      result.push_back(chars[(val >> valb) & 0x3F]);
+      valb -= 6;
+    }
+  }
+  if (valb > -6) result.push_back(chars[((val << 8) >> (valb + 8)) & 0x3F]);
+  while (result.size() % 4) result.push_back('=');
+  return result;
+}
+
+// Function to write camera frame data as JSON for C# UI
+void WriteCameraFrameJSON(const Frame& frameData) {
+  try {
+    // Construct cv::Mat from YUYVFrame data in frameData
+    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)frameData.yuyvData);
+    cv::Mat rgbFrame;
+    cv::cvtColor(yuyvMat, rgbFrame, cv::COLOR_YUV2BGR_YUYV);
+    // Encode as JPEG with quality 80
+    std::vector<uint8_t> jpegBuffer;
+    std::vector<int> jpegParams = {cv::IMWRITE_JPEG_QUALITY, 80};
+    cv::imencode(".jpg", rgbFrame, jpegBuffer, jpegParams);
+    
+    // Convert to base64
+    std::string base64Image = EncodeBase64(jpegBuffer);
+    
+    // Write JSON with frame data
+    std::ostringstream json;
+    json << "{\n";
+    json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << frameData.timestamp << ",\n";
+    json << "  \"frameNumber\": " << frameData.frameNumber << ",\n";
+    json << "  \"width\": " << CameraHelpers::IMAGE_WIDTH << ",\n";
+    json << "  \"height\": " << CameraHelpers::IMAGE_HEIGHT << ",\n";
+    json << "  \"format\": \"jpeg\",\n";
+    json << "  \"imageData\": \"data:image/jpeg;base64," << base64Image << "\",\n";
+    json << "  \"imageSize\": " << jpegBuffer.size() << ",\n";
+    json << "  \"ballDetected\": " << (frameData.ballDetected ? "true" : "false") << ",\n";
+    json << "  \"centerX\": " << std::fixed << std::setprecision(2) << frameData.centerX << ",\n";
+    json << "  \"centerY\": " << std::fixed << std::setprecision(2) << frameData.centerY << ",\n";
+    json << "  \"confidence\": " << std::fixed << std::setprecision(3) << frameData.confidence << ",\n";
+    json << "  \"targetX\": " << std::fixed << std::setprecision(2) << frameData.targetX << ",\n";
+    json << "  \"targetY\": " << std::fixed << std::setprecision(2) << frameData.targetY << ",\n";
+    json << "  \"rtTaskRunning\": true\n";
+    json << "}";
+    
+    // Write to file atomically
+    std::ofstream dataFile("/tmp/rsi_camera_data.json.tmp");
+    if (dataFile.is_open()) {
+      dataFile << json.str();
+      dataFile.close();
+      // Atomic rename to prevent partial reads
+      std::rename("/tmp/rsi_camera_data.json.tmp", "/tmp/rsi_camera_data.json");
+    }
+    
+    // Create running flag file
+    std::ofstream flagFile("/tmp/rsi_rt_task_running");
+    if (flagFile.is_open()) {
+      flagFile << "1";
+      flagFile.close();
+    }
+  }
+  catch (const std::exception& e) {
+    std::cerr << "Error writing camera frame JSON: " << e.what() << std::endl;
+  }
 }
 
 void SubmitSingleShotTask(RTTaskManager &manager, const std::string &taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
@@ -124,9 +199,12 @@ int main()
   RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking", 6));
 
   try
-  {
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
-    
+  { 
+    // Open the shared memory for triple buffering
+    SharedMemoryTripleBuffer<Frame> sharedMemory(SHARED_MEMORY_NAME, false);
+    TripleBufferManager<Frame> tripleBufferManager(sharedMemory.get(), false);
+    Frame frame;
+
     /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
     //SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
@@ -143,48 +221,6 @@ int main()
       std::cerr << "Error: MultiAxis is not ready." << std::endl;
       return -1;
     }
-
-    // Simple shared data structure for C# camera server
-    // We'll use global firmware values that C# can read via file I/O or shared memory
-    struct CameraFrameData {
-      double timestamp;
-      int frameNumber;
-      int width;
-      int height;
-      bool ballDetected;
-      double centerX;
-      double centerY;
-      double confidence;
-      double targetX;
-      double targetY;
-    };
-    
-    // Initialize frame data values in firmware global storage
-    FirmwareValue frameTimestamp = {.Double = 0.0};
-    manager.GlobalValueSet(frameTimestamp, "frameTimestamp");
-    
-    FirmwareValue frameNumber = {.Int32 = 0};
-    manager.GlobalValueSet(frameNumber, "frameNumber");
-    
-    FirmwareValue frameWidth = {.Int32 = CameraHelpers::IMAGE_WIDTH};
-    manager.GlobalValueSet(frameWidth, "frameWidth");
-    
-    FirmwareValue frameHeight = {.Int32 = CameraHelpers::IMAGE_HEIGHT};
-    manager.GlobalValueSet(frameHeight, "frameHeight");
-    
-    FirmwareValue ballDetected = {.Bool = false};
-    manager.GlobalValueSet(ballDetected, "ballDetected");
-    
-    FirmwareValue ballCenterX = {.Double = 0.0};
-    manager.GlobalValueSet(ballCenterX, "ballCenterX");
-    
-    FirmwareValue ballCenterY = {.Double = 0.0};
-    manager.GlobalValueSet(ballCenterY, "ballCenterY");
-    
-    FirmwareValue ballConfidence = {.Double = 0.0};
-    manager.GlobalValueSet(ballConfidence, "ballConfidence");
-
-    std::cout << "Camera data interface initialized for C# server communication" << std::endl;
 
     FirmwareValue motionEnabled = {.Bool = true};
     manager.GlobalValueSet(motionEnabled, "motionEnabled");
@@ -205,47 +241,16 @@ int main()
     {
       RateLimiter rateLimiter(LOOP_INTERVAL);
 
-      FirmwareValue targetX = manager.GlobalValueGet("targetX");
-      FirmwareValue targetY = manager.GlobalValueGet("targetY");
-      
-      // Update camera frame data for C# server
-      auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
-      
-      FirmwareValue timestamp = {.Double = static_cast<double>(now)};
-      manager.GlobalValueSet(timestamp, "frameTimestamp");
-      
-      FirmwareValue frameNum = {.Int32 = ++frameCounter};
-      manager.GlobalValueSet(frameNum, "frameNumber");
-      
-      // Simulate ball detection (this would come from actual camera processing)
-      // For demo purposes, create a simple moving ball simulation
-      double simulatedBallX = 320.0 + 100.0 * std::sin(frameCounter * 0.1);
-      double simulatedBallY = 240.0 + 50.0 * std::cos(frameCounter * 0.15);
-      bool hasBall = (frameCounter % 60) < 45; // Ball visible 75% of the time
-      
-      FirmwareValue ballDetected = {.Bool = hasBall};
-      manager.GlobalValueSet(ballDetected, "ballDetected");
-      
-      FirmwareValue ballCenterX = {.Double = simulatedBallX};
-      manager.GlobalValueSet(ballCenterX, "ballCenterX");
-      
-      FirmwareValue ballCenterY = {.Double = simulatedBallY};
-      manager.GlobalValueSet(ballCenterY, "ballCenterY");
-      
-      FirmwareValue ballConfidence = {.Double = hasBall ? 0.85 : 0.0};
-      manager.GlobalValueSet(ballConfidence, "ballConfidence");
-      
-      // Note: Camera frame JSON writing is handled by the DetectBall RT task
-      // This main loop only updates the simulation data for globals
-      
-      std::cout << "Frame " << frameCounter << " - Target X: " << targetX.Double 
-                << ", Target Y: " << targetY.Double;
-      
-      if (hasBall) {
-        std::cout << " | Ball detected at (" << simulatedBallX << ", " << simulatedBallY << ")";
+      tripleBufferManager.swap_buffers();
+
+      // Check if new data is available in the triple buffer
+      if (tripleBufferManager.flags() == 1)
+      {
+        memcpy(&frame, tripleBufferManager.get(), sizeof(Frame));
+        tripleBufferManager.flags() = 0; // Reset flags after reading
+        WriteCameraFrameJSON(frame);
       }
-      std::cout << std::endl;
+
 
       /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
       // if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))

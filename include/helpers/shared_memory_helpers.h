@@ -10,6 +10,23 @@
 #include <unistd.h>
 #include <type_traits>
 
+#ifndef SHARED_MEMORY_NAME
+#define SHARED_MEMORY_NAME "/LASER_DEMO"
+#endif // SHARED_MEMORY_NAME
+
+struct Frame
+{
+  CameraHelpers::YUYVFrame yuyvData;
+  int frameNumber;
+  double timestamp;
+  bool ballDetected;
+  double centerX;
+  double centerY;
+  double confidence;
+  double targetX;
+  double targetY;
+};
+
 template<typename T>
 struct TripleBuffer {
   static_assert(std::is_default_constructible<T>::value, "T must be default-constructible");
@@ -55,22 +72,13 @@ public:
   T* operator->() { return &triple_->buffers[index_]; }
   T& operator*()  { return triple_->buffers[index_]; }
 
-  void swap_buffer() {
+  T* get() { return &triple_->buffers[index_]; }
+
+  uint32_t& flags() { return triple_->flags[index_]; }
+
+  void swap_buffers() {
     int old_spare = triple_->spare_index.exchange(index_, std::memory_order_acq_rel);
     index_ = old_spare;
-  }
-
-  void write(const T& data) {
-    if (!is_writer_) {
-      throw std::runtime_error("Cannot write to TripleBufferManager that is not a writer");
-    }
-    memcpy(&triple_->buffers[index_], &data, sizeof(T));
-    swap_buffer();
-  }
-
-  void read(T& data) {
-    swap_buffer();
-    memcpy(&data, &triple_->buffers[index_], sizeof(T));
   }
 
 protected:
