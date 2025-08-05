@@ -1185,8 +1185,8 @@
                                                     Height="14"
                                                     HorizontalAlignment="Right"
                                                     VerticalAlignment="Bottom"
-                                                    Classes.is-false="{Binding !Value}"
-                                                    Classes.is-true="{Binding Value}"
+                                                    Classes.is-false="{Binding Value, Converter={x:Static converters:BoolConverters.StringToNotBoolConverter}}"
+                                                    Classes.is-true="{Binding Value, Converter={x:Static converters:BoolConverters.StringToBoolConverter}}"
                                                     IsVisible="{Binding !IsNumeric}">
                                                     <icons:MaterialIcon.Styles>
 
