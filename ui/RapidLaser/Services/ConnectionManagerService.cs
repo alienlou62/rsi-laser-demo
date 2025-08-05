@@ -36,21 +36,19 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
     [ObservableProperty]
     private IRmpGrpcService _grpcService;
 
-    private readonly HttpCameraService _realCameraService;
-    private readonly SimulatedCameraService _mockCameraService;
+    private readonly HttpCameraService _httpCameraService;
     private readonly RmpGrpcService _realGrpcService;
     private readonly RmpGrpcService_Mock _mockGrpcService;
 
     // CONSTRUCTOR
     public ConnectionManagerService()
     {
-        _realCameraService = new HttpCameraService("http://localhost:8080");
-        _mockCameraService = new SimulatedCameraService();
+        _httpCameraService = new HttpCameraService("http://localhost:8080");
         _realGrpcService = new RmpGrpcService();
         _mockGrpcService = new RmpGrpcService_Mock();
-        
-        _cameraService = _mockCameraService; // Start with mock service
-        _grpcService = _mockGrpcService; // Start with mock service
+
+        _cameraService = _httpCameraService; // Always use HTTP camera service
+        _grpcService = _mockGrpcService; // Start with mock gRPC service
     }
 
     // METHODS
@@ -63,7 +61,7 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
         {
             if (UseMockService)
             {
-                CameraService = _mockCameraService;
+                // Use mock gRPC service only
                 GrpcService = _mockGrpcService;
                 IsConnected = true;
                 IsRunning = true;
@@ -71,16 +69,12 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
             }
             else
             {
-                // Connect camera service (HTTP localhost:8080)
-                var cameraConnected = await _realCameraService.InitializeAsync();
-                
-                // Connect gRPC service (to the specified IP/port)
+                // Only connect gRPC service (to the specified IP/port)
                 var serverAddress = $"{_latestIpAddress}:{_latestPort}";
                 var grpcConnected = await _realGrpcService.ConnectAsync(serverAddress);
-                
-                if (cameraConnected && grpcConnected)
+
+                if (grpcConnected)
                 {
-                    CameraService = _realCameraService;
                     GrpcService = _realGrpcService;
                     IsConnected = true;
                     IsRunning = true;
@@ -88,9 +82,6 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
                 }
                 else
                 {
-                    // If either fails, disconnect both and return false
-                    if (cameraConnected) _realCameraService.Dispose();
-                    if (grpcConnected) await _realGrpcService.DisconnectAsync();
                     return false;
                 }
             }
@@ -105,12 +96,6 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
 
     public async Task DisconnectAsync()
     {
-        if (CameraService != null)
-        {
-            await CameraService.StopGrabbingAsync();
-            CameraService.Dispose();
-        }
-
         if (GrpcService != null)
         {
             await GrpcService.DisconnectAsync();
@@ -126,7 +111,6 @@ public partial class ConnectionManagerService : ObservableObject, IConnectionMan
 
         if (useMock)
         {
-            CameraService = _mockCameraService;
             GrpcService = _mockGrpcService;
         }
     }

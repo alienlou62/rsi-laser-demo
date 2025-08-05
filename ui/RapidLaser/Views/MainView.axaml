@@ -952,7 +952,7 @@
                                                         Canvas.Top="0"
                                                         Width="640"
                                                         Height="480"
-                                                        Source="{Binding CameraImageSource}"
+                                                        Source="{Binding CameraImage}"
                                                         Stretch="UniformToFill" />
 
                                                     <!--  Ball Detection Overlay - only when ball is detected  -->
@@ -996,7 +996,7 @@
                                                         Width="640"
                                                         Height="480"
                                                         Fill="#222222"
-                                                        IsVisible="{Binding CameraImageSource, Converter={x:Static ObjectConverters.IsNull}}"
+                                                        IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}"
                                                         Stroke="#80444444"
                                                         StrokeThickness="1" />
 
@@ -1008,7 +1008,7 @@
                                                         VerticalAlignment="Center"
                                                         FontSize="16"
                                                         Foreground="{StaticResource SubtleTextBrush}"
-                                                        IsVisible="{Binding CameraImageSource, Converter={x:Static ObjectConverters.IsNull}}"
+                                                        IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}"
                                                         Opacity="0.6"
                                                         Text="NO CAMERA FEED"
                                                         TextAlignment="Center">
@@ -1019,14 +1019,14 @@
 
                                                     <!--  Center crosshair - shown when no camera feed  -->
                                                     <Line
-                                                        IsVisible="{Binding CameraImageSource, Converter={x:Static ObjectConverters.IsNull}}"
+                                                        IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}"
                                                         Stroke="#80444444"
                                                         StrokeDashArray="5,5"
                                                         StrokeThickness="1"
                                                         StartPoint="0,240"
                                                         EndPoint="640,240" />
                                                     <Line
-                                                        IsVisible="{Binding CameraImageSource, Converter={x:Static ObjectConverters.IsNull}}"
+                                                        IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}"
                                                         Stroke="#80444444"
                                                         StrokeDashArray="5,5"
                                                         StrokeThickness="1"

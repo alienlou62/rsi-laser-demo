@@ -21,8 +21,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
 
     /** SERVICES **/
-    private readonly IImageProcessingService _imageProcessingService;
     private readonly IConnectionManagerService _connectionManager;
+    private readonly ICameraService _independentCameraService; // Independent camera service
 
 
     /** FIELDS **/
@@ -140,13 +140,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private WriteableBitmap? _cameraImage;
-    partial void OnCameraImageChanged(WriteableBitmap? value)
-    {
-        OnPropertyChanged(nameof(CameraImageSource));
-    }
-
-    // Alias for XAML binding compatibility
-    public WriteableBitmap? CameraImageSource => CameraImage;
 
     [ObservableProperty]
     private bool _isCameraStreaming = false;
@@ -333,31 +326,21 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
-            // Check if connected and running
-            if (!IsConnected || !_connectionManager.IsRunning)
-            {
-                CameraStatus = "Not connected";
-                LogMessage("Camera: Cannot start - not connected to system");
-                return;
-            }
-
-            var cameraService = _connectionManager.CameraService;
-            
-            // Initialize camera service
-            if (!cameraService.IsInitialized)
+            // Initialize independent camera service
+            if (!_independentCameraService.IsInitialized)
             {
                 CameraStatus = "Initializing...";
-                var initialized = await cameraService.InitializeAsync();
+                var initialized = await _independentCameraService.InitializeAsync();
                 if (!initialized)
                 {
                     CameraStatus = "Failed to initialize";
-                    LogMessage("Camera: Failed to initialize camera service");
+                    LogMessage("Camera: Failed to initialize HTTP camera service");
                     return;
                 }
             }
 
             // Start grabbing frames
-            var started = await cameraService.StartGrabbingAsync();
+            var started = await _independentCameraService.StartGrabbingAsync();
             if (!started)
             {
                 CameraStatus = "Failed to start";
@@ -389,9 +372,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             _cameraStreamCancellation?.Cancel();
-            
-            if (_connectionManager.CameraService != null)
-                await _connectionManager.CameraService.StopGrabbingAsync();
+
+            await _independentCameraService.StopGrabbingAsync();
 
             IsCameraStreaming = false;
             CameraStatus = "Stopped";
@@ -578,7 +560,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         //services
         _connectionManager      = new ConnectionManagerService();
-        _imageProcessingService = new ImageProcessingService(); // Use simple image processing service
+        _independentCameraService = new HttpCameraService("http://localhost:8080"); // Independent camera for JSON frame reading
 
         //connection
         UseMockService = _connectionManager.UseMockService;
@@ -657,7 +639,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            var cameraService = _connectionManager.CameraService;
             var frameCounter = 0;
             var frameTimeTracker = DateTime.Now;
 
@@ -665,13 +646,37 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 try
                 {
-                    // Get frame from camera service
-                    var (success, imageData, width, height) = await cameraService.TryGrabFrameAsync(cancellationToken);
-                    
+                    // For HttpCameraService, bypass the IsProgramRunning check since it has its own RT task verification
+                    if (_independentCameraService is not HttpCameraService)
+                    {
+                        // Only stream if program is running for non-HTTP camera services
+                        if (!IsProgramRunning)
+                        {
+                            await Task.Delay(100, cancellationToken); // Wait and check again
+                            continue;
+                        }
+                    }
+
+                    // Get frame from independent camera service
+                    var (success, imageData, width, height) = await _independentCameraService.TryGrabFrameAsync(cancellationToken);
+
                     if (success && imageData.Length > 0)
                     {
+                        Console.WriteLine($"MainViewModel: Frame received, size: {imageData.Length} bytes");
+
+                        // Check if RT task is running from camera service data
+                        if (_independentCameraService is HttpCameraService httpCamera &&
+                            httpCamera.LastFrameData != null &&
+                            !httpCamera.LastFrameData.RtTaskRunning)
+                        {
+                            Console.WriteLine("MainViewModel: RT task not running, waiting...");
+                            await Task.Delay(100, cancellationToken); // Wait if RT task is not running
+                            continue;
+                        }
+
+                        Console.WriteLine($"MainViewModel: Processing frame {imageData.Length} bytes, {width}x{height}");
                         await ProcessHttpCameraFrameAsync(imageData, width, height);
-                        
+
                         // Update frame count and FPS
                         frameCounter++;
                         if (frameCounter % 10 == 0) // Update FPS every 10 frames
@@ -691,6 +696,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     }
                     else
                     {
+                        Console.WriteLine($"MainViewModel: Frame grab failed - success: {success}, imageData length: {imageData?.Length ?? 0}");
                         // Wait a bit before trying again if frame grab failed
                         await Task.Delay(33, cancellationToken); // ~30 FPS
                     }
@@ -720,16 +726,20 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
+            Console.WriteLine($"ProcessHttpCameraFrameAsync: Processing {imageData.Length} bytes, {width}x{height}");
             // For HTTP camera service, imageData is a JPEG byte array
             // We can load it directly into a bitmap
-            
+
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 try
                 {
+                    Console.WriteLine("ProcessHttpCameraFrameAsync: Creating bitmap from JPEG data");
                     using var stream = new MemoryStream(imageData);
                     var bitmap = new Bitmap(stream);
-                    
+
+                    Console.WriteLine($"ProcessHttpCameraFrameAsync: Bitmap created {bitmap.PixelSize.Width}x{bitmap.PixelSize.Height}");
+
                     // Convert to WriteableBitmap for UI binding
                     var writeableBitmap = new WriteableBitmap(
                         new PixelSize(bitmap.PixelSize.Width, bitmap.PixelSize.Height),
@@ -741,18 +751,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                     bitmap.CopyPixels(new PixelRect(0, 0, bitmap.PixelSize.Width, bitmap.PixelSize.Height),
                         lockedBitmap.Address, lockedBitmap.RowBytes * bitmap.PixelSize.Height, lockedBitmap.RowBytes);
 
+                    Console.WriteLine("ProcessHttpCameraFrameAsync: Setting CameraImage");
                     CameraImage = writeableBitmap;
-                    
-                    // If using HttpCameraService, we get ball detection data from the JSON response
-                    if (_connectionManager.CameraService is HttpCameraService httpCamera)
+
+                    // Get ball detection data from the HTTP camera service
+                    if (_independentCameraService is HttpCameraService httpCamera && httpCamera.LastFrameData != null)
                     {
-                        // Ball detection data would be available from the HTTP response
-                        // For now, we'll simulate some values
-                        ObjectsDetected = 1;
-                        DetectionConfidence = 0.95;
-                        Program_BallX = width / 2.0;
-                        Program_BallY = height / 2.0;
-                        Program_BallRadius = 20.0;
+                        var frameData = httpCamera.LastFrameData;
+                        ObjectsDetected = frameData.BallDetected ? 1 : 0;
+                        DetectionConfidence = frameData.Confidence;
+                        Program_BallX = frameData.CenterX;
+                        Program_BallY = frameData.CenterY;
+                        Program_BallRadius = 10.0; // Default radius since it's not in the JSON
                     }
                 }
                 catch (Exception ex)
@@ -764,208 +774,6 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         catch (Exception ex)
         {
             LogMessage($"Frame Processing Error: {ex.Message}");
-        }
-    }
-    {
-        try
-        {
-            // Process the frame to get ball detection results
-            var detectionResult = await ((GrpcImageProcessingService)_imageProcessingService)
-                .ProcessCameraFrameAsync(frame);
-
-            // Update UI on the main thread
-            await Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                // Update detection properties
-                ObjectsDetected = detectionResult.ObjectsDetected;
-                DetectionConfidence = detectionResult.Confidence;
-
-                // Update ball position if detected
-                if (detectionResult.BallDetected)
-                {
-                    Program_BallX = detectionResult.CenterX;
-                    Program_BallY = detectionResult.CenterY;
-                    Program_BallRadius = Math.Sqrt(detectionResult.OffsetX * detectionResult.OffsetX +
-                                                  detectionResult.OffsetY * detectionResult.OffsetY);
-                }
-
-                // Create camera image bitmap
-                if (frame.ImageData?.Length > 0)
-                {
-                    CameraImage = CreateBitmapFromImageData(
-                        frame.ImageData.ToByteArray(),
-                        frame.Width,
-                        frame.Height,
-                        frame.Format);
-                }
-
-                // Create mask image bitmap if available
-                if (detectionResult.MaskImageData?.Length > 0)
-                {
-                    MaskImage = CreateBitmapFromMaskData(
-                        detectionResult.MaskImageData,
-                        frame.Width,
-                        frame.Height);
-                }
-
-                // Update frame rate
-                FrameRate = CalculateFrameRate();
-            });
-        }
-        catch (Exception ex)
-        {
-            LogMessage($"Camera Frame Processing Error: {ex.Message}");
-        }
-    }
-
-    private unsafe WriteableBitmap? CreateBitmapFromImageData(byte[] imageData, int width, int height, Rsi.Camera.ImageFormat format)
-    {
-        try
-        {
-            var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
-
-            using (var buffer = bitmap.Lock())
-            {
-                var bufferSize = width * height * 4; // 4 bytes per pixel for BGRA
-                var span = new Span<byte>(buffer.Address.ToPointer(), bufferSize);
-
-                switch (format)
-                {
-                    case Rsi.Camera.ImageFormat.FormatRgb:
-                        ConvertRgbToBgra(imageData, span, width, height);
-                        break;
-                    case Rsi.Camera.ImageFormat.FormatYuyv:
-                        ConvertYuyvToBgra(imageData, span, width, height);
-                        break;
-                    default:
-                        // For other formats, try to decode as is or show placeholder
-                        LogMessage($"Unsupported image format: {format}");
-                        return null;
-                }
-            }
-
-            return bitmap;
-        }
-        catch (Exception ex)
-        {
-            LogMessage($"Bitmap Creation Error: {ex.Message}");
-            return null;
-        }
-    }
-
-    private unsafe WriteableBitmap? CreateBitmapFromMaskData(byte[] maskData, int width, int height)
-    {
-        try
-        {
-            var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
-
-            using (var buffer = bitmap.Lock())
-            {
-                var bufferSize = width * height * 4; // 4 bytes per pixel for BGRA
-                var span = new Span<byte>(buffer.Address.ToPointer(), bufferSize);
-                ConvertMaskToBgra(maskData, span, width, height);
-            }
-
-            return bitmap;
-        }
-        catch (Exception ex)
-        {
-            LogMessage($"Mask Bitmap Creation Error: {ex.Message}");
-            return null;
-        }
-    }
-
-    private static void ConvertRgbToBgra(byte[] rgbData, Span<byte> bgraSpan, int width, int height)
-    {
-        int rgbIndex = 0;
-        int bgraIndex = 0;
-
-        for (int i = 0; i < width * height; i++)
-        {
-            if (rgbIndex + 2 < rgbData.Length && bgraIndex + 3 < bgraSpan.Length)
-            {
-                bgraSpan[bgraIndex] = rgbData[rgbIndex + 2];     // B
-                bgraSpan[bgraIndex + 1] = rgbData[rgbIndex + 1]; // G
-                bgraSpan[bgraIndex + 2] = rgbData[rgbIndex];     // R
-                bgraSpan[bgraIndex + 3] = 255;                   // A
-            }
-
-            rgbIndex += 3;
-            bgraIndex += 4;
-        }
-    }
-
-    private static void ConvertYuyvToBgra(byte[] yuyvData, Span<byte> bgraSpan, int width, int height)
-    {
-        // Simple YUYV to RGB conversion (basic implementation)
-        int yuyvIndex = 0;
-        int bgraIndex = 0;
-
-        for (int i = 0; i < width * height / 2; i++)
-        {
-            if (yuyvIndex + 3 < yuyvData.Length && bgraIndex + 7 < bgraSpan.Length)
-            {
-                byte y1 = yuyvData[yuyvIndex];
-                byte u = yuyvData[yuyvIndex + 1];
-                byte y2 = yuyvData[yuyvIndex + 2];
-                byte v = yuyvData[yuyvIndex + 3];
-
-                // Convert YUV to RGB for both pixels
-                ConvertYuvToRgb(y1, u, v, out byte r1, out byte g1, out byte b1);
-                ConvertYuvToRgb(y2, u, v, out byte r2, out byte g2, out byte b2);
-
-                // First pixel
-                bgraSpan[bgraIndex] = b1;
-                bgraSpan[bgraIndex + 1] = g1;
-                bgraSpan[bgraIndex + 2] = r1;
-                bgraSpan[bgraIndex + 3] = 255;
-
-                // Second pixel
-                bgraSpan[bgraIndex + 4] = b2;
-                bgraSpan[bgraIndex + 5] = g2;
-                bgraSpan[bgraIndex + 6] = r2;
-                bgraSpan[bgraIndex + 7] = 255;
-            }
-
-            yuyvIndex += 4;
-            bgraIndex += 8;
-        }
-    }
-
-    private static void ConvertYuvToRgb(byte y, byte u, byte v, out byte r, out byte g, out byte b)
-    {
-        int c = y - 16;
-        int d = u - 128;
-        int e = v - 128;
-
-        int red = (298 * c + 409 * e + 128) >> 8;
-        int green = (298 * c - 100 * d - 208 * e + 128) >> 8;
-        int blue = (298 * c + 516 * d + 128) >> 8;
-
-        r = (byte)Math.Clamp(red, 0, 255);
-        g = (byte)Math.Clamp(green, 0, 255);
-        b = (byte)Math.Clamp(blue, 0, 255);
-    }
-
-    private static void ConvertMaskToBgra(byte[] maskData, Span<byte> bgraSpan, int width, int height)
-    {
-        int maskIndex = 0;
-        int bgraIndex = 0;
-
-        for (int i = 0; i < width * height; i++)
-        {
-            if (maskIndex < maskData.Length && bgraIndex + 3 < bgraSpan.Length)
-            {
-                byte maskValue = maskData[maskIndex];
-                // Show mask as semi-transparent green overlay
-                bgraSpan[bgraIndex] = 0;                    // B
-                bgraSpan[bgraIndex + 1] = maskValue;        // G  
-                bgraSpan[bgraIndex + 2] = 0;                // R
-                bgraSpan[bgraIndex + 3] = (byte)(maskValue / 2); // A (semi-transparent)
-            }
-
-            maskIndex++;
-            bgraIndex += 4;
         }
     }
 
@@ -1358,7 +1166,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         // Clean up camera streaming
         _cameraStreamCancellation?.Cancel();
-        _connectionManager?.CameraService?.Dispose();
+        _independentCameraService?.Dispose();
 
         GC.SuppressFinalize(this);
     }
