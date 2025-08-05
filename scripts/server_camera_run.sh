@@ -1,10 +1,14 @@
 #!/bin/bash
 
-# Simple Camera Server - .NET 10 App Style Runner
-# Runs SimpleCameraServer.cs using .NET 10 file-based execution
+# HTTP Camera Server Runner
+# Starts a lightweight HTTP server that serves camera frame data to UI clients
+# Listens on http://localhost:50080/ with endpoints:
+#   - GET /camera/frame - Returns latest camera frame data as JSON
+#   - GET /status - Returns server health status
+# Uses .NET 10 file-based execution (no project files needed)
 
 echo "==============================================="
-echo " Simple Camera Server (.NET 10 App Style)"
+echo " Http Camera Server (.NET 10 App Style)"
 echo "==============================================="
 echo
 
@@ -28,7 +32,7 @@ echo
 
 # Run HttpCameraServer.cs with .NET 10 app-style execution
 echo "Starting HTTP Camera Server..."
-dotnet run ../src/csharp/HttpCameraServer.cs
+dotnet run ../src/servers/camera/HttpCameraServer.cs
 
 echo
 echo "Camera server ended."
