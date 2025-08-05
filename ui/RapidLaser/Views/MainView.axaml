@@ -101,7 +101,10 @@
                             IsVisible="{Binding IsProgramRunning}"
                             ToolTip.Tip="RTTaskManager.Shutdown() ">
                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                <icons:MaterialIcon Kind="Skull" />
+                                <icons:MaterialIcon
+                                    Width="15"
+                                    Height="15"
+                                    Kind="Skull" />
                                 <TextBlock VerticalAlignment="Center" Text="Kill Program" />
                             </StackPanel>
                         </Button>
@@ -143,7 +146,7 @@
                         <Border
                             Width="1"
                             Height="24"
-                            Margin="6,0"
+                            Margin="4,0"
                             Background="{StaticResource SubtleTextBrush}"
                             IsVisible="{Binding IsProgramRunning}"
                             Opacity="0.1" />
@@ -608,6 +611,7 @@
                                     <icons:MaterialIcon
                                         Width="16"
                                         Height="16"
+                                        IsVisible="False"
                                         Kind="VideoOutline" />
                                     <TextBlock Text="Start Camera" />
                                 </StackPanel>
@@ -624,6 +628,7 @@
                                     <icons:MaterialIcon
                                         Width="16"
                                         Height="16"
+                                        IsVisible="False"
                                         Kind="VideoOffOutline" />
                                     <TextBlock Text="Stop Camera" />
                                 </StackPanel>
@@ -1040,39 +1045,27 @@
                                                 Grid.Row="2"
                                                 Margin="0,2,0,0"
                                                 Orientation="Horizontal">
+
+                                                <TextBlock
+                                                    MinWidth="80"
+                                                    Classes="Mono "
+                                                    Foreground="{StaticResource TextBrush}">
+                                                    <Run Text="Live:" />
+                                                    <Run Text="{Binding IsCameraStreaming, Converter={x:Static converters:BoolConverters.BoolToYesNoConverter}}" />
+                                                </TextBlock>
+
                                                 <TextBlock
                                                     MinWidth="80"
                                                     Classes="Mono"
-                                                    Foreground="{StaticResource TextBrush}">
-                                                    <TextBlock.Text>
-                                                        <MultiBinding StringFormat="Live: {0}">
-                                                            <Binding
-                                                                Converter="{x:Static converters:BoolConverters.BoolToYesNoConverter}"
-                                                                FallbackValue="No"
-                                                                Path="IsCameraStreaming" />
-                                                        </MultiBinding>
-                                                    </TextBlock.Text>
-                                                </TextBlock>
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="{Binding CameraFps, FallbackValue=0, StringFormat='FPS: {0:F1}'}" />
+
                                                 <TextBlock
                                                     MinWidth="80"
                                                     Classes="Mono"
-                                                    Foreground="{StaticResource TextBrush}">
-                                                    <TextBlock.Text>
-                                                        <MultiBinding StringFormat="FPS: {0:F1}">
-                                                            <Binding FallbackValue="0" Path="CameraFps" />
-                                                        </MultiBinding>
-                                                    </TextBlock.Text>
-                                                </TextBlock>
-                                                <TextBlock
-                                                    MinWidth="80"
-                                                    Classes="Mono"
-                                                    Foreground="{StaticResource TextBrush}">
-                                                    <TextBlock.Text>
-                                                        <MultiBinding StringFormat="Frame: {0}">
-                                                            <Binding FallbackValue="-" Path="CameraFrameCount" />
-                                                        </MultiBinding>
-                                                    </TextBlock.Text>
-                                                </TextBlock>
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="{Binding CameraFrameCount, FallbackValue='-', StringFormat='Frames: {0}'}" />
+
                                             </StackPanel>
 
                                         </Grid>
