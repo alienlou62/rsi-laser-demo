@@ -35,7 +35,6 @@
 		<Protobuf Include="$(RSIProtoPath)\rsienums.proto" GrpcServices="Client">
 			<Link>Assets\protos\rsienums.proto</Link>
 		</Protobuf>
-		<Protobuf Include="Assets\protos\camera_streaming.proto" GrpcServices="Client" />
 	</ItemGroup>
 
   <ItemGroup>
@@ -58,6 +57,7 @@
     <PackageReference Include="Material.Icons.Avalonia" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="System.Text.Json" />
     <PackageReference Include="SSH.NET" />
   </ItemGroup>
 

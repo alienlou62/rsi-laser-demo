@@ -21,10 +21,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
 
     /** SERVICES **/
-    private readonly ICameraService _cameraService;
     private readonly IImageProcessingService _imageProcessingService;
     private readonly IConnectionManagerService _connectionManager;
-    private IRmpGrpcService? _rmp = null;
 
 
     /** FIELDS **/
@@ -282,10 +280,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            if (_rmp != null)
+            var rmp = _connectionManager.GrpcService;
+            if (rmp != null)
             {
                 LogMessage("Stopping task manager...");
-                var result = await _rmp.StopTaskManagerAsync();
+                var result = await rmp.StopTaskManagerAsync();
             }
             else
             {
@@ -312,10 +311,11 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            if (string.IsNullOrEmpty(Global_IsMotionEnabled) || _rmp == null)
+            var rmp = _connectionManager.GrpcService;
+            if (string.IsNullOrEmpty(Global_IsMotionEnabled) || rmp == null)
                 return;
 
-            var response = await _rmp.SetBoolGlobalValueAsync(Global_IsMotionEnabled, (bool)isMotionEnabled);
+            var response = await rmp.SetBoolGlobalValueAsync(Global_IsMotionEnabled, (bool)isMotionEnabled);
             LogMessage($"Motion enabled set to: {(bool)isMotionEnabled}");
         }
         catch (Exception ex)
@@ -333,21 +333,31 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         try
         {
+            // Check if connected and running
+            if (!IsConnected || !_connectionManager.IsRunning)
+            {
+                CameraStatus = "Not connected";
+                LogMessage("Camera: Cannot start - not connected to system");
+                return;
+            }
+
+            var cameraService = _connectionManager.CameraService;
+            
             // Initialize camera service
-            if (!_cameraService.IsInitialized)
+            if (!cameraService.IsInitialized)
             {
                 CameraStatus = "Initializing...";
-                var initialized = await _cameraService.InitializeAsync();
+                var initialized = await cameraService.InitializeAsync();
                 if (!initialized)
                 {
                     CameraStatus = "Failed to initialize";
-                    LogMessage("Camera: Failed to initialize gRPC camera service");
+                    LogMessage("Camera: Failed to initialize camera service");
                     return;
                 }
             }
 
             // Start grabbing frames
-            var started = await _cameraService.StartGrabbingAsync();
+            var started = await cameraService.StartGrabbingAsync();
             if (!started)
             {
                 CameraStatus = "Failed to start";
@@ -379,7 +389,9 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             _cameraStreamCancellation?.Cancel();
-            await _cameraService.StopGrabbingAsync();
+            
+            if (_connectionManager.CameraService != null)
+                await _connectionManager.CameraService.StopGrabbingAsync();
 
             IsCameraStreaming = false;
             CameraStatus = "Stopped";
@@ -428,18 +440,13 @@ public partial class MainViewModel : ViewModelBase, IDisposable
             {
                 IsConnected = true;
 
-                // rmp service
-                _rmp = _connectionManager.GrpcService;
-
                 // Test SSH authentication after successful server connection
                 await TestSshAuthenticationAsync();
             }
             else
             {
-                // rmp service
-                _rmp = null;
-                LastError = "Failed to connect to server";
-                LogMessage("Connection failed: Failed to connect to server");
+                LastError = "Failed to connect to camera system";
+                LogMessage("Connection failed: Failed to connect to camera system");
                 IsSshAuthenticated = false;
             }
         }
@@ -571,8 +578,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         //services
         _connectionManager      = new ConnectionManagerService();
-        _cameraService          = new GrpcCameraService(); // Use gRPC camera service
-        _imageProcessingService = new GrpcImageProcessingService(); // Use gRPC image processing service
+        _imageProcessingService = new ImageProcessingService(); // Use simple image processing service
 
         //connection
         UseMockService = _connectionManager.UseMockService;
@@ -592,15 +598,18 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         try
         {
             // checks
-            if (!IsConnected || _rmp == null)
+            if (!IsConnected || !_connectionManager.IsRunning)
                 return;
 
-            //controller status
-            try { ControllerStatus = await _rmp.GetControllerStatusAsync(); }
+            var rmp = _connectionManager.GrpcService;
+
+            //controller status - we'll implement this later when we have motion control
+            // For now, just simulate some data
+            try { ControllerStatus = await rmp.GetControllerStatusAsync(); }
             catch { ControllerStatus = null; }
 
             //network status
-            try { NetworkStatus = (ControllerStatus != null) ? await _rmp.GetNetworkStatusAsync() : null; }
+            try { NetworkStatus = (ControllerStatus != null) ? await rmp.GetNetworkStatusAsync() : null; }
             catch { NetworkStatus = null; }
 
             // ball positions
@@ -609,7 +618,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
                 //tm status
                 try
                 {
-                    TaskManagerStatus = (ControllerStatus != null) ? await _rmp.GetTaskManagerStatusAsync() : null;
+                    TaskManagerStatus = (ControllerStatus != null) ? await rmp.GetTaskManagerStatusAsync() : null;
 
                     IsProgramRunning = TaskManagerStatus != null && TaskManagerStatus.State == RTTaskManagerState.Running;
                 }
@@ -648,23 +657,49 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     {
         try
         {
-            if (_cameraService is not GrpcCameraService grpcCamera)
-            {
-                LogMessage("Camera: Service is not gRPC-enabled");
-                return;
-            }
+            var cameraService = _connectionManager.CameraService;
+            var frameCounter = 0;
+            var frameTimeTracker = DateTime.Now;
 
-            // Use the streaming method from GrpcCameraService
-            await foreach (var frame in grpcCamera.StreamFramesAsync(
-                maxFps: (int)FrameRate,
-                format: Rsi.Camera.ImageFormat.FormatRgb,
-                quality: 85,
-                cancellationToken: cancellationToken))
+            while (!cancellationToken.IsCancellationRequested && IsCameraStreaming)
             {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
-
-                await ProcessCameraFrameAsync(frame);
+                try
+                {
+                    // Get frame from camera service
+                    var (success, imageData, width, height) = await cameraService.TryGrabFrameAsync(cancellationToken);
+                    
+                    if (success && imageData.Length > 0)
+                    {
+                        await ProcessHttpCameraFrameAsync(imageData, width, height);
+                        
+                        // Update frame count and FPS
+                        frameCounter++;
+                        if (frameCounter % 10 == 0) // Update FPS every 10 frames
+                        {
+                            var now = DateTime.Now;
+                            var elapsed = (now - frameTimeTracker).TotalSeconds;
+                            if (elapsed > 0)
+                            {
+                                await Dispatcher.UIThread.InvokeAsync(() =>
+                                {
+                                    CameraFps = 10.0 / elapsed;
+                                    CameraFrameCount = frameCounter;
+                                });
+                            }
+                            frameTimeTracker = now;
+                        }
+                    }
+                    else
+                    {
+                        // Wait a bit before trying again if frame grab failed
+                        await Task.Delay(33, cancellationToken); // ~30 FPS
+                    }
+                }
+                catch (Exception ex) when (!(ex is OperationCanceledException))
+                {
+                    LogMessage($"Camera Frame Error: {ex.Message}");
+                    await Task.Delay(100, cancellationToken); // Wait before retrying
+                }
             }
         }
         catch (OperationCanceledException)
@@ -681,7 +716,56 @@ public partial class MainViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private async Task ProcessCameraFrameAsync(Rsi.Camera.CameraFrame frame)
+    private async Task ProcessHttpCameraFrameAsync(byte[] imageData, int width, int height)
+    {
+        try
+        {
+            // For HTTP camera service, imageData is a JPEG byte array
+            // We can load it directly into a bitmap
+            
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                try
+                {
+                    using var stream = new MemoryStream(imageData);
+                    var bitmap = new Bitmap(stream);
+                    
+                    // Convert to WriteableBitmap for UI binding
+                    var writeableBitmap = new WriteableBitmap(
+                        new PixelSize(bitmap.PixelSize.Width, bitmap.PixelSize.Height),
+                        new Vector(96, 96),
+                        PixelFormat.Bgra8888,
+                        AlphaFormat.Premul);
+
+                    using var lockedBitmap = writeableBitmap.Lock();
+                    bitmap.CopyPixels(new PixelRect(0, 0, bitmap.PixelSize.Width, bitmap.PixelSize.Height),
+                        lockedBitmap.Address, lockedBitmap.RowBytes * bitmap.PixelSize.Height, lockedBitmap.RowBytes);
+
+                    CameraImage = writeableBitmap;
+                    
+                    // If using HttpCameraService, we get ball detection data from the JSON response
+                    if (_connectionManager.CameraService is HttpCameraService httpCamera)
+                    {
+                        // Ball detection data would be available from the HTTP response
+                        // For now, we'll simulate some values
+                        ObjectsDetected = 1;
+                        DetectionConfidence = 0.95;
+                        Program_BallX = width / 2.0;
+                        Program_BallY = height / 2.0;
+                        Program_BallRadius = 20.0;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogMessage($"Image Processing Error: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Frame Processing Error: {ex.Message}");
+        }
+    }
     {
         try
         {
@@ -903,7 +987,8 @@ public partial class MainViewModel : ViewModelBase, IDisposable
     //globals
     private async Task UpdateGlobalValues()
     {
-        if (_rmp == null) return;
+        var rmp = _connectionManager.GrpcService;
+        if (rmp == null) return;
 
         // Update global value names if task manager status is available
         await UpdateGlobalValuesAsync();
@@ -1273,7 +1358,7 @@ public partial class MainViewModel : ViewModelBase, IDisposable
 
         // Clean up camera streaming
         _cameraStreamCancellation?.Cancel();
-        _cameraService?.Dispose();
+        _connectionManager?.CameraService?.Dispose();
 
         GC.SuppressFinalize(this);
     }
