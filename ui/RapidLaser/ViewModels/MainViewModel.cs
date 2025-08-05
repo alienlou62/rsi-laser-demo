@@ -234,11 +234,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var rmp = _sshService.RmpGrpcService;
-            if (rmp != null)
+            if (_rmpGrpcService != null)
             {
                 LogMessage("Stopping task manager...");
-                var result = await rmp.StopTaskManagerAsync();
+                var result = await _rmpGrpcService.StopTaskManagerAsync();
             }
             else
             {
@@ -265,11 +264,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var rmp = _sshService.RmpGrpcService;
-            if (string.IsNullOrEmpty(Global_IsMotionEnabled) || rmp == null)
+            if (string.IsNullOrEmpty(Global_IsMotionEnabled) || _rmpGrpcService == null)
                 return;
 
-            var response = await rmp.SetBoolGlobalValueAsync(Global_IsMotionEnabled, (bool)isMotionEnabled);
+            var response = await _rmpGrpcService.SetBoolGlobalValueAsync(Global_IsMotionEnabled, (bool)isMotionEnabled);
             LogMessage($"Motion enabled set to: {(bool)isMotionEnabled}");
         }
         catch (Exception ex)
