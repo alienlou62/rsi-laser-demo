@@ -243,18 +243,47 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             LogMessage($"Executing SSH command: {SshRunCommand}");
-            var sshResult = await ExecuteSshCommandAsync(SshRunCommand, updateSshOutput: true);
+            ProgramStatus = "STARTING...";
 
-            if (sshResult == null)
+            // Run SSH command in background without blocking UI
+            _ = Task.Run(async () =>
             {
-                ProgramStatus = "SSH ERROR";
-                LogMessage("Program run failed: SSH command returned null");
-            }
-            else
-            {
-                ProgramStatus = "";
-                LogMessage("Program run completed successfully");
-            }
+                try
+                {
+                    var sshResult = await ExecuteSshCommandAsync(SshRunCommand, updateSshOutput: true);
+
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        if (sshResult == null)
+                        {
+                            ProgramStatus = "SSH ERROR";
+                            LogMessage("Program run failed: SSH command returned null");
+                        }
+                        else
+                        {
+                            ProgramStatus = "";
+                            LogMessage("Program run completed successfully");
+
+                            // start camera streaming if not already started
+                            if (!IsCameraStreaming)
+                            {
+                                _ = StartCameraStreamAsync();
+                            }
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await Dispatcher.UIThread.InvokeAsync(() =>
+                    {
+                        ProgramStatus = $"SSH ERROR: {ex.Message}";
+                        LogMessage($"Program Run Error: {ex.Message}");
+                    });
+                }
+            });
+
+            // Return immediately to prevent UI blocking
+            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -270,8 +299,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             if (_rmpGrpcService != null)
             {
+                // stop camera streaming
+                await _cameraService.StopGrabbingAsync();
+                IsCameraStreaming = false;
+                CameraImage = null;
+
+                // shut down task manager
                 LogMessage("Stopping task manager...");
                 var result = await _rmpGrpcService.StopTaskManagerAsync();
+
+                if (result)
+                {
+                    //reset global variables
+                    Dispatcher.UIThread.InvokeAsync(GlobalValues.Clear);
+                }
             }
             else
             {
@@ -574,14 +615,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     //ssh
-    [RelayCommand]
-    private async Task RunSshCommandAsync()
-    {
-        if (IsSshCommandRunning) return;
-
-        await ExecuteSshCommandAsync(SshCommand);
-    }
-
     [RelayCommand]
     private void ClearLogOutput()
     {
