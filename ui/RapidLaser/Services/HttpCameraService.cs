@@ -1,4 +1,3 @@
-
 namespace RapidLaser.Services;
 
 public class CameraFrameData
@@ -18,11 +17,14 @@ public class CameraFrameData
 
 public interface ICameraService
 {
+    bool IsConnected { get; }
     bool IsInitialized { get; }
     bool IsGrabbing { get; }
     int ImageWidth { get; }
     int ImageHeight { get; }
 
+    Task<bool> ConnectAsync(string ip, int port);
+    Task DisconnectAsync();
     Task<bool> InitializeAsync();
     Task<bool> StartGrabbingAsync();
     Task StopGrabbingAsync();
@@ -36,40 +38,80 @@ public class HttpCameraService : ICameraService
     /** FIELDS **/
     //private
     private readonly HttpClient _httpClient;
-    private readonly string _serverUrl;
+    private string _serverUrl;
     private bool _isInitialized;
     private bool _isGrabbing;
+    private bool _isConnected = false;
+
     //public
     public bool IsInitialized => _isInitialized;
     public bool IsGrabbing => _isGrabbing;
     public int ImageWidth { get; private set; } = 640;
     public int ImageHeight { get; private set; } = 480;
+    public bool IsConnected => _isConnected;
 
 
     /** CONSTRUCTOR **/
-    public HttpCameraService(string serverUrl = "http://localhost:50080")
+    public HttpCameraService()
     {
         _httpClient = new HttpClient();
         _httpClient.Timeout = TimeSpan.FromSeconds(5);
-        _serverUrl = serverUrl;
+        _serverUrl = string.Empty; // Will be set when connecting
     }
 
 
     /** METHODS **/
-    public async Task<bool> InitializeAsync()
+    // Connection methods
+    public async Task<bool> ConnectAsync(string ip, int port)
     {
         try
         {
+            _serverUrl = $"{ip}:{port}";
             Console.WriteLine($"HttpCameraService: Attempting to connect to {_serverUrl}/status");
+
             // Test connection to camera server
             var response = await _httpClient.GetAsync($"{_serverUrl}/status");
-            _isInitialized = response.IsSuccessStatusCode;
+            _isConnected = response.IsSuccessStatusCode;
+
             Console.WriteLine($"HttpCameraService: Connection test result - StatusCode: {response.StatusCode}, IsSuccess: {response.IsSuccessStatusCode}");
+            return _isConnected;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to connect to HTTP camera service at {_serverUrl}: {ex.Message}");
+            _isConnected = false;
+            return false;
+        }
+    }
+
+    public Task DisconnectAsync()
+    {
+        _isConnected = false;
+        _isInitialized = false;
+        _isGrabbing = false;
+        Console.WriteLine("HttpCameraService: Disconnected from camera server");
+        return Task.CompletedTask;
+    }
+
+    public async Task<bool> InitializeAsync()
+    {
+        if (!_isConnected)
+        {
+            Console.WriteLine("HttpCameraService: Cannot initialize, not connected to server");
+            return false;
+        }
+
+        try
+        {
+            Console.WriteLine($"HttpCameraService: Attempting to initialize at {_serverUrl}/status");
+            var response = await _httpClient.GetAsync($"{_serverUrl}/status");
+            _isInitialized = response.IsSuccessStatusCode;
+            Console.WriteLine($"HttpCameraService: Initialization result - StatusCode: {response.StatusCode}, IsSuccess: {response.IsSuccessStatusCode}");
             return _isInitialized;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to initialize HTTP camera service to {_serverUrl}: {ex.Message}");
+            Console.WriteLine($"Failed to initialize HTTP camera service at {_serverUrl}: {ex.Message}");
             _isInitialized = false;
             return false;
         }

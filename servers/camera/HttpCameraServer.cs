@@ -1,10 +1,14 @@
 #:package Newtonsoft.Json@13.0.3
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 using Newtonsoft.Json;
 
 // ============================================================================================
@@ -52,14 +56,59 @@ try
     httpListener?.Stop();
     httpListener?.Close();
     httpListener = new HttpListener();
-    httpListener.Prefixes.Add("http://localhost:50080/");
+
+    // Add prefixes for all available IP addresses
+    httpListener.Prefixes.Add("http://+:50080/"); // Bind to all interfaces
     httpListener.Start();
 
-    Console.WriteLine("HTTP camera server started successfully on http://localhost:50080/");
-    Console.WriteLine("Endpoints:");
-    Console.WriteLine("  GET /camera/frame - Get latest camera frame");
-    Console.WriteLine("  GET /status - Server status");
+    var localIPs = GetLocalIPAddresses();
+    Console.WriteLine("HTTP camera server started successfully on all network interfaces (port 50080)");
+    Console.WriteLine("Available endpoints:");
+    foreach (var ip in localIPs)
+    {
+        Console.WriteLine($"  GET http://{ip}:50080/camera/frame - Get latest camera frame");
+        Console.WriteLine($"  GET http://{ip}:50080/status - Server status");
+    }
     Console.WriteLine();
+
+    // Function to get all available IP addresses
+    string[] GetLocalIPAddresses()
+    {
+        var addresses = new List<string>();
+
+        try
+        {
+            // Get all network interfaces
+            var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(ni => ni.OperationalStatus == OperationalStatus.Up &&
+                           ni.NetworkInterfaceType != NetworkInterfaceType.Loopback);
+
+            foreach (var networkInterface in networkInterfaces)
+            {
+                var properties = networkInterface.GetIPProperties();
+                foreach (var address in properties.UnicastAddresses)
+                {
+                    if (address.Address.AddressFamily == AddressFamily.InterNetwork) // IPv4 only
+                    {
+                        addresses.Add(address.Address.ToString());
+                    }
+                }
+            }
+
+            // Always include localhost addresses
+            if (!addresses.Contains("127.0.0.1"))
+                addresses.Insert(0, "127.0.0.1");
+            if (!addresses.Contains("localhost"))
+                addresses.Insert(0, "localhost");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting IP addresses: {ex.Message}");
+            addresses.AddRange(new[] { "localhost", "127.0.0.1" });
+        }
+
+        return addresses.ToArray();
+    }
 
     // Function to read camera data from RT tasks
     object GetCameraDataFromRTTasks()
@@ -145,10 +194,11 @@ try
     });
 
     // Main monitoring loop
-    string serverAddress = "http://localhost:50080/";
     while (!shutdown)
     {
-        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Server running at {serverAddress}");
+        var addresses = GetLocalIPAddresses();
+        var addressList = string.Join(", ", addresses.Select(ip => $"http://{ip}:50080"));
+        Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] Server running on: {addressList}");
         await Task.Delay(5000); // Check every 5 seconds
     }
 
