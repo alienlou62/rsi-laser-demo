@@ -195,6 +195,49 @@
                             </ToggleButton.Styles>
                         </ToggleButton>
 
+                        <!--  Camera Toggle  -->
+                        <ToggleButton
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-soft"
+                            Classes.danger="{Binding !IsCameraStreaming}"
+                            Classes.success="{Binding IsCameraStreaming}"
+                            Command="{Binding ToggleCameraStreamCommand}"
+                            IsChecked="{Binding IsCameraStreaming}"
+                            IsEnabled="{Binding IsCameraConnected}"
+                            IsVisible="{Binding IsProgramRunning}"
+                            ToolTip.Tip="Start/Stop Camera Stream">
+                            <ToggleButton.Styles>
+                                <!--  Unchecked (Camera Off)  -->
+                                <Style Selector="ToggleButton">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="CameraOff" />
+                                                <TextBlock VerticalAlignment="Center" Text="Camera OFF" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                                <!--  Checked (Camera On)  -->
+                                <Style Selector="ToggleButton:checked">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="Camera" />
+                                                <TextBlock VerticalAlignment="Center" Text="Camera ON" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                            </ToggleButton.Styles>
+                        </ToggleButton>
+
                     </StackPanel>
 
                     <!--  Right side content with status and custom window controls  -->
@@ -355,18 +398,29 @@
                         </actipro:MeshGradientPresenter>
 
                         <StackPanel>
-                            <Grid Margin="0,0,0,12">
+                            <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock
+                                <StackPanel
                                     Grid.Column="0"
-                                    FontSize="14"
-                                    FontWeight="SemiBold"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="RapidServer" />
+                                    Orientation="Horizontal"
+                                    Spacing="3">
+                                    <TextBlock
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="RapidServer" />
+                                    <TextBlock
+                                        Margin="0,0,0,1"
+                                        VerticalAlignment="Bottom"
+                                        FontSize="11"
+                                        FontWeight="Light"
+                                        Opacity="0.4"
+                                        Text="over gRPC" />
+                                </StackPanel>
 
                                 <icons:MaterialIcon
                                     Grid.Column="1"
@@ -387,12 +441,7 @@
                             </Grid>
 
                             <!--  Server Configuration (disabled when using mock or when connected)  -->
-                            <StackPanel Spacing="8">
-                                <!-- <StackPanel.Styles>
-                                    <Style Selector="ContentControl.is-connected controls|LabeledControl TextPresenter">
-                                        <Setter Property="TextElement.Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccessPressed}" />
-                                    </Style>
-                                </StackPanel.Styles>-->
+                            <StackPanel Margin="0,12,0,0" Spacing="8">
 
                                 <!--  IP Address  -->
                                 <controls:LabeledControl
@@ -454,6 +503,110 @@
                                 TextWrapping="Wrap" />
                         </StackPanel>
                     </Grid>
+                </Border>
+
+
+                <!--  Camera Card  -->
+                <Border Classes="card" IsEnabled="{Binding IsConnected}">
+
+                    <StackPanel>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                <TextBlock
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextBrush}"
+                                    Text="Camera Server" />
+                                <TextBlock
+                                    Margin="0,0,0,1"
+                                    VerticalAlignment="Bottom"
+                                    FontSize="11"
+                                    FontWeight="Light"
+                                    Opacity="0.4"
+                                    Text="over HTTP" />
+                            </StackPanel>
+
+                            <icons:MaterialIcon
+                                Grid.Column="1"
+                                Width="17"
+                                Height="17"
+                                VerticalAlignment="Center"
+                                Classes.is-camera-connected="{Binding IsCameraConnected}"
+                                Classes.is-camera-not-connected="{Binding !IsCameraConnected}">
+                                <icons:MaterialIcon.Styles>
+                                    <Style Selector="icons|MaterialIcon.is-camera-connected">
+                                        <Setter Property="Kind" Value="LanCheck" />
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                    </Style>
+                                    <Style Selector="icons|MaterialIcon.is-camera-not-connected">
+                                        <Setter Property="Kind" Value="LanDisconnect" />
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                    </Style>
+                                </icons:MaterialIcon.Styles>
+                            </icons:MaterialIcon>
+                        </Grid>
+
+                        <StackPanel Spacing="8">
+
+                            <!--  Camera Configuration (disabled when not connected to RapidServer)  -->
+                            <StackPanel
+                                Margin="0,12,0,0"
+                                IsVisible="{Binding IsConnected}"
+                                Spacing="8">
+
+                                <!--  Camera Port  -->
+                                <controls:LabeledControl IsEnabled="{Binding IsConnected}" Label="Port">
+                                    <TextBox
+                                        IsEnabled="{Binding !IsCameraConnected}"
+                                        Text="{Binding CameraPort}"
+                                        Watermark="50080" />
+                                </controls:LabeledControl>
+
+                                <!--  Connect/Disconnect Button  -->
+                                <Button
+                                    Margin="0,2,0,0"
+                                    HorizontalAlignment="Right"
+                                    Classes="theme-soft success"
+                                    Command="{Binding ConnectCameraCommand}"
+                                    Content="Connect"
+                                    IsEnabled="{Binding IsConnected}"
+                                    IsVisible="{Binding !IsCameraConnected}" />
+
+                                <Button
+                                    Margin="0,2,0,0"
+                                    HorizontalAlignment="Right"
+                                    Classes="theme-soft danger"
+                                    Command="{Binding DisconnectCameraCommand}"
+                                    Content="Disconnect"
+                                    IsVisible="{Binding IsCameraConnected}" />
+
+                                <!--  Camera Status and Controls (only visible when connected)  -->
+                                <StackPanel IsVisible="{Binding IsCameraConnected}" Spacing="8">
+
+                                    <!--  Camera Status  -->
+                                    <controls:StatusLabel
+                                        Title="Status"
+                                        IsActive="{Binding IsCameraStreaming}"
+                                        Value="{Binding CameraStatus}" />
+
+                                    <!--  Camera FPS  -->
+                                    <controls:StatusLabel
+                                        Title="FPS"
+                                        IsMonoFont="True"
+                                        Value="{Binding CameraFps, StringFormat='{}{0:F1}', FallbackValue='0.0'}" />
+
+                                </StackPanel>
+
+                            </StackPanel>
+                        </StackPanel>
+
+                    </StackPanel>
                 </Border>
 
                 <!--  SSH Card  -->
@@ -531,97 +684,6 @@
 
                         </StackPanel>
 
-
-                    </StackPanel>
-                </Border>
-
-                <!--  Camera Card  -->
-                <Border Classes="card" IsEnabled="{Binding IsConnected}">
-
-                    <StackPanel Spacing="8">
-                        <Grid Margin="0,0,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock
-                                Grid.Column="0"
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="Camera Stream" />
-
-                            <icons:MaterialIcon
-                                Grid.Column="1"
-                                Width="17"
-                                Height="17"
-                                VerticalAlignment="Center"
-                                Classes.is-camera-not-streaming="{Binding !IsCameraStreaming}"
-                                Classes.is-camera-streaming="{Binding IsCameraStreaming}">
-                                <icons:MaterialIcon.Styles>
-                                    <Style Selector="icons|MaterialIcon.is-camera-streaming">
-                                        <Setter Property="Kind" Value="VideoCheck" />
-                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-                                    </Style>
-                                    <Style Selector="icons|MaterialIcon.is-camera-not-streaming">
-                                        <Setter Property="Kind" Value="VideoOff" />
-                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-                                    </Style>
-                                </icons:MaterialIcon.Styles>
-                            </icons:MaterialIcon>
-                        </Grid>
-
-                        <StackPanel IsVisible="{Binding IsConnected}" Spacing="8">
-
-                            <!--  Camera Status  -->
-                            <controls:StatusLabel
-                                Title="Status"
-                                IsActive="{Binding IsCameraStreaming}"
-                                Value="{Binding IsCameraStreaming, Converter={x:Static converters:BoolConverters.BoolToStreamingStatusConverter}}" />
-
-                            <!--  Camera FPS  -->
-                            <controls:StatusLabel
-                                Title="FPS"
-                                IsMonoFont="True"
-                                Value="{Binding CameraFps, StringFormat='{}{0:F1}', FallbackValue='0.0'}" />
-
-                            <!--  Start/Stop Camera Button  -->
-                            <Button
-                                Margin="0,2,0,0"
-                                HorizontalAlignment="Right"
-                                Classes="theme-soft success"
-                                Command="{Binding StartCameraStreamCommand}"
-                                IsEnabled="{Binding IsConnected}"
-                                IsVisible="{Binding !IsCameraStreaming}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <icons:MaterialIcon
-                                        Width="16"
-                                        Height="16"
-                                        IsVisible="False"
-                                        Kind="VideoOutline" />
-                                    <TextBlock Text="Start" />
-                                </StackPanel>
-                            </Button>
-
-                            <Button
-                                Margin="0,2,0,0"
-                                HorizontalAlignment="Right"
-                                Classes="theme-soft danger"
-                                Command="{Binding StopCameraStreamCommand}"
-                                IsEnabled="{Binding IsConnected}"
-                                IsVisible="{Binding IsCameraStreaming}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <icons:MaterialIcon
-                                        Width="16"
-                                        Height="16"
-                                        IsVisible="False"
-                                        Kind="VideoOffOutline" />
-                                    <TextBlock Text="Stop" />
-                                </StackPanel>
-                            </Button>
-
-                        </StackPanel>
 
                     </StackPanel>
                 </Border>

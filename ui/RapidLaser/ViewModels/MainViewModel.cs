@@ -15,7 +15,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /** FIELDS **/
     //camera streaming
     private const double CAMERA_TARGET_FPS = 60.0; // Target camera refresh rate - change this to adjust streaming speed
-    
+
     //polling
     private double _updateIntervalMs = 100;
     private System.Timers.Timer? _updateTimer;
@@ -142,6 +142,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     //camera 
     [ObservableProperty]
+    private int _cameraPort = 50080;
+
+    [ObservableProperty]
+    private bool _isCameraConnected = false;
+
+    [ObservableProperty]
+    private bool _isCameraConnecting = false;
+
+    [ObservableProperty]
     private double _frameRate = CAMERA_TARGET_FPS;
 
     [ObservableProperty]
@@ -153,10 +162,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isCameraStreaming = false;
 
-    [ObservableProperty]
-    private string _cameraStatus = "Disconnected";
-
     private CancellationTokenSource? _cameraStreamCancellation;
+
+    [ObservableProperty]
+    private string _cameraLastError = string.Empty;
 
     //server
     [ObservableProperty]
@@ -304,20 +313,110 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     //camera
     [RelayCommand]
+    private async Task ConnectCameraAsync()
+    {
+        // verify ip address is valid 
+        if (!IsValidIpAddress(IpAddress))
+        {
+            CameraLastError = "Invalid IP address. Connect to RapidServer first.";
+            return;
+        }
+
+        // verify camera port is valid
+        if (CameraPort <= 0)
+        {
+            CameraLastError = "Invalid camera port.";
+            return;
+        }
+
+        if (IsCameraConnecting) return;
+
+        try
+        {
+            IsCameraConnecting = true;
+            CameraLastError = string.Empty;
+
+            LogMessage($"Connecting to camera at {IpAddress}:{CameraPort}...");
+
+            bool success = await _cameraService.ConnectAsync(IpAddress, CameraPort);
+
+            if (success)
+            {
+                IsCameraConnected = true;
+                LogMessage($"Connected to camera server at {IpAddress}:{CameraPort}");
+            }
+            else
+            {
+                IsCameraConnected = false;
+                CameraLastError = "Failed to connect to camera server.";
+                LogMessage($"Failed to connect to camera server at {IpAddress}:{CameraPort}");
+            }
+        }
+        catch (Exception ex)
+        {
+            IsCameraConnected = false;
+            CameraLastError = ex.Message;
+            LogMessage($"Camera connection error: {ex.Message}");
+        }
+        finally
+        {
+            IsCameraConnecting = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DisconnectCameraAsync()
+    {
+        try
+        {
+            if (IsCameraStreaming)
+            {
+                await StopCameraStreamAsync();
+            }
+
+            await _cameraService.DisconnectAsync();
+            IsCameraConnected = false;
+            LogMessage("Disconnected from camera server");
+        }
+        catch (Exception ex)
+        {
+            CameraLastError = ex.Message;
+            LogMessage($"Camera disconnect error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ToggleCameraStreamAsync()
+    {
+        if (IsCameraStreaming)
+        {
+            await StopCameraStreamAsync();
+        }
+        else
+        {
+            await StartCameraStreamAsync();
+        }
+    }
+
+    [RelayCommand]
     private async Task StartCameraStreamAsync()
     {
         if (IsCameraStreaming) return;
 
         try
         {
-            // Initialize independent camera service
+            if (!_cameraService.IsConnected)
+            {
+                LogMessage("Camera: Not connected. Please connect to camera first.");
+                return;
+            }
+
+            // Initialize camera service
             if (!_cameraService.IsInitialized)
             {
-                CameraStatus = "Initializing...";
                 var initialized = await _cameraService.InitializeAsync();
                 if (!initialized)
                 {
-                    CameraStatus = "Failed to initialize";
                     LogMessage("Camera: Failed to initialize HTTP camera service");
                     return;
                 }
@@ -327,13 +426,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var started = await _cameraService.StartGrabbingAsync();
             if (!started)
             {
-                CameraStatus = "Failed to start";
                 LogMessage("Camera: Failed to start grabbing frames");
                 return;
             }
 
             IsCameraStreaming = true;
-            CameraStatus = "Streaming";
             _cameraStreamCancellation = new CancellationTokenSource();
 
             LogMessage("Camera: Started streaming");
@@ -343,7 +440,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            CameraStatus = $"Error: {ex.Message}";
             LogMessage($"Camera Start Error: {ex.Message}");
         }
     }
@@ -360,7 +456,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
             await _cameraService.StopGrabbingAsync();
 
             IsCameraStreaming = false;
-            CameraStatus = "Stopped";
             CameraImage = null;
 
             LogMessage("Camera: Stopped streaming");
@@ -447,6 +542,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 await StopCameraStreamAsync();
             }
 
+            // Disconnect camera if connected
+            if (IsCameraConnected)
+            {
+                await DisconnectCameraAsync();
+            }
+
             await _rmpGrpcService.DisconnectAsync();
             IsConnected = false;
             IsSshAuthenticated = false;
@@ -527,7 +628,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         //services
         _sshService     = new SshService();
-        _cameraService  = new HttpCameraService("http://localhost:50080");
+        _cameraService  = new HttpCameraService(); // Remove hardcoded URL
         _rmpGrpcService = new RmpGrpcService();
 
         // load ui settings from file
