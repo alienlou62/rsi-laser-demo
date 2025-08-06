@@ -29,13 +29,13 @@ namespace SharedDataHelpers
   template<typename T>
   class SPSCStorageManager {
   public:
-    SPSCStorageManager(SPSCStorage<T>* triple, bool is_writer = false)
-      : triple_(triple), 
+    SPSCStorageManager(SPSCStorage<T>* storage, bool is_writer = false)
+      : storage_(storage), 
         index_(is_writer ? 1 : 2),
         is_writer_(is_writer)
     {
-      lock_ = is_writer ? std::unique_lock<std::mutex>(triple_->writer_mutex, std::try_to_lock) 
-                        : std::unique_lock<std::mutex>(triple_->reader_mutex, std::try_to_lock);
+      lock_ = is_writer ? std::unique_lock<std::mutex>(storage_->writer_mutex, std::try_to_lock) 
+                        : std::unique_lock<std::mutex>(storage_->reader_mutex, std::try_to_lock);
       if (!lock_.owns_lock()) {
         throw std::runtime_error("Failed to acquire lock on SPSCStorage");
       }
@@ -46,7 +46,7 @@ namespace SharedDataHelpers
     SPSCStorageManager& operator=(const SPSCStorageManager&) = delete;
 
     SPSCStorageManager(SPSCStorageManager&& other) noexcept
-      : triple_(std::move(other.triple_)),
+      : storage_(std::move(other.storage_)),
         lock_(std::move(other.lock_)),
         index_(other.index_),
         is_writer_(other.is_writer_)
@@ -56,16 +56,16 @@ namespace SharedDataHelpers
 
     ~SPSCStorageManager() = default;
 
-    T& data() { return triple_->slots[index_]; }
-    uint32_t& flags() { return triple_->flags[index_]; }
+    T& data() { return storage_->slots[index_]; }
+    uint32_t& flags() { return storage_->flags[index_]; }
 
     void exchange() {
-      int old_spare = triple_->spare_index.exchange(index_, std::memory_order_acq_rel);
+      int old_spare = storage_->spare_index.exchange(index_, std::memory_order_acq_rel);
       index_ = old_spare;
     }
 
   protected:
-    SPSCStorage<T>* triple_;
+    SPSCStorage<T>* storage_;
     std::unique_lock<std::mutex> lock_;
     int index_;
     bool is_writer_ = false;
@@ -100,16 +100,16 @@ namespace SharedDataHelpers
         throw std::runtime_error("Failed to map shared memory segment");
       }
 
-      triple_ = static_cast<SPSCStorage<T>*>(ptr);
+      storage_ = static_cast<SPSCStorage<T>*>(ptr);
       if (is_writer_) {
-        new (triple_) SPSCStorage<T>();
+        new (storage_) SPSCStorage<T>();
       }
     }
 
     ~SharedMemorySPSCStorage()
     {
       size_t size = sizeof(SPSCStorage<T>);
-      munmap(triple_, size);
+      munmap(storage_, size);
       if (is_writer_) {
         shm_unlink(name_.c_str());
       }
@@ -123,22 +123,22 @@ namespace SharedDataHelpers
       : name_(std::move(other.name_)), 
         is_writer_(other.is_writer_), 
         fd_(other.fd_), 
-        triple_(other.triple_)
+        storage_(other.storage_)
     {
       other.fd_ = -1;
-      other.triple_ = nullptr;
+      other.storage_ = nullptr;
     }
 
-    SPSCStorage<T>* get() { return triple_; }
+    SPSCStorage<T>* get() { return storage_; }
 
-    SPSCStorage<T>* operator->() { return triple_; }
-    SPSCStorage<T>& operator*()  { return *triple_; }
+    SPSCStorage<T>* operator->() { return storage_; }
+    SPSCStorage<T>& operator*()  { return *storage_; }
 
     private:
       std::string name_;
       bool is_writer_;
       int fd_;
-      SPSCStorage<T>* triple_;
+      SPSCStorage<T>* storage_;
   };
 }
 
