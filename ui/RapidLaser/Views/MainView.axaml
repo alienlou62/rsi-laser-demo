@@ -202,7 +202,7 @@
                             Classes.danger="{Binding !IsCameraStreaming}"
                             Classes.success="{Binding IsCameraStreaming}"
                             Command="{Binding ToggleCameraStreamCommand}"
-                            IsChecked="{Binding IsCameraStreaming}"
+                            IsChecked="{Binding IsCameraStreaming, Mode=OneWay}"
                             IsEnabled="{Binding IsCameraConnected}"
                             IsVisible="{Binding IsProgramRunning}"
                             ToolTip.Tip="Start/Stop Camera Stream">
@@ -215,7 +215,7 @@
                                                 <icons:MaterialIcon
                                                     Width="16"
                                                     Height="16"
-                                                    Kind="CameraOff" />
+                                                    Kind="VideoOff" />
                                                 <TextBlock VerticalAlignment="Center" Text="Camera OFF" />
                                             </StackPanel>
                                         </Template>
@@ -229,7 +229,7 @@
                                                 <icons:MaterialIcon
                                                     Width="16"
                                                     Height="16"
-                                                    Kind="Camera" />
+                                                    Kind="Video" />
                                                 <TextBlock VerticalAlignment="Center" Text="Camera ON" />
                                             </StackPanel>
                                         </Template>
