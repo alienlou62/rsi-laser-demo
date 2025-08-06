@@ -40,9 +40,7 @@ struct Frame
   double targetY;
 };
 
-SharedDataHelpers::SPSCStorage<Frame> g_frameStorage;
-SharedDataHelpers::SPSCStorageManager g_frameWriter(&g_frameStorage, true);
-SharedDataHelpers::SPSCStorageManager g_frameReader(&g_frameStorage, false);
+inline std::shared_ptr g_frameStorage = std::make_shared<SharedDataHelpers::SPSCStorage<Frame>>();
 
 // Initializes the global data structure and sets up the camera and multi-axis.
 RSI_TASK(Initialize)
@@ -135,6 +133,8 @@ RSI_TASK(MoveMotors)
 // Processes the image captured by the camera.
 RSI_TASK(DetectBall)
 {
+  static SharedDataHelpers::SPSCStorageManager frameWriter(g_frameStorage, true);
+
   if (!data->initialized) return;
   if (!data->cameraReady) return;
 
@@ -201,17 +201,17 @@ RSI_TASK(DetectBall)
   }
   
   // Store the YUYV frame and metadata in the shared memory
-  memcpy(g_frameWriter.data().yuyvData, yuyvFrame.data, sizeof(CameraHelpers::YUYVFrame));
-  g_frameWriter.data().frameNumber = data->imageSequenceNumber;
-  g_frameWriter.data().timestamp = static_cast<double>(data->frameTimestamp);
-  g_frameWriter.data().ballDetected = ballDetected;
-  g_frameWriter.data().centerX = ball[0];
-  g_frameWriter.data().centerY = ball[1];
-  g_frameWriter.data().radius = ball[2];
-  g_frameWriter.data().targetX = data->targetX;
-  g_frameWriter.data().targetY = data->targetY;
-  g_frameWriter.flags() = 1; // indicate new data is available
-  g_frameWriter.exchange();
+  memcpy(frameWriter.data().yuyvData, yuyvFrame.data, sizeof(CameraHelpers::YUYVFrame));
+  frameWriter.data().frameNumber = data->imageSequenceNumber;
+  frameWriter.data().timestamp = static_cast<double>(data->frameTimestamp);
+  frameWriter.data().ballDetected = ballDetected;
+  frameWriter.data().centerX = ball[0];
+  frameWriter.data().centerY = ball[1];
+  frameWriter.data().radius = ball[2];
+  frameWriter.data().targetX = data->targetX;
+  frameWriter.data().targetY = data->targetY;
+  frameWriter.flags() = 1; // indicate new data is available
+  frameWriter.exchange();
 
   // If no ball was detected, increment the failure count
   if (!ballDetected)
@@ -242,15 +242,17 @@ std::string EncodeBase64(const std::vector<uint8_t>& data) {
 // Writes the camera frame data to a JSON file and creates a running flag file
 RSI_TASK(OutputImage)
 {
+  static SharedDataHelpers::SPSCStorageManager frameReader(g_frameStorage, false);
+
   if (!data->initialized) return;
 
   // Check if new image data is available
-  g_frameReader.exchange();
-  if (g_frameReader.flags() == 0) return;
+  frameReader.exchange();
+  if (frameReader.flags() == 0) return;
 
   try {
     // Construct cv::Mat from YUYVFrame data in the shared buffer
-    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)g_frameReader.data().yuyvData);
+    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)frameReader.data().yuyvData);
     cv::Mat rgbFrame;
     cv::cvtColor(yuyvMat, rgbFrame, cv::COLOR_YUV2RGB_YUYV);
     // Encode as JPEG with quality 80
@@ -264,19 +266,19 @@ RSI_TASK(OutputImage)
     // Write JSON with frame data
     std::ostringstream json;
     json << "{\n";
-    json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << g_frameReader.data().timestamp << ",\n";
-    json << "  \"frameNumber\": " << g_frameReader.data().frameNumber << ",\n";
+    json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << frameReader.data().timestamp << ",\n";
+    json << "  \"frameNumber\": " << frameReader.data().frameNumber << ",\n";
     json << "  \"width\": " << CameraHelpers::IMAGE_WIDTH << ",\n";
     json << "  \"height\": " << CameraHelpers::IMAGE_HEIGHT << ",\n";
     json << "  \"format\": \"jpeg\",\n";
     json << "  \"imageData\": \"data:image/jpeg;base64," << base64Image << "\",\n";
     json << "  \"imageSize\": " << jpegBuffer.size() << ",\n";
-    json << "  \"ballDetected\": " << (g_frameReader.data().ballDetected ? "true" : "false") << ",\n";
-    json << "  \"centerX\": " << std::fixed << std::setprecision(2) << g_frameReader.data().centerX << ",\n";
-    json << "  \"centerY\": " << std::fixed << std::setprecision(2) << g_frameReader.data().centerY << ",\n";
-    json << "  \"radius\": " << std::fixed << std::setprecision(2) << g_frameReader.data().radius << ",\n";
-    json << "  \"targetX\": " << std::fixed << std::setprecision(2) << g_frameReader.data().targetX << ",\n";
-    json << "  \"targetY\": " << std::fixed << std::setprecision(2) << g_frameReader.data().targetY << ",\n";
+    json << "  \"ballDetected\": " << (frameReader.data().ballDetected ? "true" : "false") << ",\n";
+    json << "  \"centerX\": " << std::fixed << std::setprecision(2) << frameReader.data().centerX << ",\n";
+    json << "  \"centerY\": " << std::fixed << std::setprecision(2) << frameReader.data().centerY << ",\n";
+    json << "  \"radius\": " << std::fixed << std::setprecision(2) << frameReader.data().radius << ",\n";
+    json << "  \"targetX\": " << std::fixed << std::setprecision(2) << frameReader.data().targetX << ",\n";
+    json << "  \"targetY\": " << std::fixed << std::setprecision(2) << frameReader.data().targetY << ",\n";
     json << "  \"rtTaskRunning\": true\n";
     json << "}";
     
@@ -301,5 +303,5 @@ RSI_TASK(OutputImage)
   }
 
   // Reset flags after writing
-  g_frameReader.flags() = 0;
+  frameReader.flags() = 0;
 }

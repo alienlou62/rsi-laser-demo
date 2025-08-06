@@ -13,23 +13,28 @@
 namespace SharedDataHelpers
 {
   // SPSC (Single Producer Single Consumer) storage for shared data
-  template<typename T>
+  template<typename ElementType>
   struct SPSCStorage {
-    static_assert(std::is_default_constructible<T>::value, "T must be default-constructible");
-    static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
+    static_assert(std::is_default_constructible<ElementType>::value, "ElementType must be default-constructible");
+    static_assert(std::is_trivially_copyable<ElementType>::value, "ElementType must be trivially copyable");
+
+    using element_type = ElementType;
 
     std::mutex writer_mutex;
     std::mutex reader_mutex;
     std::atomic<int> spare_index{0};
     uint32_t flags[3] = {0, 0, 0};
-    T slots[3];
+    element_type elements[3];
   };
 
   // SPSC storage manager for accessing shared data in a concurrency-safe manner
-  template<typename T>
+  template<typename StoragePtr>
   class SPSCStorageManager {
   public:
-    SPSCStorageManager(SPSCStorage<T>* storage, bool is_writer = false)
+    using storage_type = typename std::pointer_traits<StoragePtr>::element_type;
+    using value_type = typename storage_type::element_type;
+
+    SPSCStorageManager(StoragePtr storage, bool is_writer = false)
       : storage_(storage), 
         index_(is_writer ? 1 : 2),
         is_writer_(is_writer)
@@ -56,7 +61,7 @@ namespace SharedDataHelpers
 
     ~SPSCStorageManager() = default;
 
-    T& data() { return storage_->slots[index_]; }
+    value_type& data() { return storage_->elements[index_]; }
     uint32_t& flags() { return storage_->flags[index_]; }
 
     void exchange() {
@@ -65,7 +70,7 @@ namespace SharedDataHelpers
     }
 
   protected:
-    SPSCStorage<T>* storage_;
+    StoragePtr storage_;
     std::unique_lock<std::mutex> lock_;
     int index_;
     bool is_writer_ = false;
