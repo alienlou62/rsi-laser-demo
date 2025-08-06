@@ -1042,20 +1042,41 @@
                                                 </StackPanel>
                                             </Border>
 
+                                            <!--  camera feed info  -->
                                             <StackPanel
                                                 Grid.Row="2"
                                                 Margin="0,2,0,0"
                                                 VerticalAlignment="Center"
                                                 Orientation="Horizontal">
+                                                <TextBlock
+                                                    MinWidth="80"
+                                                    Margin="0,1,0,-1"
+                                                    Classes="Mono"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="{Binding CameraCenterX, StringFormat='{}X: {0:F0}'}" />
 
                                                 <TextBlock
-                                                    MinWidth="100"
+                                                    MinWidth="80"
+                                                    Margin="0,1,0,-1"
+                                                    Classes="Mono"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="{Binding CameraCenterY, StringFormat='{}Y: {0:F0}'}" />
+
+                                                <TextBlock
+                                                    MinWidth="80"
+                                                    Margin="0,1,0,-1"
+                                                    Classes="Mono"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="{Binding CameraRadius, StringFormat='{}Radius: {0:F0}'}" />
+
+                                                <TextBlock
+                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Text="{Binding CameraFps, FallbackValue=0, StringFormat='FPS: {0:F1}'}" />
 
                                                 <TextBlock
-                                                    MinWidth="100"
+                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Text="{Binding CameraFrameNumber, FallbackValue='-', StringFormat='Frames: {0}'}" />
