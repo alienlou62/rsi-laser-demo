@@ -561,10 +561,14 @@
                                 Spacing="8">
 
                                 <!--  Camera Port  -->
-                                <controls:LabeledControl IsEnabled="{Binding IsConnected}" Label="Port">
+                                <controls:LabeledControl
+                                    IsEnabled="{Binding !IsCameraConnected}"
+                                    Label="Port"
+                                    LabelWidth="60">
                                     <TextBox
                                         IsEnabled="{Binding !IsCameraConnected}"
                                         Text="{Binding CameraPort}"
+                                        ToolTip.Tip="Camera server port"
                                         Watermark="50080" />
                                 </controls:LabeledControl>
 
@@ -585,23 +589,6 @@
                                     Command="{Binding DisconnectCameraCommand}"
                                     Content="Disconnect"
                                     IsVisible="{Binding IsCameraConnected}" />
-
-                                <!--  Camera Status and Controls (only visible when connected)  -->
-                                <StackPanel IsVisible="{Binding IsCameraConnected}" Spacing="8">
-
-                                    <!--  Camera Status  -->
-                                    <controls:StatusLabel
-                                        Title="Status"
-                                        IsActive="{Binding IsCameraStreaming}"
-                                        Value="{Binding CameraStatus}" />
-
-                                    <!--  Camera FPS  -->
-                                    <controls:StatusLabel
-                                        Title="FPS"
-                                        IsMonoFont="True"
-                                        Value="{Binding CameraFps, StringFormat='{}{0:F1}', FallbackValue='0.0'}" />
-
-                                </StackPanel>
 
                             </StackPanel>
                         </StackPanel>
