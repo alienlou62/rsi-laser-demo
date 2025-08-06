@@ -63,7 +63,7 @@ int SharedMemoryTest()
     TripleBufferManager<Frame> reader(shm_reader.get());
     int index = 0;
     while (index < 100 && !g_shutdown) {
-      reader.swap_buffer();
+      reader.swap_buffers();
       int value = reader->value;
 
       std::cout << "Read " << value << std::endl;
@@ -79,7 +79,7 @@ int SharedMemoryTest()
     while (index < 500 && !g_shutdown)
     {
       writer->value = index;
-      writer.swap_buffer();
+      writer.swap_buffers();
       // std::cout << "Wrote " << index << std::endl;
 
       usleep(5000);

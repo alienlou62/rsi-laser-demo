@@ -45,15 +45,15 @@
       <NoRmp>false</NoRmp>
       <RTTasks>
         <RTTask>
-          <FunctionName>MoveMotors</FunctionName>
+          <FunctionName>Initialize</FunctionName>
           <LibraryName>RTTaskFunctions</LibraryName>
           <LibraryDirectory />
-          <UserLabel>MoveMotors</UserLabel>
-          <Priority>High</Priority>
-          <Repeats>-1</Repeats>
+          <UserLabel>Initialize</UserLabel>
+          <Priority>Medium</Priority>
+          <Repeats>0</Repeats>
           <Period>1</Period>
           <Phase>0</Phase>
-          <EnableTiming>true</EnableTiming>
+          <EnableTiming>false</EnableTiming>
         </RTTask>
         <RTTask>
           <FunctionName>DetectBall</FunctionName>
@@ -67,15 +67,26 @@
           <EnableTiming>true</EnableTiming>
         </RTTask>
         <RTTask>
-          <FunctionName>Initialize</FunctionName>
+          <FunctionName>MoveMotors</FunctionName>
           <LibraryName>RTTaskFunctions</LibraryName>
           <LibraryDirectory />
-          <UserLabel>Initialize</UserLabel>
-          <Priority>Medium</Priority>
-          <Repeats>0</Repeats>
+          <UserLabel>MoveMotors</UserLabel>
+          <Priority>High</Priority>
+          <Repeats>-1</Repeats>
           <Period>1</Period>
           <Phase>0</Phase>
-          <EnableTiming>false</EnableTiming>
+          <EnableTiming>true</EnableTiming>
+        </RTTask>
+        <RTTask>
+          <FunctionName>OutputImage</FunctionName>
+          <LibraryName>RTTaskFunctions</LibraryName>
+          <LibraryDirectory />
+          <UserLabel>OutputImage</UserLabel>
+          <Priority>Low</Priority>
+          <Repeats>-1</Repeats>
+          <Period>16</Period>
+          <Phase>0</Phase>
+          <EnableTiming>true</EnableTiming>
         </RTTask>
       </RTTasks>
     </RTTaskManager>

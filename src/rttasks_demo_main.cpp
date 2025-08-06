@@ -15,13 +15,15 @@
 #include "misc_helpers.h"
 #include "rmp_helpers.h"
 #include "camera_helpers.h"
+#include "image_processing.h"
+#include "shared_memory_helpers.h"
 
 using namespace Pylon;
 
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
-constexpr std::chrono::milliseconds LOOP_INTERVAL(50); // milliseconds
+constexpr std::chrono::milliseconds LOOP_INTERVAL(10); // milliseconds (100 FPS)
 constexpr int32_t TASK_WAIT_TIMEOUT = 1000;            // 1 seconds, for task execution wait
 constexpr int32_t INIT_TIMEOUT = 15000;                // 15 seconds, initialization can take a while
 constexpr int32_t DETECTION_TASK_PERIOD = 1;
@@ -124,9 +126,7 @@ int main()
   RTTaskManager manager(RMPHelpers::CreateRTTaskManager("LaserTracking", 6));
 
   try
-  {
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));  // Adjust to 300–500ms if needed
-    
+  { 
     /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
     //SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
@@ -143,48 +143,6 @@ int main()
       std::cerr << "Error: MultiAxis is not ready." << std::endl;
       return -1;
     }
-
-    // Simple shared data structure for C# camera server
-    // We'll use global firmware values that C# can read via file I/O or shared memory
-    struct CameraFrameData {
-      double timestamp;
-      int frameNumber;
-      int width;
-      int height;
-      bool ballDetected;
-      double centerX;
-      double centerY;
-      double confidence;
-      double targetX;
-      double targetY;
-    };
-    
-    // Initialize frame data values in firmware global storage
-    FirmwareValue frameTimestamp = {.Double = 0.0};
-    manager.GlobalValueSet(frameTimestamp, "frameTimestamp");
-    
-    FirmwareValue frameNumber = {.Int32 = 0};
-    manager.GlobalValueSet(frameNumber, "frameNumber");
-    
-    FirmwareValue frameWidth = {.Int32 = CameraHelpers::IMAGE_WIDTH};
-    manager.GlobalValueSet(frameWidth, "frameWidth");
-    
-    FirmwareValue frameHeight = {.Int32 = CameraHelpers::IMAGE_HEIGHT};
-    manager.GlobalValueSet(frameHeight, "frameHeight");
-    
-    FirmwareValue ballDetected = {.Bool = false};
-    manager.GlobalValueSet(ballDetected, "ballDetected");
-    
-    FirmwareValue ballCenterX = {.Double = 0.0};
-    manager.GlobalValueSet(ballCenterX, "ballCenterX");
-    
-    FirmwareValue ballCenterY = {.Double = 0.0};
-    manager.GlobalValueSet(ballCenterY, "ballCenterY");
-    
-    FirmwareValue ballConfidence = {.Double = 0.0};
-    manager.GlobalValueSet(ballConfidence, "ballConfidence");
-
-    std::cout << "Camera data interface initialized for C# server communication" << std::endl;
 
     FirmwareValue motionEnabled = {.Bool = true};
     manager.GlobalValueSet(motionEnabled, "motionEnabled");
@@ -204,48 +162,6 @@ int main()
     while (!g_shutdown)
     {
       RateLimiter rateLimiter(LOOP_INTERVAL);
-
-      FirmwareValue targetX = manager.GlobalValueGet("targetX");
-      FirmwareValue targetY = manager.GlobalValueGet("targetY");
-      
-      // Update camera frame data for C# server
-      auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::system_clock::now().time_since_epoch()).count();
-      
-      FirmwareValue timestamp = {.Double = static_cast<double>(now)};
-      manager.GlobalValueSet(timestamp, "frameTimestamp");
-      
-      FirmwareValue frameNum = {.Int32 = ++frameCounter};
-      manager.GlobalValueSet(frameNum, "frameNumber");
-      
-      // Simulate ball detection (this would come from actual camera processing)
-      // For demo purposes, create a simple moving ball simulation
-      double simulatedBallX = 320.0 + 100.0 * std::sin(frameCounter * 0.1);
-      double simulatedBallY = 240.0 + 50.0 * std::cos(frameCounter * 0.15);
-      bool hasBall = (frameCounter % 60) < 45; // Ball visible 75% of the time
-      
-      FirmwareValue ballDetected = {.Bool = hasBall};
-      manager.GlobalValueSet(ballDetected, "ballDetected");
-      
-      FirmwareValue ballCenterX = {.Double = simulatedBallX};
-      manager.GlobalValueSet(ballCenterX, "ballCenterX");
-      
-      FirmwareValue ballCenterY = {.Double = simulatedBallY};
-      manager.GlobalValueSet(ballCenterY, "ballCenterY");
-      
-      FirmwareValue ballConfidence = {.Double = hasBall ? 0.85 : 0.0};
-      manager.GlobalValueSet(ballConfidence, "ballConfidence");
-      
-      // Note: Camera frame JSON writing is handled by the DetectBall RT task
-      // This main loop only updates the simulation data for globals
-      
-      std::cout << "Frame " << frameCounter << " - Target X: " << targetX.Double 
-                << ", Target Y: " << targetY.Double;
-      
-      if (hasBall) {
-        std::cout << " | Ball detected at (" << simulatedBallX << ", " << simulatedBallY << ")";
-      }
-      std::cout << std::endl;
 
       /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
       // if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))
