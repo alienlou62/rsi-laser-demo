@@ -987,77 +987,98 @@
                                                         </Canvas.Top>
                                                     </Ellipse>
 
-                                                    <!--  Placeholder when no camera feed  -->
-                                                    <Rectangle
-                                                        Width="640"
-                                                        Height="480"
-                                                        Fill="#222222"
-                                                        IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}"
-                                                        Stroke="#80444444"
-                                                        StrokeThickness="1" />
-
-                                                    <!--  Placeholder text when no camera feed  -->
-                                                    <TextBlock
-                                                        Canvas.Left="320"
-                                                        Canvas.Top="235"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        FontSize="16"
-                                                        Foreground="{StaticResource SubtleTextBrush}"
-                                                        IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}"
-                                                        Opacity="0.6"
-                                                        Text="NO CAMERA FEED"
-                                                        TextAlignment="Center">
-                                                        <TextBlock.RenderTransform>
-                                                            <TranslateTransform X="-70" Y="-8" />
-                                                        </TextBlock.RenderTransform>
-                                                    </TextBlock>
-
-                                                    <!--  Center crosshair - shown when no camera feed  -->
-                                                    <Line
-                                                        IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}"
-                                                        Stroke="#80444444"
-                                                        StrokeDashArray="5,5"
-                                                        StrokeThickness="1"
-                                                        StartPoint="0,240"
-                                                        EndPoint="640,240" />
-                                                    <Line
-                                                        IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}"
-                                                        Stroke="#80444444"
-                                                        StrokeDashArray="5,5"
-                                                        StrokeThickness="1"
-                                                        StartPoint="320,0"
-                                                        EndPoint="320,480" />
-
                                                 </Canvas>
                                             </Viewbox>
+
+                                            <!--  Placeholder text when no camera feed  -->
+                                            <StackPanel
+                                                Grid.Row="1"
+                                                Margin="0,-6,0,0"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}">
+
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    FontSize="18"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}"
+                                                    Text="Streaming Required" />
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    FontSize="14"
+                                                    Foreground="{StaticResource SubtleTextBrush}"
+                                                    Opacity="0.7"
+                                                    Text="Start camera stream to start seeing image data" />
+                                            </StackPanel>
 
                                             <StackPanel
                                                 Grid.Row="2"
                                                 Margin="0,2,0,0"
+                                                VerticalAlignment="Center"
                                                 Orientation="Horizontal">
 
                                                 <TextBlock
-                                                    MinWidth="80"
-                                                    Classes="Mono "
-                                                    Foreground="{StaticResource TextBrush}">
-                                                    <Run Text="Live:" />
-                                                    <Run Text="{Binding IsCameraStreaming, Converter={x:Static converters:BoolConverters.BoolToYesNoConverter}}" />
-                                                </TextBlock>
-
-                                                <TextBlock
-                                                    MinWidth="80"
+                                                    MinWidth="100"
+                                                    Margin="0,1,0,-1"
                                                     Classes="Mono"
-                                                    Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding CameraFps, FallbackValue=0, StringFormat='FPS: {0:F1}'}" />
 
                                                 <TextBlock
-                                                    MinWidth="80"
+                                                    MinWidth="100"
+                                                    Margin="0,1,0,-1"
                                                     Classes="Mono"
-                                                    Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding CameraFrameCount, FallbackValue='-', StringFormat='Frames: {0}'}" />
 
                                             </StackPanel>
+
+                                            <StackPanel
+                                                Grid.Row="2"
+                                                HorizontalAlignment="Right"
+                                                Orientation="Horizontal">
+
+                                                <icons:MaterialIcon
+                                                    Grid.Column="1"
+                                                    Width="18"
+                                                    Height="18"
+                                                    Margin="0,0,0,-3"
+                                                    VerticalAlignment="Center"
+                                                    Classes.is-camera-not-streaming="{Binding !IsCameraStreaming}"
+                                                    Classes.is-camera-streaming="{Binding IsCameraStreaming}">
+                                                    <icons:MaterialIcon.Styles>
+                                                        <Style Selector="icons|MaterialIcon.is-camera-streaming">
+                                                            <Setter Property="Kind" Value="VideoCheck" />
+                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                                        </Style>
+                                                        <Style Selector="icons|MaterialIcon.is-camera-not-streaming">
+                                                            <Setter Property="Kind" Value="VideoOff" />
+                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                                        </Style>
+                                                    </icons:MaterialIcon.Styles>
+                                                </icons:MaterialIcon>
+
+                                                <TextBlock
+                                                    Margin="0,-6,0,-3"
+                                                    Padding="0"
+                                                    VerticalAlignment="Center"
+                                                    Classes.not-streaming="{Binding !IsCameraStreaming}"
+                                                    Classes.streaming="{Binding IsCameraStreaming}"
+                                                    FontSize="12"
+                                                    FontWeight="SemiBold"
+                                                    IsVisible="False">
+                                                    <TextBlock.Styles>
+                                                        <Style Selector="TextBlock.streaming">
+                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                                            <Setter Property="Text" Value="Streaming" />
+                                                        </Style>
+                                                        <Style Selector="TextBlock.not-streaming">
+                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                                            <Setter Property="Text" Value="Not Streaming " />
+                                                        </Style>
+                                                    </TextBlock.Styles>
+                                                </TextBlock>
+                                            </StackPanel>
+
 
                                         </Grid>
 
