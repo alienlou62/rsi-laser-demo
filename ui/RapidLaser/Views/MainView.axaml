@@ -990,13 +990,13 @@
                                                 </Canvas>
                                             </Viewbox>
 
-                                            <!--  Placeholder text when no camera feed  -->
+                                            <!--  Placeholder text when camera is not streaming  -->
                                             <StackPanel
                                                 Grid.Row="1"
                                                 Margin="0,-6,0,0"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
-                                                IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}">
+                                                IsVisible="{Binding !IsCameraStreaming}">
 
                                                 <TextBlock
                                                     HorizontalAlignment="Center"
@@ -1011,6 +1011,29 @@
                                                     Opacity="0.7"
                                                     Text="Start camera stream to start seeing image data" />
                                             </StackPanel>
+
+                                            <!--  Placeholder text when streaming but no image data  -->
+                                            <Border Grid.Row="1" IsVisible="{Binding IsCameraStreaming}">
+                                                <StackPanel
+                                                    Margin="0,-6,0,0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    IsVisible="{Binding CameraImage, Converter={x:Static ObjectConverters.IsNull}}">
+
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        FontSize="18"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidWarning}"
+                                                        Text="No Image Data" />
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        FontSize="14"
+                                                        Foreground="{StaticResource SubtleTextBrush}"
+                                                        Opacity="0.7"
+                                                        Text="Camera is streaming but no image data is being received" />
+                                                </StackPanel>
+                                            </Border>
 
                                             <StackPanel
                                                 Grid.Row="2"
