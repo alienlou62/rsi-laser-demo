@@ -109,9 +109,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isProgramRunning = false;
 
-    [ObservableProperty]
-    private string _programStatus = "";
-
     //camera frame data
     [ObservableProperty]
     private WriteableBitmap? _cameraImage;
@@ -242,52 +239,32 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            LogMessage($"Executing SSH command: {SshRunCommand}");
-            ProgramStatus = "STARTING...";
-
-            // Run SSH command in background without blocking UI
-            _ = Task.Run(async () =>
+            try
             {
-                try
+                var sshResult = await ExecuteSshCommandAsync(SshRunCommand, updateSshOutput: true);
+
+                if (sshResult == null)
                 {
-                    var sshResult = await ExecuteSshCommandAsync(SshRunCommand, updateSshOutput: true);
-
-                    await Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        if (sshResult == null)
-                        {
-                            ProgramStatus = "SSH ERROR";
-                            LogMessage("Program run failed: SSH command returned null");
-                        }
-                        else
-                        {
-                            ProgramStatus = "";
-                            LogMessage("Program run completed successfully");
-
-                            // start camera streaming if not already started
-                            if (!IsCameraStreaming)
-                            {
-                                _ = StartCameraStreamAsync();
-                            }
-                        }
-                    });
+                    LogMessage("Program run failed: SSH command returned null");
                 }
-                catch (Exception ex)
+                else
                 {
-                    await Dispatcher.UIThread.InvokeAsync(() =>
-                    {
-                        ProgramStatus = $"SSH ERROR: {ex.Message}";
-                        LogMessage($"Program Run Error: {ex.Message}");
-                    });
-                }
-            });
+                    LogMessage(sshResult);
 
-            // Return immediately to prevent UI blocking
-            await Task.CompletedTask;
+                    // start camera streaming if not already started
+                    if (!IsCameraStreaming)
+                    {
+                        _ = StartCameraStreamAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Program Run Error: {ex.Message}");
+            }
         }
         catch (Exception ex)
         {
-            ProgramStatus = $"SSH ERROR: {ex.Message}";
             LogMessage($"Program Run Error: {ex.Message}");
         }
     }
@@ -312,17 +289,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 {
                     //reset global variables
                     Dispatcher.UIThread.InvokeAsync(GlobalValues.Clear);
+                    LogMessage("Task manager stopped successfully");
                 }
             }
             else
             {
-                ProgramStatus = "RMP service not available";
                 LogMessage("Program stop failed: RMP service not available");
             }
         }
         catch (Exception ex)
         {
-            ProgramStatus = $"SHUTDOWN ERROR: {ex.Message}";
             LogMessage($"Program Stop Error: {ex.Message}");
         }
     }

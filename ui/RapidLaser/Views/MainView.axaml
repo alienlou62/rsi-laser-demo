@@ -248,12 +248,6 @@
                         Orientation="Horizontal"
                         Spacing="12">
 
-                        <!--  System Status Indicator  -->
-                        <!--<TextBlock
-                            Classes="status-text status-active"
-                            FontWeight="SemiBold"
-                            Text="{Binding ProgramStatus}" />-->
-
                         <!--  FPS Counter  -->
                         <TextBlock
                             VerticalAlignment="Center"
