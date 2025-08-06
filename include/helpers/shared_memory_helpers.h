@@ -22,7 +22,7 @@ struct Frame
   bool ballDetected;
   double centerX;
   double centerY;
-  double confidence;
+  double radius;
   double targetX;
   double targetY;
 };

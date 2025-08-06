@@ -171,7 +171,7 @@ RSI_TASK(DetectBall)
   g_frameBufferWriter->ballDetected = ballDetected;
   g_frameBufferWriter->centerX = ball[0];
   g_frameBufferWriter->centerY = ball[1];
-  g_frameBufferWriter->confidence = confidence;
+  g_frameBufferWriter->radius = ball[2];
   g_frameBufferWriter->targetX = data->targetX;
   g_frameBufferWriter->targetY = data->targetY;
   g_frameBufferWriter.flags() = 1; // indicate new data is available
@@ -231,7 +231,7 @@ void WriteCameraFrameJSON(const Frame& frameData) {
     json << "  \"ballDetected\": " << (frameData.ballDetected ? "true" : "false") << ",\n";
     json << "  \"centerX\": " << std::fixed << std::setprecision(2) << frameData.centerX << ",\n";
     json << "  \"centerY\": " << std::fixed << std::setprecision(2) << frameData.centerY << ",\n";
-    json << "  \"confidence\": " << std::fixed << std::setprecision(3) << frameData.confidence << ",\n";
+    json << "  \"radius\": " << std::fixed << std::setprecision(2) << frameData.radius << ",\n";
     json << "  \"targetX\": " << std::fixed << std::setprecision(2) << frameData.targetX << ",\n";
     json << "  \"targetY\": " << std::fixed << std::setprecision(2) << frameData.targetY << ",\n";
     json << "  \"rtTaskRunning\": true\n";
