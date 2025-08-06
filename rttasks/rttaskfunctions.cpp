@@ -189,15 +189,15 @@ RSI_TASK(DetectBall)
   }
   
   // Store the YUYV frame and metadata in the shared memory
-  memcpy(g_frameBufferWriter->yuyvData, yuyvFrame.data, sizeof(CameraHelpers::YUYVFrame));
-  g_frameBufferWriter->frameNumber = data->imageSequenceNumber;
-  g_frameBufferWriter->timestamp = static_cast<double>(data->frameTimestamp);
-  g_frameBufferWriter->ballDetected = ballDetected;
-  g_frameBufferWriter->centerX = ball[0];
-  g_frameBufferWriter->centerY = ball[1];
-  g_frameBufferWriter->radius = ball[2];
-  g_frameBufferWriter->targetX = data->targetX;
-  g_frameBufferWriter->targetY = data->targetY;
+  memcpy(g_frameBufferWriter.buffer()->yuyvData, yuyvFrame.data, sizeof(CameraHelpers::YUYVFrame));
+  g_frameBufferWriter.buffer()->frameNumber = data->imageSequenceNumber;
+  g_frameBufferWriter.buffer()->timestamp = static_cast<double>(data->frameTimestamp);
+  g_frameBufferWriter.buffer()->ballDetected = ballDetected;
+  g_frameBufferWriter.buffer()->centerX = ball[0];
+  g_frameBufferWriter.buffer()->centerY = ball[1];
+  g_frameBufferWriter.buffer()->radius = ball[2];
+  g_frameBufferWriter.buffer()->targetX = data->targetX;
+  g_frameBufferWriter.buffer()->targetY = data->targetY;
   g_frameBufferWriter.flags() = 1; // indicate new data is available
   g_frameBufferWriter.swap_buffers();
 
@@ -228,10 +228,10 @@ std::string EncodeBase64(const std::vector<uint8_t>& data) {
 }
 
 // Function to write camera frame data as JSON for C# UI
-void WriteCameraFrameJSON(const Frame& frameData) {
+void WriteCameraFrameJSON(const Frame* frameData) {
   try {
     // Construct cv::Mat from YUYVFrame data in frameData
-    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)frameData.yuyvData);
+    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)frameData->yuyvData);
     cv::Mat rgbFrame;
     cv::cvtColor(yuyvMat, rgbFrame, cv::COLOR_YUV2RGB_YUYV);
     // Encode as JPEG with quality 80
@@ -245,19 +245,19 @@ void WriteCameraFrameJSON(const Frame& frameData) {
     // Write JSON with frame data
     std::ostringstream json;
     json << "{\n";
-    json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << frameData.timestamp << ",\n";
-    json << "  \"frameNumber\": " << frameData.frameNumber << ",\n";
+    json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << frameData->timestamp << ",\n";
+    json << "  \"frameNumber\": " << frameData->frameNumber << ",\n";
     json << "  \"width\": " << CameraHelpers::IMAGE_WIDTH << ",\n";
     json << "  \"height\": " << CameraHelpers::IMAGE_HEIGHT << ",\n";
     json << "  \"format\": \"jpeg\",\n";
     json << "  \"imageData\": \"data:image/jpeg;base64," << base64Image << "\",\n";
     json << "  \"imageSize\": " << jpegBuffer.size() << ",\n";
-    json << "  \"ballDetected\": " << (frameData.ballDetected ? "true" : "false") << ",\n";
-    json << "  \"centerX\": " << std::fixed << std::setprecision(2) << frameData.centerX << ",\n";
-    json << "  \"centerY\": " << std::fixed << std::setprecision(2) << frameData.centerY << ",\n";
-    json << "  \"radius\": " << std::fixed << std::setprecision(2) << frameData.radius << ",\n";
-    json << "  \"targetX\": " << std::fixed << std::setprecision(2) << frameData.targetX << ",\n";
-    json << "  \"targetY\": " << std::fixed << std::setprecision(2) << frameData.targetY << ",\n";
+    json << "  \"ballDetected\": " << (frameData->ballDetected ? "true" : "false") << ",\n";
+    json << "  \"centerX\": " << std::fixed << std::setprecision(2) << frameData->centerX << ",\n";
+    json << "  \"centerY\": " << std::fixed << std::setprecision(2) << frameData->centerY << ",\n";
+    json << "  \"radius\": " << std::fixed << std::setprecision(2) << frameData->radius << ",\n";
+    json << "  \"targetX\": " << std::fixed << std::setprecision(2) << frameData->targetX << ",\n";
+    json << "  \"targetY\": " << std::fixed << std::setprecision(2) << frameData->targetY << ",\n";
     json << "  \"rtTaskRunning\": true\n";
     json << "}";
     
@@ -290,7 +290,7 @@ RSI_TASK(OutputImage)
   g_frameBufferReader.swap_buffers();
   if (g_frameBufferReader.flags() == 0) return;
 
-  WriteCameraFrameJSON(*g_frameBufferReader);
+  WriteCameraFrameJSON(g_frameBufferReader.buffer());
 
   // Reset flags after writing
   g_frameBufferReader.flags() = 0;

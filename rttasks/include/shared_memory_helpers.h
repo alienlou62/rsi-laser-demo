@@ -81,10 +81,7 @@ public:
     }
   }
 
-  T* operator->() { return &triple_->buffers[index_]; }
-  T& operator*()  { return triple_->buffers[index_]; }
-
-  T* get() { return &triple_->buffers[index_]; }
+  T* buffer() { return &triple_->buffers[index_]; }
 
   uint32_t& flags() { return triple_->flags[index_]; }
 
