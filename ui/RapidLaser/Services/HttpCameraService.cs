@@ -1,20 +1,37 @@
-using System.Net.Http;
-using System.Text.Json;
 
 namespace RapidLaser.Services;
 
+public interface ICameraService
+{
+    bool IsInitialized { get; }
+    bool IsGrabbing { get; }
+    int ImageWidth { get; }
+    int ImageHeight { get; }
+
+    Task<bool> InitializeAsync();
+    Task<bool> StartGrabbingAsync();
+    Task StopGrabbingAsync();
+    Task<bool> CheckServerStatusAsync(CancellationToken cancellationToken = default);
+    Task<(bool success, byte[] imageData, int width, int height)> TryGrabFrameAsync(CancellationToken cancellationToken = default);
+    void Dispose();
+}
+
 public class HttpCameraService : ICameraService
 {
+    /** FIELDS **/
+    //private
     private readonly HttpClient _httpClient;
     private readonly string _serverUrl;
     private bool _isInitialized;
     private bool _isGrabbing;
-
+    //public
     public bool IsInitialized => _isInitialized;
     public bool IsGrabbing => _isGrabbing;
     public int ImageWidth { get; private set; } = 640;
     public int ImageHeight { get; private set; } = 480;
 
+
+    /** CONSTRUCTOR **/
     public HttpCameraService(string serverUrl = "http://localhost:50080")
     {
         _httpClient = new HttpClient();
@@ -22,6 +39,8 @@ public class HttpCameraService : ICameraService
         _serverUrl = serverUrl;
     }
 
+
+    /** METHODS **/
     public async Task<bool> InitializeAsync()
     {
         try
