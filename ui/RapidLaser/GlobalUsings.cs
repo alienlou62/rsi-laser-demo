@@ -12,6 +12,7 @@ global using System.Timers;
 global using System.Collections.ObjectModel;
 global using System.Text.Json;
 global using System.Net.Http;
+global using System.Reflection;
 
 // avalonia
 global using Avalonia;

@@ -709,7 +709,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             // For HTTP camera service, imageData is a JPEG byte array
             // We can load it directly into a bitmap
-
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 try
@@ -718,20 +717,22 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     var bitmap = new Bitmap(stream);
 
                     // Convert to WriteableBitmap for UI binding
-                    // Use Rgba8888 format to maintain RGB color order instead of Bgra8888
-                    var writeableBitmap = new WriteableBitmap(
-                        new PixelSize(bitmap.PixelSize.Width, bitmap.PixelSize.Height),
-                        new Vector(96, 96),
-                        PixelFormat.Rgba8888,  // Changed from Bgra8888 to Rgba8888 to fix color channel swap
-                        AlphaFormat.Premul);
+                    var writeableBitmap = new WriteableBitmap(new PixelSize(bitmap.PixelSize.Width, bitmap.PixelSize.Height),
+                                                              new Vector(96, 96),
+                                                              PixelFormat.Rgba8888,
+                                                              AlphaFormat.Premul);
 
+                    // Copy pixels from the bitmap to the WriteableBitmap (lock the bitmap for writing)
                     using var lockedBitmap = writeableBitmap.Lock();
-                    bitmap.CopyPixels(new PixelRect(0, 0, bitmap.PixelSize.Width, bitmap.PixelSize.Height),
-                        lockedBitmap.Address, lockedBitmap.RowBytes * bitmap.PixelSize.Height, lockedBitmap.RowBytes);
+                    var sourceRect = new PixelRect(0, 0, bitmap.PixelSize.Width, bitmap.PixelSize.Height);
+                    var buffer = lockedBitmap.Address;
+                    var bufferSize = lockedBitmap.RowBytes * bitmap.PixelSize.Height;
+                    var stride = lockedBitmap.RowBytes;
 
+                    bitmap.CopyPixels(sourceRect, buffer, bufferSize, stride);
+
+                    // Update the camera image
                     CameraImage = writeableBitmap;
-
-                    // Note: Ball detection data is now handled separately from camera image data
                 }
                 catch (Exception ex)
                 {
@@ -1082,7 +1083,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 LogMessage($"SSH: Running command '{command}'...");
             }
 
-            var result = await _sshService.RunSshCommandAsync(command, SshUser, SshPassword);
+            var result = await _sshService.RunSshCommandAsync(command, SshUser, SshPassword, IpAddress);
 
             if (updateSshOutput)
             {

@@ -600,7 +600,7 @@
                                         Height="16"
                                         IsVisible="False"
                                         Kind="VideoOutline" />
-                                    <TextBlock Text="Start Camera" />
+                                    <TextBlock Text="Start" />
                                 </StackPanel>
                             </Button>
 
@@ -617,7 +617,7 @@
                                         Height="16"
                                         IsVisible="False"
                                         Kind="VideoOffOutline" />
-                                    <TextBlock Text="Stop Camera" />
+                                    <TextBlock Text="Stop" />
                                 </StackPanel>
                             </Button>
 
@@ -674,18 +674,22 @@
                         </Button>
                     </Grid>
 
-                    <TextBox
+                    <ScrollViewer
                         MaxHeight="280"
-                        Margin="0,0,0,0"
-                        Padding="0"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        FontSize="11"
-                        IsReadOnly="True"
-                        Text="{Binding LogOutput}"
-                        TextWrapping="WrapWithOverflow"
-                        Watermark="App output will appear here.." />
-
+                        Margin="0,0,-17,0"
+                        behaviors:ScrollToEndBehavior.IsEnabled="True">
+                        <TextBox
+                            Margin="0,0,0,0"
+                            Padding="0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            FontSize="11"
+                            IsReadOnly="True"
+                            ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                            Text="{Binding LogOutput}"
+                            TextWrapping="WrapWithOverflow"
+                            Watermark="App output will appear here.." />
+                    </ScrollViewer>
 
                 </StackPanel>
             </Border>
@@ -1262,7 +1266,7 @@
 
                                 <StackPanel
                                     Margin="0,12,0,0"
-                                    IsVisible="{Binding IsConnected}"
+                                    IsVisible="{Binding IsProgramRunning}"
                                     Spacing="6">
 
                                     <!--  ball x  -->

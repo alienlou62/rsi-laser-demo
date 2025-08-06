@@ -2,29 +2,13 @@ namespace RapidLaser.Services;
 
 public interface ISshService
 {
-    bool IsConnected { get; }
-
     Task<string> RunSshCommandAsync(string command, string sshUser, string sshPass, string? ipAddress = null);
 }
 
 public partial class SshService : ObservableObject, ISshService
 {
-    /** FIELDS **/
-    [ObservableProperty]
-    private bool _isConnected = false;
-
-
-    /** CONSTRUCTOR **/
-    public SshService() { }
-
-
-    /**  METHODS **/
     public async Task<string> RunSshCommandAsync(string command, string sshUser, string sshPass, string? ipAddress = null)
     {
-        if (!IsConnected)
-        {
-            throw new InvalidOperationException("Not connected to server. Please connect first.");
-        }
 
         if (string.IsNullOrWhiteSpace(command))
         {

@@ -1,11 +1,3 @@
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Threading;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Reflection;
 
 namespace RapidLaser.Behaviors;
 
