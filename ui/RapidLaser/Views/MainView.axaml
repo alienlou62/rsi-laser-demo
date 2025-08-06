@@ -655,8 +655,8 @@
                         <!--  Clear Button  -->
                         <Button
                             Grid.Column="1"
-                            Margin="-8,-4"
-                            Padding="4,2,4,1"
+                            Margin="0,-16,-9,0"
+                            Padding="4,4,3,3"
                             Classes="theme-subtle"
                             Command="{Binding ClearLogOutputCommand}"
                             IsEnabled="{Binding IsConnected}"
