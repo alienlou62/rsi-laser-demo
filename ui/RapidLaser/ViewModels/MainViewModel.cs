@@ -13,6 +13,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
 
     /** FIELDS **/
+    //camera streaming
+    private const double CAMERA_TARGET_FPS = 60.0; // Target camera refresh rate - change this to adjust streaming speed
+    
     //polling
     private double _updateIntervalMs = 100;
     private System.Timers.Timer? _updateTimer;
@@ -139,7 +142,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     //camera 
     [ObservableProperty]
-    private double _frameRate = 30.0;
+    private double _frameRate = CAMERA_TARGET_FPS;
 
     [ObservableProperty]
     private double _cameraFps = 0.0;
@@ -620,12 +623,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             var frameCounter = 0;
             var frameTimeTracker = DateTime.Now;
-            var lastFrameTime = DateTime.Now;
 
-            // Calculate target frame interval with reasonable limits
-            // Cap at 60 FPS (16.67ms) for human eye processing and resource efficiency
-            var targetFrameRate = Math.Min(FrameRate, 60.0);
-            var targetFrameIntervalMs = (int)(1000.0 / targetFrameRate);
+            // Calculate target frame interval for camera streaming
+            var targetFrameIntervalMs = (int)(1000.0 / CAMERA_TARGET_FPS);
 
             while (!cancellationToken.IsCancellationRequested && IsCameraStreaming)
             {
@@ -1023,7 +1023,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Global_IsMotionEnabled = settings["global_IsMotionEnabled"] ?? "";
 
         //camera
-        FrameRate = double.TryParse(settings["camera_FrameRate"], out var frameRate) ? frameRate : 30.0;
+        FrameRate = double.TryParse(settings["camera_FrameRate"], out var frameRate) ? frameRate : CAMERA_TARGET_FPS;
         BinaryThreshold = int.TryParse(settings["camera_BinaryThreshold"], out var threshold) ? threshold : 128;
     }
 
