@@ -500,12 +500,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
     /** CONSTRUCTOR **/
     public MainViewModel()
     {
-        StorageLoad();
-
         //services
         _sshService     = new SshService();
         _cameraService  = new HttpCameraService("http://localhost:50080");
         _rmpGrpcService = new RmpGrpcService();
+
+        // load ui settings from file
+        StorageLoad();
+
+        // try to connect to a previous rapidserver
+        if (!string.IsNullOrEmpty(IpAddress) && Port > 0)
+        {
+            try
+            {
+                _ = ConnectAsync();
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Auto-connect failed: {ex.Message}");
+            }
+        }
 
         //connection
         IsConnected = _rmpGrpcService.IsConnected;
