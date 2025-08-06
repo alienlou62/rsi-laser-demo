@@ -157,7 +157,6 @@ public class HttpCameraService : ICameraService
 
         try
         {
-            Console.WriteLine($"HttpCameraService: Making request to {_serverUrl}/camera/frame");
             var response = await _httpClient.GetAsync($"{_serverUrl}/camera/frame", cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
@@ -166,15 +165,11 @@ public class HttpCameraService : ICameraService
             }
 
             var jsonContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            Console.WriteLine($"HttpCameraService: Received JSON response length: {jsonContent.Length}");
-            Console.WriteLine($"HttpCameraService: JSON content preview: {jsonContent.Substring(0, Math.Min(200, jsonContent.Length))}");
-
             var jsonDocument = JsonDocument.Parse(jsonContent);
             var root = jsonDocument.RootElement;
 
             // Parse image data
             var imageDataString = root.GetProperty("imageData").GetString();
-            Console.WriteLine($"HttpCameraService: Deserialized imageData - null: {imageDataString == null}");
 
             if (string.IsNullOrEmpty(imageDataString))
             {
@@ -210,7 +205,6 @@ public class HttpCameraService : ICameraService
             ImageWidth = frameData.Width;
             ImageHeight = frameData.Height;
 
-            Console.WriteLine($"HttpCameraService: Successfully grabbed frame {frameData.Width}x{frameData.Height}, image bytes: {imageBytes.Length}, frameNumber: {frameData.FrameNumber}, ballDetected: {frameData.BallDetected}");
             return (true, frameData);
         }
         catch (Exception ex)
