@@ -27,9 +27,11 @@ PylonAutoInitTerm g_PylonAutoInitTerm;
 CInstantCamera g_camera;
 CGrabResultPtr g_ptrGrabResult;
 
-// These start in an invalid state and must be initialized before use
-SharedMemoryTripleBuffer<Frame> g_sharedMemory;
-TripleBufferManager<Frame> g_tripleBufferManager;
+// Shared storage for camera frames
+// SharedMemoryTripleBuffer<Frame> g_sharedMemory;
+TripleBuffer<Frame> g_frameBuffer;
+TripleBufferManager<Frame> g_frameBufferWriter(&g_frameBuffer, true);
+TripleBufferManager<Frame> g_frameBufferReader(&g_frameBuffer, false);
 
 // Initializes the global data structure and sets up the camera and multi-axis.
 RSI_TASK(Initialize)
@@ -59,10 +61,6 @@ RSI_TASK(Initialize)
   data->newTarget = false;
   data->targetX = 0.0;
   data->targetY = 0.0;
-
-  // Initialize shared memory
-  g_sharedMemory.Initialize(SHARED_MEMORY_NAME, true);
-  g_tripleBufferManager.Initialize(g_sharedMemory.get(), true);
 
   // Setup the camera
   CameraHelpers::ConfigureCamera(g_camera);
@@ -167,17 +165,17 @@ RSI_TASK(DetectBall)
   }
   
   // Store the YUYV frame and metadata in the shared memory
-  memcpy(g_tripleBufferManager->yuyvData, yuyvFrame.data, sizeof(CameraHelpers::YUYVFrame));
-  g_tripleBufferManager->frameNumber = data->imageSequenceNumber;
-  g_tripleBufferManager->timestamp = static_cast<double>(data->frameTimestamp);
-  g_tripleBufferManager->ballDetected = ballDetected;
-  g_tripleBufferManager->centerX = ball[0];
-  g_tripleBufferManager->centerY = ball[1];
-  g_tripleBufferManager->confidence = confidence;
-  g_tripleBufferManager->targetX = data->targetX;
-  g_tripleBufferManager->targetY = data->targetY;
-  g_tripleBufferManager.flags() = 1; // indicate new data is available
-  g_tripleBufferManager.swap_buffers();
+  memcpy(g_frameBufferWriter->yuyvData, yuyvFrame.data, sizeof(CameraHelpers::YUYVFrame));
+  g_frameBufferWriter->frameNumber = data->imageSequenceNumber;
+  g_frameBufferWriter->timestamp = static_cast<double>(data->frameTimestamp);
+  g_frameBufferWriter->ballDetected = ballDetected;
+  g_frameBufferWriter->centerX = ball[0];
+  g_frameBufferWriter->centerY = ball[1];
+  g_frameBufferWriter->confidence = confidence;
+  g_frameBufferWriter->targetX = data->targetX;
+  g_frameBufferWriter->targetY = data->targetY;
+  g_frameBufferWriter.flags() = 1; // indicate new data is available
+  g_frameBufferWriter.swap_buffers();
 
   // If no ball was detected, increment the failure count
   if (!ballDetected)
@@ -185,4 +183,91 @@ RSI_TASK(DetectBall)
     data->ballDetectionFailures++;
   }
   data->newTarget = true;
+}
+
+// Function to convert image data to base64 for JSON embedding
+std::string EncodeBase64(const std::vector<uint8_t>& data) {
+  static const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  std::string result;
+  int val = 0, valb = -6;
+  for (uint8_t c : data) {
+    val = (val << 8) + c;
+    valb += 8;
+    while (valb >= 0) {
+      result.push_back(chars[(val >> valb) & 0x3F]);
+      valb -= 6;
+    }
+  }
+  if (valb > -6) result.push_back(chars[((val << 8) >> (valb + 8)) & 0x3F]);
+  while (result.size() % 4) result.push_back('=');
+  return result;
+}
+
+// Function to write camera frame data as JSON for C# UI
+void WriteCameraFrameJSON(const Frame& frameData) {
+  try {
+    // Construct cv::Mat from YUYVFrame data in frameData
+    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)frameData.yuyvData);
+    cv::Mat rgbFrame;
+    cv::cvtColor(yuyvMat, rgbFrame, cv::COLOR_YUV2RGB_YUYV);
+    // Encode as JPEG with quality 80
+    std::vector<uint8_t> jpegBuffer;
+    std::vector<int> jpegParams = {cv::IMWRITE_JPEG_QUALITY, 80};
+    cv::imencode(".jpg", rgbFrame, jpegBuffer, jpegParams);
+    
+    // Convert to base64
+    std::string base64Image = EncodeBase64(jpegBuffer);
+    
+    // Write JSON with frame data
+    std::ostringstream json;
+    json << "{\n";
+    json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << frameData.timestamp << ",\n";
+    json << "  \"frameNumber\": " << frameData.frameNumber << ",\n";
+    json << "  \"width\": " << CameraHelpers::IMAGE_WIDTH << ",\n";
+    json << "  \"height\": " << CameraHelpers::IMAGE_HEIGHT << ",\n";
+    json << "  \"format\": \"jpeg\",\n";
+    json << "  \"imageData\": \"data:image/jpeg;base64," << base64Image << "\",\n";
+    json << "  \"imageSize\": " << jpegBuffer.size() << ",\n";
+    json << "  \"ballDetected\": " << (frameData.ballDetected ? "true" : "false") << ",\n";
+    json << "  \"centerX\": " << std::fixed << std::setprecision(2) << frameData.centerX << ",\n";
+    json << "  \"centerY\": " << std::fixed << std::setprecision(2) << frameData.centerY << ",\n";
+    json << "  \"confidence\": " << std::fixed << std::setprecision(3) << frameData.confidence << ",\n";
+    json << "  \"targetX\": " << std::fixed << std::setprecision(2) << frameData.targetX << ",\n";
+    json << "  \"targetY\": " << std::fixed << std::setprecision(2) << frameData.targetY << ",\n";
+    json << "  \"rtTaskRunning\": true\n";
+    json << "}";
+    
+    // Write to file atomically
+    std::ofstream dataFile("/tmp/rsi_camera_data.json.tmp");
+    if (dataFile.is_open()) {
+      dataFile << json.str();
+      dataFile.close();
+      // Atomic rename to prevent partial reads
+      std::rename("/tmp/rsi_camera_data.json.tmp", "/tmp/rsi_camera_data.json");
+    }
+    
+    // Create running flag file
+    std::ofstream flagFile("/tmp/rsi_rt_task_running");
+    if (flagFile.is_open()) {
+      flagFile << "1";
+      flagFile.close();
+    }
+  }
+  catch (const std::exception& e) {
+    std::cerr << "Error writing camera frame JSON: " << e.what() << std::endl;
+  }
+}
+
+RSI_TASK(OutputImage)
+{
+  if (!data->initialized) return;
+
+  // Check if new image data is available
+  g_frameBufferReader.swap_buffers();
+  if (g_frameBufferReader.flags() == 0) return;
+
+  WriteCameraFrameJSON(*g_frameBufferReader);
+
+  // Reset flags after writing
+  g_frameBufferReader.flags() = 0;
 }

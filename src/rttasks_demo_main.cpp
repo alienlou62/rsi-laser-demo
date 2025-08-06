@@ -36,79 +36,6 @@ void sigint_handler(int signal)
   g_shutdown = true;
 }
 
-// Function to convert image data to base64 for JSON embedding
-std::string EncodeBase64(const std::vector<uint8_t>& data) {
-  static const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  std::string result;
-  int val = 0, valb = -6;
-  for (uint8_t c : data) {
-    val = (val << 8) + c;
-    valb += 8;
-    while (valb >= 0) {
-      result.push_back(chars[(val >> valb) & 0x3F]);
-      valb -= 6;
-    }
-  }
-  if (valb > -6) result.push_back(chars[((val << 8) >> (valb + 8)) & 0x3F]);
-  while (result.size() % 4) result.push_back('=');
-  return result;
-}
-
-// Function to write camera frame data as JSON for C# UI
-void WriteCameraFrameJSON(const Frame& frameData) {
-  try {
-    // Construct cv::Mat from YUYVFrame data in frameData
-    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)frameData.yuyvData);
-    cv::Mat rgbFrame;
-    cv::cvtColor(yuyvMat, rgbFrame, cv::COLOR_YUV2RGB_YUYV);
-    // Encode as JPEG with quality 80
-    std::vector<uint8_t> jpegBuffer;
-    std::vector<int> jpegParams = {cv::IMWRITE_JPEG_QUALITY, 80};
-    cv::imencode(".jpg", rgbFrame, jpegBuffer, jpegParams);
-    
-    // Convert to base64
-    std::string base64Image = EncodeBase64(jpegBuffer);
-    
-    // Write JSON with frame data
-    std::ostringstream json;
-    json << "{\n";
-    json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << frameData.timestamp << ",\n";
-    json << "  \"frameNumber\": " << frameData.frameNumber << ",\n";
-    json << "  \"width\": " << CameraHelpers::IMAGE_WIDTH << ",\n";
-    json << "  \"height\": " << CameraHelpers::IMAGE_HEIGHT << ",\n";
-    json << "  \"format\": \"jpeg\",\n";
-    json << "  \"imageData\": \"data:image/jpeg;base64," << base64Image << "\",\n";
-    json << "  \"imageSize\": " << jpegBuffer.size() << ",\n";
-    json << "  \"ballDetected\": " << (frameData.ballDetected ? "true" : "false") << ",\n";
-    json << "  \"centerX\": " << std::fixed << std::setprecision(2) << frameData.centerX << ",\n";
-    json << "  \"centerY\": " << std::fixed << std::setprecision(2) << frameData.centerY << ",\n";
-    json << "  \"confidence\": " << std::fixed << std::setprecision(3) << frameData.confidence << ",\n";
-    json << "  \"targetX\": " << std::fixed << std::setprecision(2) << frameData.targetX << ",\n";
-    json << "  \"targetY\": " << std::fixed << std::setprecision(2) << frameData.targetY << ",\n";
-    json << "  \"rtTaskRunning\": true\n";
-    json << "}";
-    
-    // Write to file atomically
-    std::ofstream dataFile("/tmp/rsi_camera_data.json.tmp");
-    if (dataFile.is_open()) {
-      dataFile << json.str();
-      dataFile.close();
-      // Atomic rename to prevent partial reads
-      std::rename("/tmp/rsi_camera_data.json.tmp", "/tmp/rsi_camera_data.json");
-    }
-    
-    // Create running flag file
-    std::ofstream flagFile("/tmp/rsi_rt_task_running");
-    if (flagFile.is_open()) {
-      flagFile << "1";
-      flagFile.close();
-    }
-  }
-  catch (const std::exception& e) {
-    std::cerr << "Error writing camera frame JSON: " << e.what() << std::endl;
-  }
-}
-
 void SubmitSingleShotTask(RTTaskManager &manager, const std::string &taskName, int32_t timeoutMs = TASK_WAIT_TIMEOUT)
 {
   RTTaskCreationParameters singleShotParams(taskName.c_str());
@@ -200,11 +127,6 @@ int main()
 
   try
   { 
-    // Open the shared memory for triple buffering
-    SharedMemoryTripleBuffer<Frame> sharedMemory(SHARED_MEMORY_NAME, false);
-    TripleBufferManager<Frame> tripleBufferManager(sharedMemory.get(), false);
-    Frame frame;
-
     /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
     //SubmitSingleShotTask(manager, "Initialize", INIT_TIMEOUT);
 
@@ -240,17 +162,6 @@ int main()
     while (!g_shutdown)
     {
       RateLimiter rateLimiter(LOOP_INTERVAL);
-
-      tripleBufferManager.swap_buffers();
-
-      // Check if new data is available in the triple buffer
-      if (tripleBufferManager.flags() == 1)
-      {
-        memcpy(&frame, tripleBufferManager.get(), sizeof(Frame));
-        tripleBufferManager.flags() = 0; // Reset flags after reading
-        WriteCameraFrameJSON(frame);
-      }
-
 
       /* LEAVE THIS COMMENTED OUT FOR NOW (we are doing this from rsiconfig command) */
       // if (!CheckRTTaskStatus(ballDetectionTask, "Ball Detection Task"))
