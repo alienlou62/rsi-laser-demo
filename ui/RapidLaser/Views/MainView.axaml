@@ -160,7 +160,6 @@
                             Command="{Binding ToggleProgramMotionEnabledCommand}"
                             CommandParameter="{Binding $self.IsChecked}"
                             IsChecked="{Binding Program_IsMotionEnabled}"
-                            IsEnabled="{Binding Program_IsMotionEnabled, Converter={x:Static ObjectConverters.IsNotNull}}"
                             IsVisible="{Binding IsProgramRunning}"
                             ToolTip.Tip="Enable/Disable Motion Control">
                             <ToggleButton.Styles>
