@@ -1,5 +1,5 @@
-#ifndef SHARED_MEMORY_HELPERS_H
-#define SHARED_MEMORY_HELPERS_H
+#ifndef SHARED_DATA_HELPERS_H
+#define SHARED_DATA_HELPERS_H
 
 #include <atomic>
 #include <mutex>
@@ -10,10 +10,11 @@
 #include <unistd.h>
 #include <type_traits>
 
-namespace SharedMemoryHelpers
+namespace SharedDataHelpers
 {
+  // SPSC (Single Producer Single Consumer) storage for shared data
   template<typename T>
-  struct TripleBuffer {
+  struct SPSCStorage {
     static_assert(std::is_default_constructible<T>::value, "T must be default-constructible");
     static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
 
@@ -21,13 +22,14 @@ namespace SharedMemoryHelpers
     std::mutex reader_mutex;
     std::atomic<int> spare_index{0};
     uint32_t flags[3] = {0, 0, 0};
-    T buffers[3];
+    T slots[3];
   };
 
+  // SPSC storage manager for accessing shared data in a concurrency-safe manner
   template<typename T>
-  class TripleBufferManager {
+  class SPSCStorageManager {
   public:
-    TripleBufferManager(TripleBuffer<T>* triple, bool is_writer = false)
+    SPSCStorageManager(SPSCStorage<T>* triple, bool is_writer = false)
       : triple_(triple), 
         index_(is_writer ? 1 : 2),
         is_writer_(is_writer)
@@ -35,15 +37,15 @@ namespace SharedMemoryHelpers
       lock_ = is_writer ? std::unique_lock<std::mutex>(triple_->writer_mutex, std::try_to_lock) 
                         : std::unique_lock<std::mutex>(triple_->reader_mutex, std::try_to_lock);
       if (!lock_.owns_lock()) {
-        throw std::runtime_error("Failed to acquire lock on TripleBuffer");
+        throw std::runtime_error("Failed to acquire lock on SPSCStorage");
       }
     }
 
-    TripleBufferManager() = delete;
-    TripleBufferManager(const TripleBufferManager&) = delete;
-    TripleBufferManager& operator=(const TripleBufferManager&) = delete;
+    SPSCStorageManager() = delete;
+    SPSCStorageManager(const SPSCStorageManager&) = delete;
+    SPSCStorageManager& operator=(const SPSCStorageManager&) = delete;
 
-    TripleBufferManager(TripleBufferManager&& other) noexcept
+    SPSCStorageManager(SPSCStorageManager&& other) noexcept
       : triple_(std::move(other.triple_)),
         lock_(std::move(other.lock_)),
         index_(other.index_),
@@ -52,28 +54,29 @@ namespace SharedMemoryHelpers
       other.index_ = -1;
     }
 
-    ~TripleBufferManager() = default;
+    ~SPSCStorageManager() = default;
 
-    T& buffer() { return triple_->buffers[index_]; }
+    T& data() { return triple_->slots[index_]; }
     uint32_t& flags() { return triple_->flags[index_]; }
 
-    void swap_buffers() {
+    void exchange() {
       int old_spare = triple_->spare_index.exchange(index_, std::memory_order_acq_rel);
       index_ = old_spare;
     }
 
   protected:
-    TripleBuffer<T>* triple_;
+    SPSCStorage<T>* triple_;
     std::unique_lock<std::mutex> lock_;
     int index_;
     bool is_writer_ = false;
   };
 
+  // Shared memory SPSC storage for cross-process communication
   template<typename T>
-  class SharedMemoryTripleBuffer
+  class SharedMemorySPSCStorage
   {
   public:
-    SharedMemoryTripleBuffer(const std::string& name, bool is_writer = false)
+    SharedMemorySPSCStorage(const std::string& name, bool is_writer = false)
       : name_(name), is_writer_(is_writer)
     {
       int flags = is_writer_ ? (O_CREAT | O_EXCL | O_RDWR) : O_RDWR;
@@ -83,7 +86,7 @@ namespace SharedMemoryHelpers
         throw std::runtime_error("Failed to open shared memory segment " + name_ + ": " + std::string(strerror(err)));
       }
 
-      size_t size = sizeof(TripleBuffer<T>);
+      size_t size = sizeof(SPSCStorage<T>);
       if (is_writer_) {
         if (ftruncate(fd_, size) == -1) {
           close(fd_);
@@ -97,26 +100,26 @@ namespace SharedMemoryHelpers
         throw std::runtime_error("Failed to map shared memory segment");
       }
 
-      triple_ = static_cast<TripleBuffer<T>*>(ptr);
+      triple_ = static_cast<SPSCStorage<T>*>(ptr);
       if (is_writer_) {
-        new (triple_) TripleBuffer<T>();
+        new (triple_) SPSCStorage<T>();
       }
     }
 
-    ~SharedMemoryTripleBuffer()
+    ~SharedMemorySPSCStorage()
     {
-      size_t size = sizeof(TripleBuffer<T>);
+      size_t size = sizeof(SPSCStorage<T>);
       munmap(triple_, size);
       if (is_writer_) {
         shm_unlink(name_.c_str());
       }
     }
 
-    SharedMemoryTripleBuffer() = delete;
+    SharedMemorySPSCStorage() = delete;
 
-    SharedMemoryTripleBuffer(const SharedMemoryTripleBuffer&) = delete;
-    SharedMemoryTripleBuffer& operator=(const SharedMemoryTripleBuffer&) = delete;
-    SharedMemoryTripleBuffer(SharedMemoryTripleBuffer&& other) noexcept
+    SharedMemorySPSCStorage(const SharedMemorySPSCStorage&) = delete;
+    SharedMemorySPSCStorage& operator=(const SharedMemorySPSCStorage&) = delete;
+    SharedMemorySPSCStorage(SharedMemorySPSCStorage&& other) noexcept
       : name_(std::move(other.name_)), 
         is_writer_(other.is_writer_), 
         fd_(other.fd_), 
@@ -126,17 +129,17 @@ namespace SharedMemoryHelpers
       other.triple_ = nullptr;
     }
 
-    TripleBuffer<T>* get() { return triple_; }
+    SPSCStorage<T>* get() { return triple_; }
 
-    TripleBuffer<T>* operator->() { return triple_; }
-    TripleBuffer<T>& operator*()  { return *triple_; }
+    SPSCStorage<T>* operator->() { return triple_; }
+    SPSCStorage<T>& operator*()  { return *triple_; }
 
     private:
       std::string name_;
       bool is_writer_;
       int fd_;
-      TripleBuffer<T>* triple_;
+      SPSCStorage<T>* triple_;
   };
 }
 
-#endif // SHARED_MEMORY_HELPERS_H
+#endif // SHARED_DATA_HELPERS_H
