@@ -1,6 +1,21 @@
 
 namespace RapidLaser.Services;
 
+public class CameraFrameData
+{
+    public byte[] ImageData { get; set; } = Array.Empty<byte>();
+    public int Width { get; set; }
+    public int Height { get; set; }
+    public int FrameNumber { get; set; }
+    public double Timestamp { get; set; }
+    public bool BallDetected { get; set; }
+    public double CenterX { get; set; }
+    public double CenterY { get; set; }
+    public double Radius { get; set; }
+    public double TargetX { get; set; }
+    public double TargetY { get; set; }
+}
+
 public interface ICameraService
 {
     bool IsInitialized { get; }
@@ -12,7 +27,7 @@ public interface ICameraService
     Task<bool> StartGrabbingAsync();
     Task StopGrabbingAsync();
     Task<bool> CheckServerStatusAsync(CancellationToken cancellationToken = default);
-    Task<(bool success, byte[] imageData, int width, int height)> TryGrabFrameAsync(CancellationToken cancellationToken = default);
+    Task<(bool success, CameraFrameData frameData)> TryGrabFrameAsync(CancellationToken cancellationToken = default);
     void Dispose();
 }
 
@@ -88,12 +103,14 @@ public class HttpCameraService : ICameraService
         }
     }
 
-    public async Task<(bool success, byte[] imageData, int width, int height)> TryGrabFrameAsync(CancellationToken cancellationToken = default)
+    public async Task<(bool success, CameraFrameData frameData)> TryGrabFrameAsync(CancellationToken cancellationToken = default)
     {
+        var emptyFrame = new CameraFrameData();
+
         if (!_isGrabbing)
         {
             Console.WriteLine($"HttpCameraService: Not grabbing (_isGrabbing = {_isGrabbing})");
-            return (false, Array.Empty<byte>(), 0, 0);
+            return (false, emptyFrame);
         }
 
         try
@@ -103,7 +120,7 @@ public class HttpCameraService : ICameraService
             if (!response.IsSuccessStatusCode)
             {
                 Console.WriteLine($"HttpCameraService: HTTP request failed with status {response.StatusCode}: {response.ReasonPhrase}");
-                return (false, Array.Empty<byte>(), 0, 0);
+                return (false, emptyFrame);
             }
 
             var jsonContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -111,39 +128,53 @@ public class HttpCameraService : ICameraService
             Console.WriteLine($"HttpCameraService: JSON content preview: {jsonContent.Substring(0, Math.Min(200, jsonContent.Length))}");
 
             var jsonDocument = JsonDocument.Parse(jsonContent);
-            var imageData = jsonDocument.RootElement.GetProperty("imageData").GetString();
-            Console.WriteLine($"HttpCameraService: Deserialized imageData - null: {imageData == null}");
+            var root = jsonDocument.RootElement;
 
-            if (string.IsNullOrEmpty(imageData))
+            // Parse image data
+            var imageDataString = root.GetProperty("imageData").GetString();
+            Console.WriteLine($"HttpCameraService: Deserialized imageData - null: {imageDataString == null}");
+
+            if (string.IsNullOrEmpty(imageDataString))
             {
                 Console.WriteLine($"HttpCameraService: No image data in response");
-                return (false, Array.Empty<byte>(), 0, 0);
+                return (false, emptyFrame);
             }
 
             // Convert base64 JPEG to byte array
-            var base64Data = imageData;
+            var base64Data = imageDataString;
             if (base64Data.StartsWith("data:image/jpeg;base64,"))
             {
                 base64Data = base64Data.Substring("data:image/jpeg;base64,".Length);
             }
             var imageBytes = Convert.FromBase64String(base64Data);
 
-            // For mock data, use default dimensions since we only have a minimal JPEG header
-            // In real implementation, you would decode the image to get actual dimensions
-            const int defaultWidth = 640;
-            const int defaultHeight = 480;
+            // Parse all frame data from JSON
+            var frameData = new CameraFrameData
+            {
+                ImageData = imageBytes,
+                Width = root.TryGetProperty("width", out var widthProp) ? widthProp.GetInt32() : 640,
+                Height = root.TryGetProperty("height", out var heightProp) ? heightProp.GetInt32() : 480,
+                FrameNumber = root.TryGetProperty("frameNumber", out var frameNumProp) ? frameNumProp.GetInt32() : 0,
+                Timestamp = root.TryGetProperty("timestamp", out var timestampProp) ? timestampProp.GetDouble() : 0,
+                BallDetected = root.TryGetProperty("ballDetected", out var ballDetectedProp) ? ballDetectedProp.GetBoolean() : false,
+                CenterX = root.TryGetProperty("centerX", out var centerXProp) ? centerXProp.GetDouble() : 0,
+                CenterY = root.TryGetProperty("centerY", out var centerYProp) ? centerYProp.GetDouble() : 0,
+                Radius = root.TryGetProperty("radius", out var radiusProp) ? radiusProp.GetDouble() : 0,
+                TargetX = root.TryGetProperty("targetX", out var targetXProp) ? targetXProp.GetDouble() : 0,
+                TargetY = root.TryGetProperty("targetY", out var targetYProp) ? targetYProp.GetDouble() : 0
+            };
 
             // Update dimensions
-            ImageWidth = defaultWidth;
-            ImageHeight = defaultHeight;
+            ImageWidth = frameData.Width;
+            ImageHeight = frameData.Height;
 
-            Console.WriteLine($"HttpCameraService: Successfully grabbed frame {defaultWidth}x{defaultHeight}, image bytes: {imageBytes.Length}");
-            return (true, imageBytes, defaultWidth, defaultHeight);
+            Console.WriteLine($"HttpCameraService: Successfully grabbed frame {frameData.Width}x{frameData.Height}, image bytes: {imageBytes.Length}, frameNumber: {frameData.FrameNumber}, ballDetected: {frameData.BallDetected}");
+            return (true, frameData);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to grab frame from HTTP camera service: {ex.Message}");
-            return (false, Array.Empty<byte>(), 0, 0);
+            return (false, emptyFrame);
         }
     }
 

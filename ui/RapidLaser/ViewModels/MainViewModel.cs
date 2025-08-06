@@ -109,18 +109,40 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _programStatus = "";
 
-    //camera
+    //camera frame data
     [ObservableProperty]
     private WriteableBitmap? _cameraImage;
 
+    [ObservableProperty]
+    private double _cameraCenterX;
+
+    [ObservableProperty]
+    private double _cameraCenterY;
+
+    [ObservableProperty]
+    private double _cameraRadius;
+
+    [ObservableProperty]
+    private int _cameraFrameNumber = 0;
+
+    [ObservableProperty]
+    private double _cameraTimestamp = 0;
+
+    [ObservableProperty]
+    private bool _cameraBallDetected = false;
+
+    [ObservableProperty]
+    private double _cameraTargetX = 0;
+
+    [ObservableProperty]
+    private double _cameraTargetY = 0;
+
+    //camera 
     [ObservableProperty]
     private double _frameRate = 30.0;
 
     [ObservableProperty]
     private double _cameraFps = 0.0;
-
-    [ObservableProperty]
-    private int _cameraFrameCount = 0;
 
     [ObservableProperty]
     private int _binaryThreshold = 128;
@@ -639,12 +661,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     }
 
                     // Get frame from independent camera service
-                    var (success, imageData, width, height) = await _cameraService.TryGrabFrameAsync(cancellationToken);
+                    var (success, frameData) = await _cameraService.TryGrabFrameAsync(cancellationToken);
 
-                    if (success && imageData.Length > 0)
+                    if (success && frameData.ImageData.Length > 0)
                     {
                         // Process the frame
-                        await ProcessHttpCameraFrameAsync(imageData, width, height);
+                        await ProcessHttpCameraFrameAsync(frameData);
 
                         // Update frame count and FPS
                         frameCounter++;
@@ -657,7 +679,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
                                 await Dispatcher.UIThread.InvokeAsync(() =>
                                 {
                                     CameraFps = 10.0 / elapsed;
-                                    CameraFrameCount = frameCounter;
                                 });
                             }
                             frameTimeTracker = now;
@@ -718,17 +739,28 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private async Task ProcessHttpCameraFrameAsync(byte[] imageData, int width, int height)
+    private async Task ProcessHttpCameraFrameAsync(CameraFrameData frameData)
     {
         try
         {
-            // For HTTP camera service, imageData is a JPEG byte array
-            // We can load it directly into a bitmap
+            // Update camera data properties from the frame
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 try
                 {
-                    using var stream = new MemoryStream(imageData);
+                    // Update camera data from frame
+                    CameraFrameNumber = frameData.FrameNumber;
+                    CameraTimestamp = frameData.Timestamp;
+                    CameraBallDetected = frameData.BallDetected;
+                    CameraCenterX = frameData.CenterX;
+                    CameraCenterY = frameData.CenterY;
+                    CameraRadius = frameData.Radius;
+                    CameraTargetX = frameData.TargetX;
+                    CameraTargetY = frameData.TargetY;
+
+                    // Process image data - For HTTP camera service, imageData is a JPEG byte array
+                    // We can load it directly into a bitmap
+                    using var stream = new MemoryStream(frameData.ImageData);
                     var bitmap = new Bitmap(stream);
 
                     // Convert to WriteableBitmap for UI binding

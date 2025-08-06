@@ -961,7 +961,7 @@
                                                     <!--  Ball Detection Overlay - only when ball is detected  -->
                                                     <Ellipse
                                                         Fill="Transparent"
-                                                        IsVisible="{Binding Program_BallRadius, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                        IsVisible="{Binding CameraRadius, Converter={x:Static ObjectConverters.IsNotNull}}"
                                                         Stroke="Lime"
                                                         StrokeThickness="1">
 
@@ -970,26 +970,26 @@
                                                             <Binding
                                                                 Converter="{x:Static converters:BoolConverters.RadiusToDiameterConverter}"
                                                                 FallbackValue="10"
-                                                                Path="Program_BallRadius" />
+                                                                Path="CameraRadius" />
                                                         </Ellipse.Width>
                                                         <Ellipse.Height>
                                                             <Binding
                                                                 Converter="{x:Static converters:BoolConverters.RadiusToDiameterConverter}"
                                                                 FallbackValue="10"
-                                                                Path="Program_BallRadius" />
+                                                                Path="CameraRadius" />
                                                         </Ellipse.Height>
 
                                                         <!--  canvas position (center - radius for top-left positioning)  -->
                                                         <Canvas.Left>
                                                             <MultiBinding Converter="{x:Static converters:BoolConverters.BallPositionToCenterOffsetConverter}">
-                                                                <Binding FallbackValue="320" Path="Program_BallX" />
-                                                                <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                                <Binding FallbackValue="320" Path="CameraCenterX" />
+                                                                <Binding FallbackValue="10" Path="CameraRadius" />
                                                             </MultiBinding>
                                                         </Canvas.Left>
                                                         <Canvas.Top>
                                                             <MultiBinding Converter="{x:Static converters:BoolConverters.BallYPositionToCenterOffsetConverter}">
-                                                                <Binding FallbackValue="240" Path="Program_BallY" />
-                                                                <Binding FallbackValue="10" Path="Program_BallRadius" />
+                                                                <Binding FallbackValue="240" Path="CameraCenterY" />
+                                                                <Binding FallbackValue="10" Path="CameraRadius" />
                                                             </MultiBinding>
                                                         </Canvas.Top>
                                                     </Ellipse>
@@ -1058,7 +1058,7 @@
                                                     MinWidth="100"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
-                                                    Text="{Binding CameraFrameCount, FallbackValue='-', StringFormat='Frames: {0}'}" />
+                                                    Text="{Binding CameraFrameNumber, FallbackValue='-', StringFormat='Frames: {0}'}" />
 
                                             </StackPanel>
 
