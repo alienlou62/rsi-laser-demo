@@ -877,21 +877,22 @@
                                             <StackPanel
                                                 Grid.Row="2"
                                                 Margin="0,2,0,0"
-                                                Orientation="Horizontal">
+                                                Orientation="Horizontal"
+                                                Spacing="20">
+
                                                 <TextBlock
-                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding Program_BallX, StringFormat='{}X: {0:F0}'}" />
+
                                                 <TextBlock
-                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding Program_BallY, StringFormat='{}Y: {0:F0}'}" />
+
                                                 <TextBlock
-                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
@@ -927,14 +928,73 @@
                                                     Foreground="#00CCFF"
                                                     Text="CAMERA" />
 
-                                                <!--  Size information  -->
-                                                <TextBlock
+                                                <StackPanel
                                                     Grid.Column="1"
+                                                    HorizontalAlignment="Right"
                                                     VerticalAlignment="Center"
-                                                    FontSize="10"
-                                                    Foreground="{StaticResource SubtleTextBrush}"
-                                                    Opacity="0.8"
-                                                    Text="{Binding IsCanvasResponsive, Converter={x:Static converters:BoolConverters.BoolToSizeInfoConverter}}" />
+                                                    Orientation="Horizontal"
+                                                    Spacing="10">
+
+                                                    <!--  size information  -->
+                                                    <TextBlock
+                                                        Margin="0,0,3,0"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="10"
+                                                        Foreground="{StaticResource SubtleTextBrush}"
+                                                        Opacity="0.8"
+                                                        Text="{Binding IsCanvasResponsive, Converter={x:Static converters:BoolConverters.BoolToSizeInfoConverter}}" />
+
+                                                    <!--  camera streaming icon  -->
+                                                    <icons:MaterialIcon
+                                                        Grid.Column="1"
+                                                        Width="18"
+                                                        Height="18"
+                                                        Margin="0,0,0,-1"
+                                                        VerticalAlignment="Center"
+                                                        Background="Transparent"
+                                                        Classes.is-camera-not-streaming="{Binding !IsCameraStreaming}"
+                                                        Classes.is-camera-streaming="{Binding IsCameraStreaming}"
+                                                        ToolTip.ShowDelay="0">
+                                                        <icons:MaterialIcon.Styles>
+                                                            <Style Selector="icons|MaterialIcon.is-camera-streaming">
+                                                                <Setter Property="Kind" Value="VideoCheck" />
+                                                                <Setter Property="ToolTip.Tip" Value="Camera streaming ON" />
+                                                                <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                                            </Style>
+                                                            <Style Selector="icons|MaterialIcon.is-camera-not-streaming">
+                                                                <Setter Property="Kind" Value="VideoOff" />
+                                                                <Setter Property="ToolTip.Tip" Value="Camera streaming OFF" />
+                                                                <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                                            </Style>
+                                                        </icons:MaterialIcon.Styles>
+                                                    </icons:MaterialIcon>
+
+                                                    <!--  camera ball detected  -->
+                                                    <icons:MaterialIcon
+                                                        Grid.Column="1"
+                                                        Width="14"
+                                                        Height="14"
+                                                        Margin="0,0,0,-1"
+                                                        VerticalAlignment="Center"
+                                                        Background="Transparent"
+                                                        Classes.ball-detected="{Binding CameraBallDetected}"
+                                                        Classes.ball-detected-n="{Binding !CameraBallDetected}"
+                                                        ToolTip.ShowDelay="0">
+                                                        <icons:MaterialIcon.Styles>
+                                                            <Style Selector="icons|MaterialIcon.ball-detected">
+                                                                <Setter Property="Kind" Value="CheckCircle" />
+                                                                <Setter Property="ToolTip.Tip" Value="Ball detected" />
+                                                                <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                                            </Style>
+                                                            <Style Selector="icons|MaterialIcon.ball-detected-n">
+                                                                <Setter Property="Kind" Value="CloseCircle" />
+                                                                <Setter Property="ToolTip.Tip" Value="Ball not detected" />
+                                                                <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                                            </Style>
+                                                        </icons:MaterialIcon.Styles>
+                                                    </icons:MaterialIcon>
+
+                                                </StackPanel>
                                             </Grid>
 
                                             <!--  camera canvas with viewbox for scaling  -->
@@ -1047,89 +1107,37 @@
                                                 Grid.Row="2"
                                                 Margin="0,2,0,0"
                                                 VerticalAlignment="Center"
-                                                Orientation="Horizontal">
+                                                Orientation="Horizontal"
+                                                Spacing="20">
                                                 <TextBlock
-                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding CameraCenterX, StringFormat='{}X: {0:F0}'}" />
 
                                                 <TextBlock
-                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding CameraCenterY, StringFormat='{}Y: {0:F0}'}" />
 
                                                 <TextBlock
-                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding CameraRadius, StringFormat='{}Radius: {0:F0}'}" />
 
                                                 <TextBlock
-                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Text="{Binding CameraFps, FallbackValue=0, StringFormat='FPS: {0:F1}'}" />
 
                                                 <TextBlock
-                                                    MinWidth="80"
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Text="{Binding CameraFrameNumber, FallbackValue='-', StringFormat='Frames: {0}'}" />
 
                                             </StackPanel>
-
-                                            <StackPanel
-                                                Grid.Row="2"
-                                                HorizontalAlignment="Right"
-                                                Orientation="Horizontal">
-
-                                                <icons:MaterialIcon
-                                                    Grid.Column="1"
-                                                    Width="18"
-                                                    Height="18"
-                                                    Margin="0,0,0,-3"
-                                                    VerticalAlignment="Center"
-                                                    Classes.is-camera-not-streaming="{Binding !IsCameraStreaming}"
-                                                    Classes.is-camera-streaming="{Binding IsCameraStreaming}">
-                                                    <icons:MaterialIcon.Styles>
-                                                        <Style Selector="icons|MaterialIcon.is-camera-streaming">
-                                                            <Setter Property="Kind" Value="VideoCheck" />
-                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-                                                        </Style>
-                                                        <Style Selector="icons|MaterialIcon.is-camera-not-streaming">
-                                                            <Setter Property="Kind" Value="VideoOff" />
-                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-                                                        </Style>
-                                                    </icons:MaterialIcon.Styles>
-                                                </icons:MaterialIcon>
-
-                                                <TextBlock
-                                                    Margin="0,-6,0,-3"
-                                                    Padding="0"
-                                                    VerticalAlignment="Center"
-                                                    Classes.not-streaming="{Binding !IsCameraStreaming}"
-                                                    Classes.streaming="{Binding IsCameraStreaming}"
-                                                    FontSize="12"
-                                                    FontWeight="SemiBold"
-                                                    IsVisible="False">
-                                                    <TextBlock.Styles>
-                                                        <Style Selector="TextBlock.streaming">
-                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-                                                            <Setter Property="Text" Value="Streaming" />
-                                                        </Style>
-                                                        <Style Selector="TextBlock.not-streaming">
-                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-                                                            <Setter Property="Text" Value="Not Streaming " />
-                                                        </Style>
-                                                    </TextBlock.Styles>
-                                                </TextBlock>
-                                            </StackPanel>
-
 
                                         </Grid>
 
