@@ -39,7 +39,7 @@ namespace SharedMemoryHelpers
       }
     }
 
-    TripleBufferManager() = default;
+    TripleBufferManager() = delete;
     TripleBufferManager(const TripleBufferManager&) = delete;
     TripleBufferManager& operator=(const TripleBufferManager&) = delete;
 
@@ -54,24 +54,7 @@ namespace SharedMemoryHelpers
 
     ~TripleBufferManager() = default;
 
-    void Initialize(TripleBuffer<T>* triple, bool is_writer = false) {
-      triple_ = triple;
-      index_ = is_writer ? 1 : 2;
-      is_writer_ = is_writer;
-
-      if (is_writer_) {
-        lock_ = std::unique_lock<std::mutex>(triple_->writer_mutex, std::try_to_lock);
-      } else {
-        lock_ = std::unique_lock<std::mutex>(triple_->reader_mutex, std::try_to_lock);
-      }
-
-      if (!lock_.owns_lock()) {
-        throw std::runtime_error("Failed to acquire lock on TripleBuffer");
-      }
-    }
-
-    T* buffer() { return &triple_->buffers[index_]; }
-
+    T& buffer() { return triple_->buffers[index_]; }
     uint32_t& flags() { return triple_->flags[index_]; }
 
     void swap_buffers() {
@@ -129,7 +112,7 @@ namespace SharedMemoryHelpers
       }
     }
 
-    SharedMemoryTripleBuffer() = default;
+    SharedMemoryTripleBuffer() = delete;
 
     SharedMemoryTripleBuffer(const SharedMemoryTripleBuffer&) = delete;
     SharedMemoryTripleBuffer& operator=(const SharedMemoryTripleBuffer&) = delete;
@@ -141,38 +124,6 @@ namespace SharedMemoryHelpers
     {
       other.fd_ = -1;
       other.triple_ = nullptr;
-    }
-
-    void Initialize(const std::string& name, bool is_writer = false)
-    {
-      name_ = name;
-      is_writer_ = is_writer;
-
-      int flags = is_writer_ ? (O_CREAT | O_EXCL | O_RDWR) : O_RDWR;
-      fd_ = shm_open(name_.c_str(), flags, 0666);
-      if (fd_ == -1) {
-        int err = errno;
-        throw std::runtime_error("Failed to open shared memory segment " + name_ + ": " + std::string(strerror(err)));
-      }
-
-      size_t size = sizeof(TripleBuffer<T>);
-      if (is_writer_) {
-        if (ftruncate(fd_, size) == -1) {
-          close(fd_);
-          throw std::runtime_error("Failed to set size of shared memory segment");
-        }
-      }
-
-      void* ptr = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
-      close(fd_);
-      if (ptr == MAP_FAILED) {
-        throw std::runtime_error("Failed to map shared memory segment");
-      }
-
-      triple_ = static_cast<TripleBuffer<T>*>(ptr);
-      if (is_writer_) {
-        new (triple_) TripleBuffer<T>();
-      }
     }
 
     TripleBuffer<T>* get() { return triple_; }
