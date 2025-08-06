@@ -344,6 +344,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
             {
                 IsCameraConnected = true;
                 LogMessage($"Connected to camera server at {IpAddress}:{CameraPort}");
+
+                // try to start camera stream
+                if (!IsCameraStreaming)
+                {
+                    await StartCameraStreamAsync();
+                }
+                CameraLastError = string.Empty;
+                LogMessage("Camera connected successfully");
             }
             else
             {
@@ -496,6 +504,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (success)
             {
                 IsConnected = true;
+
+                // try to connect to camera server
+                if (!IsCameraConnected)
+                {
+                    await ConnectCameraAsync();
+                }
 
                 // Test SSH authentication after successful server connection
                 await TestSshAuthenticationAsync();
@@ -1103,6 +1117,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Port              = int.TryParse(settings["server_Port"], out var port) ? port : 50061;
         var autoReconnect = bool.TryParse(settings["server_AutoReconnect"], out var reconnect) && reconnect;
 
+        //camera server
+        CameraPort = int.TryParse(settings["cameraServer_Port"], out var cameraPort) ? cameraPort : 50080;
+
         //polling
         _updateIntervalMs = int.TryParse(settings["polling_IntervalMs"], out var pollingInterval) ? pollingInterval : 100;
 
@@ -1131,12 +1148,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
             {
                 Settings = new
                 {
+                    //rapidserver
                     server_ipAddress = IpAddress,
                     server_port = Port.ToString(),
-                    //server_autoReconnect = AutoReconnect,
 
+                    //camera server
+                    cameraServer_Port = CameraPort.ToString(),
+
+                    //polling
                     polling_IntervalMs = _updateIntervalMs,
 
+                    //ssh
                     ssh_Username = SshUser,
                     ssh_Password = SshPassword,
                     ssh_RunCommand = SshRunCommand,
@@ -1146,10 +1168,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     global_BallY = Global_BallY,
                     global_BallRadius = Global_BallRadius,
                     global_IsMotionEnabled = Global_IsMotionEnabled,
-
-                    //camera
-                    camera_FrameRate = FrameRate.ToString(),
-                    camera_BinaryThreshold = BinaryThreshold.ToString()
                 }
             };
 

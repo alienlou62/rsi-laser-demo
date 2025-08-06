@@ -4,6 +4,8 @@
     "server_Port": 50061,
     "server_AutoReconnect": true,
 
+    "cameraServer_Port": 50080,
+
     "ssh_Username": "rsi",
     "ssh_Password": "admin",
     "ssh_RunCommand": "rsiconfig /rmp_config/rmp.xml --cpu-affinity 7 --primary-nic enp1s0",
