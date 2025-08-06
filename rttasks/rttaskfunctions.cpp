@@ -6,7 +6,6 @@
 #include "rttaskglobals.h"
 #include "camera_helpers.h"
 #include "image_processing.h"
-#include "motion_control.h"
 #include "shared_memory_helpers.h"
 
 //system
@@ -86,6 +85,13 @@ RSI_TASK(Initialize)
 // Moves the motors based on the target positions.
 RSI_TASK(MoveMotors)
 {
+  // Define limits for the target positions
+  inline constexpr double NEG_X_LIMIT = -0.19;
+  inline constexpr double POS_X_LIMIT = 0.19;
+  inline constexpr double NEG_Y_LIMIT = -0.14;
+  inline constexpr double POS_Y_LIMIT = 0.14;
+
+  // Check if the system is initialized and motion is enabled
   if (!data->initialized) return;
   if (!data->motionEnabled) return;
   if (!data->multiAxisReady) return;
@@ -93,7 +99,25 @@ RSI_TASK(MoveMotors)
   // Only execute if a new target is set
   if (!data->newTarget.exchange(false)) return;
 
-  MotionControl::MoveMotorsWithLimits(RTMultiAxisGet(0), data->targetX, data->targetY);
+  // Move the motors to the target positions respecting the limits
+  try
+    {
+      double clampedX = std::clamp(data->targetX.load(), NEG_X_LIMIT, POS_X_LIMIT);
+      double clampedY = std::clamp(data->targetY.load(), NEG_Y_LIMIT, POS_Y_LIMIT);
+      RTMultiAxisGet(0)->MoveSCurve(std::array{clampedX, clampedY}.data());
+    }
+    catch (const RsiError &e)
+    {
+      if (RTMultiAxisGet(0))
+        RTMultiAxisGet(0)->Abort();
+      throw std::runtime_error(std::string("RMP exception during velocity control: ") + e.what());
+    }
+    catch (const std::exception &ex)
+    {
+      if (RTMultiAxisGet(0))
+        RTMultiAxisGet(0)->Abort();
+      throw std::runtime_error(std::string("Error during velocity control: ") + ex.what());
+    }
 }
 
 // Processes the image captured by the camera.
