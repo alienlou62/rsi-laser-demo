@@ -11,7 +11,7 @@
 #include <type_traits>
 
 #ifndef SHARED_MEMORY_NAME
-#define SHARED_MEMORY_NAME "/LASER_DEMO"
+#define SHARED_MEMORY_NAME "/laser_demo_shared_memory"
 #endif // SHARED_MEMORY_NAME
 
 struct Frame
@@ -54,7 +54,7 @@ public:
     }
   }
 
-  TripleBufferManager() = delete;
+  TripleBufferManager() = default;
   TripleBufferManager(const TripleBufferManager&) = delete;
   TripleBufferManager& operator=(const TripleBufferManager&) = delete;
 
@@ -68,6 +68,22 @@ public:
   }
 
   ~TripleBufferManager() = default;
+
+  void Initialize(TripleBuffer<T>* triple, bool is_writer = false) {
+    triple_ = triple;
+    index_ = is_writer ? 1 : 2;
+    is_writer_ = is_writer;
+
+    if (is_writer_) {
+      lock_ = std::unique_lock<std::mutex>(triple_->writer_mutex, std::try_to_lock);
+    } else {
+      lock_ = std::unique_lock<std::mutex>(triple_->reader_mutex, std::try_to_lock);
+    }
+
+    if (!lock_.owns_lock()) {
+      throw std::runtime_error("Failed to acquire lock on TripleBuffer");
+    }
+  }
 
   T* operator->() { return &triple_->buffers[index_]; }
   T& operator*()  { return triple_->buffers[index_]; }
@@ -98,7 +114,8 @@ public:
     int flags = is_writer_ ? (O_CREAT | O_EXCL | O_RDWR) : O_RDWR;
     fd_ = shm_open(name_.c_str(), flags, 0666);
     if (fd_ == -1) {
-      throw std::runtime_error("Failed to open shared memory segment");
+      int err = errno;
+      throw std::runtime_error("Failed to open shared memory segment " + name_ + ": " + std::string(strerror(err)));
     }
 
     size_t size = sizeof(TripleBuffer<T>);
@@ -127,6 +144,52 @@ public:
     munmap(triple_, size);
     if (is_writer_) {
       shm_unlink(name_.c_str());
+    }
+  }
+
+  SharedMemoryTripleBuffer() = default;
+
+  SharedMemoryTripleBuffer(const SharedMemoryTripleBuffer&) = delete;
+  SharedMemoryTripleBuffer& operator=(const SharedMemoryTripleBuffer&) = delete;
+  SharedMemoryTripleBuffer(SharedMemoryTripleBuffer&& other) noexcept
+    : name_(std::move(other.name_)), 
+      is_writer_(other.is_writer_), 
+      fd_(other.fd_), 
+      triple_(other.triple_)
+  {
+    other.fd_ = -1;
+    other.triple_ = nullptr;
+  }
+
+  void Initialize(const std::string& name, bool is_writer = false)
+  {
+    name_ = name;
+    is_writer_ = is_writer;
+
+    int flags = is_writer_ ? (O_CREAT | O_EXCL | O_RDWR) : O_RDWR;
+    fd_ = shm_open(name_.c_str(), flags, 0666);
+    if (fd_ == -1) {
+      int err = errno;
+      throw std::runtime_error("Failed to open shared memory segment " + name_ + ": " + std::string(strerror(err)));
+    }
+
+    size_t size = sizeof(TripleBuffer<T>);
+    if (is_writer_) {
+      if (ftruncate(fd_, size) == -1) {
+        close(fd_);
+        throw std::runtime_error("Failed to set size of shared memory segment");
+      }
+    }
+
+    void* ptr = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0);
+    close(fd_);
+    if (ptr == MAP_FAILED) {
+      throw std::runtime_error("Failed to map shared memory segment");
+    }
+
+    triple_ = static_cast<TripleBuffer<T>*>(ptr);
+    if (is_writer_) {
+      new (triple_) TripleBuffer<T>();
     }
   }
 

@@ -26,8 +26,10 @@ using namespace RSI::RapidCode::RealTimeTasks;
 PylonAutoInitTerm g_PylonAutoInitTerm;
 CInstantCamera g_camera;
 CGrabResultPtr g_ptrGrabResult;
-SharedMemoryTripleBuffer<Frame> g_sharedMemory(SHARED_MEMORY_NAME, true);
-TripleBufferManager<Frame> g_tripleBufferManager(g_sharedMemory.get(), true);
+
+// These start in an invalid state and must be initialized before use
+SharedMemoryTripleBuffer<Frame> g_sharedMemory;
+TripleBufferManager<Frame> g_tripleBufferManager;
 
 // Initializes the global data structure and sets up the camera and multi-axis.
 RSI_TASK(Initialize)
@@ -57,6 +59,10 @@ RSI_TASK(Initialize)
   data->newTarget = false;
   data->targetX = 0.0;
   data->targetY = 0.0;
+
+  // Initialize shared memory
+  g_sharedMemory.Initialize(SHARED_MEMORY_NAME, true);
+  g_tripleBufferManager.Initialize(g_sharedMemory.get(), true);
 
   // Setup the camera
   CameraHelpers::ConfigureCamera(g_camera);

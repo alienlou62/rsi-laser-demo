@@ -60,7 +60,7 @@ void WriteCameraFrameJSON(const Frame& frameData) {
     // Construct cv::Mat from YUYVFrame data in frameData
     cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)frameData.yuyvData);
     cv::Mat rgbFrame;
-    cv::cvtColor(yuyvMat, rgbFrame, cv::COLOR_YUV2BGR_YUYV);
+    cv::cvtColor(yuyvMat, rgbFrame, cv::COLOR_YUV2RGB_YUYV);
     // Encode as JPEG with quality 80
     std::vector<uint8_t> jpegBuffer;
     std::vector<int> jpegParams = {cv::IMWRITE_JPEG_QUALITY, 80};
