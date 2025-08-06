@@ -502,8 +502,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
             else
             {
-                LastError = "Failed to connect to camera system";
-                LogMessage("Connection failed: Failed to connect to camera system");
+                LastError = $"Failed to connect to rapidserver {IpAddress}:{Port}";
+                LogMessage($"Connection failed: {LastError}");
                 IsSshAuthenticated = false;
             }
         }
@@ -752,7 +752,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
                         // Server is not responding, stop streaming and update status
                         await Dispatcher.UIThread.InvokeAsync(() =>
                         {
-                            CameraStatus = "Server not responding";
                             LogMessage("Camera: HTTP server is not responding, stopping stream");
                         });
 
@@ -818,7 +817,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
-                CameraStatus = $"Stream Error: {ex.Message}";
                 LogMessage($"Camera Stream Error: {ex.Message}");
             });
         }
@@ -830,10 +828,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 if (IsCameraStreaming)
                 {
                     IsCameraStreaming = false;
-                    if (CameraStatus != "Server not responding")
-                    {
-                        CameraStatus = "Stopped";
-                    }
                     CameraImage = null;
                 }
             });

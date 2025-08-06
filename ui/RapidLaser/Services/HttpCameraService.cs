@@ -66,7 +66,7 @@ public class HttpCameraService : ICameraService
     {
         try
         {
-            _serverUrl = $"{ip}:{port}";
+            _serverUrl = $"http://{ip}:{port}";
             Console.WriteLine($"HttpCameraService: Attempting to connect to {_serverUrl}/status");
 
             // Test connection to camera server
