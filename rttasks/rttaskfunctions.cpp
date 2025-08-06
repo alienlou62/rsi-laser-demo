@@ -41,8 +41,8 @@ struct Frame
 };
 
 SharedDataHelpers::SPSCStorage<Frame> g_frameStorage;
-SharedDataHelpers::SPSCStorageManager<Frame> g_frameWriter(&g_frameStorage, true);
-SharedDataHelpers::SPSCStorageManager<Frame> g_frameReader(&g_frameStorage, false);
+SharedDataHelpers::SPSCStorageManager g_frameWriter(&g_frameStorage, true);
+SharedDataHelpers::SPSCStorageManager g_frameReader(&g_frameStorage, false);
 
 // Initializes the global data structure and sets up the camera and multi-axis.
 RSI_TASK(Initialize)
