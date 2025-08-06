@@ -160,6 +160,7 @@
                             Command="{Binding ToggleProgramMotionEnabledCommand}"
                             CommandParameter="{Binding $self.IsChecked}"
                             IsChecked="{Binding Program_IsMotionEnabled}"
+                            IsEnabled="{Binding Global_IsMotionEnabledValid}"
                             IsVisible="{Binding IsProgramRunning}"
                             ToolTip.Tip="Enable/Disable Motion Control">
                             <ToggleButton.Styles>
@@ -228,7 +229,7 @@
                                                 <icons:MaterialIcon
                                                     Width="16"
                                                     Height="16"
-                                                    Kind="Video" />
+                                                    Kind="VideoCheck" />
                                                 <TextBlock VerticalAlignment="Center" Text="Camera ON" />
                                             </StackPanel>
                                         </Template>
@@ -1069,7 +1070,7 @@
                                                     <!--  Ball Detection Overlay - only when ball is detected  -->
                                                     <Ellipse
                                                         Fill="Transparent"
-                                                        IsVisible="{Binding CameraRadius, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                                        IsVisible="{Binding IsCameraStreaming}"
                                                         Stroke="Lime"
                                                         StrokeThickness="1">
 
