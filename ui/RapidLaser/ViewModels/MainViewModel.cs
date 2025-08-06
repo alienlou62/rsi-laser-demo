@@ -514,10 +514,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
             try
             {
                 _ = ConnectAsync();
+                LogMessage($"Auto-connected to rapidserver {IpAddress}:{Port}");
             }
             catch (Exception ex)
             {
-                LogMessage($"Auto-connect failed: {ex.Message}");
+                LogMessage($"rapidserver auto-connect failed: {ex.Message}");
             }
         }
 
@@ -586,7 +587,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     //logging
     private void LogMessage(string message)
     {
-        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        var timestamp = DateTime.Now.ToString("HH:mm:ss tt");
         LogOutput += $"[{timestamp}] {message}\n";
     }
 
