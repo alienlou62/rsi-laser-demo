@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 project(LaserDemo)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -7,43 +7,44 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Include our RapidSoftware utilities
 include(cmake/RapidSoftware.cmake)
 
-find_package(OpenCV REQUIRED)
+# Find OpenCV
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(OpenCV REQUIRED opencv4)
 
-# Add Pylon library directory
-link_directories(/opt/pylon/lib)
+# Find Pylon library
+find_package(PYLON REQUIRED)
+set(PYLON_INCLUDE_DIRS /opt/pylon/include)
 
-# Include directories
-include_directories(BEFORE include)
-include_directories(BEFORE include/helpers)
-include_directories(BEFORE sandbox/helpers)
-include_directories(BEFORE RTTaskFunctions/src)
-include_directories(BEFORE /opt/pylon/include)
-include_directories(BEFORE /usr/include)
+# Output the task library to the RMP directory where RTTasks will look for it
+set(RTTASK_FUNCTIONS_OUTPUT_DIR ${RMP_DIR})
 
-# RTTask version - simplified without gRPC
-add_executable(LaserDemoRTTasks
-    src/rttasks_demo_main.cpp
-    src/image_processing.cpp
-    src/motion_control.cpp
-    src/helpers/camera_helpers.cpp
-    src/helpers/misc_helpers.cpp
-    src/helpers/rmp_helpers.cpp
+# Setup the RTTask functions library
+
+# Grab all the source and header files in the rttasks directory
+file(GLOB_RECURSE SOURCE_FILES "${CMAKE_SOURCE_DIR}/rttasks/*.cpp")
+file(GLOB_RECURSE HEADER_FILES "${CMAKE_SOURCE_DIR}/rttasks/*.h")
+
+# Create a library target for the RTTask functions
+add_library(RTTaskFunctions SHARED ${SOURCE_FILES} ${HEADER_FILES})
+target_include_directories(RTTaskFunctions PRIVATE
+  ${CMAKE_SOURCE_DIR}/rttasks
+  ${CMAKE_SOURCE_DIR}/rttasks/include
+  ${OpenCV_INCLUDE_DIRS}
+  ${PYLON_INCLUDE_DIRS}
 )
-
-target_link_libraries(LaserDemoRTTasks
-    ${OpenCV_LIBS}
-    pylonbase
-    pylonutility
-    GenApi_gcc_v3_1_Basler_pylon_v3
-    GCBase_gcc_v3_1_Basler_pylon_v3
-    Log_gcc_v3_1_Basler_pylon_v3
-    MathParser_gcc_v3_1_Basler_pylon_v3
-    NodeMapData_gcc_v3_1_Basler_pylon_v3
-    pthread
-    RTTaskFunctions
+target_link_libraries(RTTaskFunctions PUBLIC 
+  ${OpenCV_LIBRARIES}
+  pylon::pylon
 )
-
-# Add subdirectory for RTTaskFunctions
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/RTTaskFunctions")
-    add_subdirectory(RTTaskFunctions)
-endif()
+target_compile_definitions(RTTaskFunctions PRIVATE CONFIG_FILE="/etc/laser_demo/acA640-300gc_22441779.pfs")
+target_compile_options(RTTaskFunctions PRIVATE "-Wno-deprecated-enum-enum-conversion")
+set_target_properties(RTTaskFunctions PROPERTIES 
+  COMPILE_WARNING_AS_ERROR ON
+  ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${RTTASK_FUNCTIONS_OUTPUT_DIR}
+  LIBRARY_OUTPUT_DIRECTORY_RELEASE ${RTTASK_FUNCTIONS_OUTPUT_DIR}
+  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${RTTASK_FUNCTIONS_OUTPUT_DIR}
+  ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${RTTASK_FUNCTIONS_OUTPUT_DIR}
+  LIBRARY_OUTPUT_DIRECTORY_DEBUG ${RTTASK_FUNCTIONS_OUTPUT_DIR}
+  RUNTIME_OUTPUT_DIRECTORY_DEBUG ${RTTASK_FUNCTIONS_OUTPUT_DIR}
+)
+setup_rmp_target(RTTaskFunctions)

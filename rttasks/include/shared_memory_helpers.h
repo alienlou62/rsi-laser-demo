@@ -10,10 +10,6 @@
 #include <unistd.h>
 #include <type_traits>
 
-#ifndef SHARED_MEMORY_NAME
-#define SHARED_MEMORY_NAME "/laser_demo_shared_memory"
-#endif // SHARED_MEMORY_NAME
-
 struct Frame
 {
   CameraHelpers::YUYVFrame yuyvData;
