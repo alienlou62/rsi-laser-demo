@@ -27,10 +27,22 @@ CInstantCamera g_camera;
 CGrabResultPtr g_ptrGrabResult;
 
 // Shared storage for camera frames
-// SharedMemoryTripleBuffer<Frame> g_sharedMemory;
-TripleBuffer<Frame> g_frameBuffer;
-TripleBufferManager<Frame> g_frameBufferWriter(&g_frameBuffer, true);
-TripleBufferManager<Frame> g_frameBufferReader(&g_frameBuffer, false);
+struct Frame
+{
+  CameraHelpers::YUYVFrame yuyvData;
+  int frameNumber;
+  double timestamp;
+  bool ballDetected;
+  double centerX;
+  double centerY;
+  double radius;
+  double targetX;
+  double targetY;
+};
+
+SharedMemoryHelpers::TripleBuffer<Frame> g_frameBuffer;
+SharedMemoryHelpers::TripleBufferManager<Frame> g_frameBufferWriter(&g_frameBuffer, true);
+SharedMemoryHelpers::TripleBufferManager<Frame> g_frameBufferReader(&g_frameBuffer, false);
 
 // Initializes the global data structure and sets up the camera and multi-axis.
 RSI_TASK(Initialize)
@@ -86,10 +98,10 @@ RSI_TASK(Initialize)
 RSI_TASK(MoveMotors)
 {
   // Define limits for the target positions
-  inline constexpr double NEG_X_LIMIT = -0.19;
-  inline constexpr double POS_X_LIMIT = 0.19;
-  inline constexpr double NEG_Y_LIMIT = -0.14;
-  inline constexpr double POS_Y_LIMIT = 0.14;
+  static constexpr double NEG_X_LIMIT = -0.19;
+  static constexpr double POS_X_LIMIT = 0.19;
+  static constexpr double NEG_Y_LIMIT = -0.14;
+  static constexpr double POS_Y_LIMIT = 0.14;
 
   // Check if the system is initialized and motion is enabled
   if (!data->initialized) return;
@@ -227,11 +239,18 @@ std::string EncodeBase64(const std::vector<uint8_t>& data) {
   return result;
 }
 
-// Function to write camera frame data as JSON for C# UI
-void WriteCameraFrameJSON(const Frame* frameData) {
+// Writes the camera frame data to a JSON file and creates a running flag file
+RSI_TASK(OutputImage)
+{
+  if (!data->initialized) return;
+
+  // Check if new image data is available
+  g_frameBufferReader.swap_buffers();
+  if (g_frameBufferReader.flags() == 0) return;
+
   try {
-    // Construct cv::Mat from YUYVFrame data in frameData
-    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)frameData->yuyvData);
+    // Construct cv::Mat from YUYVFrame data in the shared buffer
+    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)g_frameBufferReader.buffer()->yuyvData);
     cv::Mat rgbFrame;
     cv::cvtColor(yuyvMat, rgbFrame, cv::COLOR_YUV2RGB_YUYV);
     // Encode as JPEG with quality 80
@@ -245,19 +264,19 @@ void WriteCameraFrameJSON(const Frame* frameData) {
     // Write JSON with frame data
     std::ostringstream json;
     json << "{\n";
-    json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << frameData->timestamp << ",\n";
-    json << "  \"frameNumber\": " << frameData->frameNumber << ",\n";
+    json << "  \"timestamp\": " << std::fixed << std::setprecision(0) << g_frameBufferReader.buffer()->timestamp << ",\n";
+    json << "  \"frameNumber\": " << g_frameBufferReader.buffer()->frameNumber << ",\n";
     json << "  \"width\": " << CameraHelpers::IMAGE_WIDTH << ",\n";
     json << "  \"height\": " << CameraHelpers::IMAGE_HEIGHT << ",\n";
     json << "  \"format\": \"jpeg\",\n";
     json << "  \"imageData\": \"data:image/jpeg;base64," << base64Image << "\",\n";
     json << "  \"imageSize\": " << jpegBuffer.size() << ",\n";
-    json << "  \"ballDetected\": " << (frameData->ballDetected ? "true" : "false") << ",\n";
-    json << "  \"centerX\": " << std::fixed << std::setprecision(2) << frameData->centerX << ",\n";
-    json << "  \"centerY\": " << std::fixed << std::setprecision(2) << frameData->centerY << ",\n";
-    json << "  \"radius\": " << std::fixed << std::setprecision(2) << frameData->radius << ",\n";
-    json << "  \"targetX\": " << std::fixed << std::setprecision(2) << frameData->targetX << ",\n";
-    json << "  \"targetY\": " << std::fixed << std::setprecision(2) << frameData->targetY << ",\n";
+    json << "  \"ballDetected\": " << (g_frameBufferReader.buffer()->ballDetected ? "true" : "false") << ",\n";
+    json << "  \"centerX\": " << std::fixed << std::setprecision(2) << g_frameBufferReader.buffer()->centerX << ",\n";
+    json << "  \"centerY\": " << std::fixed << std::setprecision(2) << g_frameBufferReader.buffer()->centerY << ",\n";
+    json << "  \"radius\": " << std::fixed << std::setprecision(2) << g_frameBufferReader.buffer()->radius << ",\n";
+    json << "  \"targetX\": " << std::fixed << std::setprecision(2) << g_frameBufferReader.buffer()->targetX << ",\n";
+    json << "  \"targetY\": " << std::fixed << std::setprecision(2) << g_frameBufferReader.buffer()->targetY << ",\n";
     json << "  \"rtTaskRunning\": true\n";
     json << "}";
     
@@ -280,17 +299,6 @@ void WriteCameraFrameJSON(const Frame* frameData) {
   catch (const std::exception& e) {
     std::cerr << "Error writing camera frame JSON: " << e.what() << std::endl;
   }
-}
-
-RSI_TASK(OutputImage)
-{
-  if (!data->initialized) return;
-
-  // Check if new image data is available
-  g_frameBufferReader.swap_buffers();
-  if (g_frameBufferReader.flags() == 0) return;
-
-  WriteCameraFrameJSON(g_frameBufferReader.buffer());
 
   // Reset flags after writing
   g_frameBufferReader.flags() = 0;
