@@ -766,10 +766,14 @@
                                             FontSize="12"
                                             Foreground="{StaticResource SubtleTextBrush}"
                                             Text="Responsive Size" />
-                                        <CheckBox
-                                            Classes="theme-solid accent"
-                                            IsChecked="{Binding IsCanvasResponsive}"
-                                            ToolTip.Tip="Toggle between responsive and fixed canvas size" />
+
+                                        <Viewbox Width="18" Height="18">
+                                            <CheckBox
+                                                BorderThickness="0"
+                                                Classes="theme-outline success"
+                                                IsChecked="{Binding IsCanvasResponsive}"
+                                                ToolTip.Tip="Toggle between responsive and fixed canvas size" />
+                                        </Viewbox>
                                     </StackPanel>
                                 </Border>
 
@@ -793,9 +797,9 @@
                                             <Grid Grid.Row="0" ColumnDefinitions="* auto">
                                                 <TextBlock
                                                     Grid.Column="0"
-                                                    FontWeight="Bold"
-                                                    Foreground="#00FF00"
-                                                    Text="RENDER FEED" />
+                                                    FontWeight="SemiBold"
+                                                    Foreground="#00CCFF"
+                                                    Text="RENDER" />
 
                                                 <!--  Size information  -->
                                                 <TextBlock
@@ -876,16 +880,19 @@
                                                 Orientation="Horizontal">
                                                 <TextBlock
                                                     MinWidth="80"
+                                                    Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding Program_BallX, StringFormat='{}X: {0:F0}'}" />
                                                 <TextBlock
                                                     MinWidth="80"
+                                                    Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding Program_BallY, StringFormat='{}Y: {0:F0}'}" />
                                                 <TextBlock
                                                     MinWidth="80"
+                                                    Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding Program_BallRadius, StringFormat='{}Radius: {0:F0}'}" />
@@ -916,9 +923,9 @@
                                             <Grid Grid.Row="0" ColumnDefinitions="* auto">
                                                 <TextBlock
                                                     Grid.Column="0"
-                                                    FontWeight="Bold"
-                                                    Foreground="#0080FF"
-                                                    Text="CAMERA FEED" />
+                                                    FontWeight="SemiBold"
+                                                    Foreground="#00CCFF"
+                                                    Text="CAMERA" />
 
                                                 <!--  Size information  -->
                                                 <TextBlock
