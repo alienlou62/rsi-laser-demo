@@ -5,6 +5,9 @@ public interface IRmpGrpcService
 {
     bool IsConnected { get; }
 
+    // ping
+    Task<bool> CheckConnectionAsync();
+
     //grpc connection
     Task<bool> ConnectAsync(string ip, int port);
     Task DisconnectAsync();
@@ -39,6 +42,41 @@ public class RmpGrpcService : IRmpGrpcService
 
 
     /** METHODS **/
+    //ping
+    public async Task<bool> CheckConnectionAsync()
+    {
+        if (_channel == null)
+        {
+            Console.WriteLine("RMP service is not connected - channel is null because ConnectAsync was not called");
+            return false;
+        }
+
+        if (_serverClient == null)
+        {
+            Console.WriteLine("RMP service is not connected - server client is null");
+            return false;
+        }
+
+        if (!IsConnected)
+        {
+            Console.WriteLine("RMP service is not connected");
+            return false;
+        }
+
+        try
+        {
+            // Ping the server by getting basic info
+            var reply = await _serverClient.GetInfoAsync(new(), options: new CallOptions(deadline: DateTime.UtcNow.AddSeconds(2)));
+            _isConnected = (reply != null);
+        }
+        catch (RpcException ex)
+        {
+            Console.WriteLine($"RMP service connection check failed: {ex.Status.Detail}");
+            _isConnected = false;
+        }
+
+        return _isConnected;
+    }
     //grpc network
     public async Task<bool> ConnectAsync(string ip, int port)
     {
