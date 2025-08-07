@@ -687,6 +687,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         try
         {
+            // ping server to see if we are still connected
+            IsConnected = await _rmpGrpcService.CheckConnectionAsync();
+
             // checks
             if (!IsConnected)
                 return;
