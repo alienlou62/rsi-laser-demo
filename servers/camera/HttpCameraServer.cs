@@ -31,15 +31,13 @@ Console.WriteLine();
 const string DATA_FILE_PATH = "/tmp/rsi_camera_data.json";
 const string RT_TASK_RUNNING_FLAG = "/tmp/rsi_rt_task_running";
 
-// Declare httpListener so it's in scope for both the handler and the try block
+// Declare httpListener so it's in scope for all handlers
 HttpListener httpListener = null;
-// Handle Ctrl+C gracefully
-Console.CancelKeyPress += (sender, e) =>
+
+// Unified cleanup logic
+void Cleanup()
 {
-    e.Cancel = true;
-    Console.WriteLine("SIGINT received, setting shutdown flag...");
-    shutdown = true;
-    // Attempt to stop and dispose the listener if possible
+    Console.WriteLine("Disposing HttpListener and cleaning up...");
     try
     {
         httpListener?.Stop();
@@ -49,6 +47,29 @@ Console.CancelKeyPress += (sender, e) =>
     {
         Console.WriteLine($"Error disposing HttpListener: {ex.Message}");
     }
+}
+
+// Handle Ctrl+C gracefully
+Console.CancelKeyPress += (sender, e) =>
+{
+    e.Cancel = true;
+    Console.WriteLine("SIGINT received, setting shutdown flag...");
+    shutdown = true;
+    Cleanup();
+};
+
+// Handle process exit (SIGTERM, normal exit)
+AppDomain.CurrentDomain.ProcessExit += (sender, e) =>
+{
+    Console.WriteLine("ProcessExit event received.");
+    Cleanup();
+};
+
+// Handle unhandled exceptions
+AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+{
+    Console.WriteLine("UnhandledException event received.");
+    Cleanup();
 };
 try
 {
@@ -59,7 +80,19 @@ try
 
     // Add prefixes for all available IP addresses
     httpListener.Prefixes.Add("http://+:50080/"); // Bind to all interfaces
-    httpListener.Start();
+    try
+    {
+        httpListener.Start();
+    }
+    catch (HttpListenerException ex) when (ex.ErrorCode == 10013 || ex.Message.Contains("Address already in use"))
+    {
+        Console.WriteLine("ERROR: Port 50080 is already in use.\n");
+        Console.WriteLine("To fix this, run:");
+        Console.WriteLine("sudo lsof -i :50080      // List processes using port 50080");
+        Console.WriteLine("sudo kill -9 <PID>       // Kill the process using 50080\n");
+        exitCode = 1;
+        throw;
+    }
 
     var localIPs = GetLocalIPAddresses();
     Console.WriteLine("HTTP camera server started successfully on all network interfaces (port 50080)");
