@@ -32,7 +32,7 @@ echo
 
 # Run HttpCameraServer.cs with .NET 10 app-style execution
 echo "Starting HTTP Camera Server..."
-dotnet run ../src/servers/camera/HttpCameraServer.cs
+dotnet run ../servers/camera/HttpCameraServer.cs
 
 echo
 echo "Camera server ended."
