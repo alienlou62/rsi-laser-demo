@@ -193,11 +193,8 @@ try
                 }
                 else if (url == "/status")
                 {
-                    var status = new { status = "running", server = EXECUTABLE_NAME };
-                    var json = JsonConvert.SerializeObject(status);
-                    var buffer = System.Text.Encoding.UTF8.GetBytes(json);
-
-                    response.ContentType = "application/json";
+                    var buffer = System.Text.Encoding.UTF8.GetBytes("OK");
+                    response.ContentType = "text/plain";
                     response.ContentLength64 = buffer.Length;
                     await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
                 }
