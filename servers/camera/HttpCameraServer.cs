@@ -21,10 +21,9 @@ var exitCode = 0;
 
 // RT Task communication via shared data files
 const string DATA_FILE_PATH = "/tmp/rsi_camera_data.json";
-const string RT_TASK_RUNNING_FLAG = "/tmp/rsi_rt_task_running";
 
 // Declare httpListener so it's in scope for all handlers
-HttpListener httpListener = null;
+HttpListener? httpListener = null;
 
 // Unified cleanup logic
 void Cleanup()
