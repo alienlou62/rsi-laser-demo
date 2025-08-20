@@ -88,7 +88,7 @@ try
 
     var localIPs = GetLocalIPAddresses();
     Console.WriteLine();
-    Console.WriteLine("HTTP camera server port: 50080)");
+    Console.WriteLine("HTTP camera server port: 50080");
     Console.WriteLine("Available endpoints:");
 
     // Calculate max URL length for alignment
