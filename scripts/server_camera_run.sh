@@ -63,6 +63,8 @@ cd "$CAMERA_DIR"
 
 # Run HttpCameraServer.cs with .NET 10 app-style execution
 echo "🟢 Starting HTTP Camera Server (dotnet run HttpCameraServer.cs)..."
+echo
+
 dotnet run HttpCameraServer.cs
 
 echo

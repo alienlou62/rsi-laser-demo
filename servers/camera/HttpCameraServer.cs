@@ -87,12 +87,20 @@ try
     }
 
     var localIPs = GetLocalIPAddresses();
-    Console.WriteLine("HTTP camera server started successfully on all network interfaces (port 50080)");
+    Console.WriteLine();
+    Console.WriteLine("HTTP camera server port: 50080)");
     Console.WriteLine("Available endpoints:");
+
+    // Calculate max URL length for alignment
+    var maxUrlLength = localIPs.Max(ip => $"  GET http://{ip}:50080/camera/frame".Length);
+
     foreach (var ip in localIPs)
     {
-        Console.WriteLine($"  GET http://{ip}:50080/camera/frame    - Get latest camera frame");
-        Console.WriteLine($"  GET http://{ip}:50080/status          - Server status");
+        var frameUrl = $"  GET http://{ip}:50080/camera/frame";
+        var statusUrl = $"  GET http://{ip}:50080/status";
+
+        Console.WriteLine($"{frameUrl.PadRight(maxUrlLength + 4)} - Get latest camera frame");
+        Console.WriteLine($"{statusUrl.PadRight(maxUrlLength + 4)} - Server status");
     }
     Console.WriteLine();
 
