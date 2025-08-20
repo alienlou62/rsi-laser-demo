@@ -43,12 +43,17 @@ if ! command -v dotnet &> /dev/null; then
     exit 1
 fi
 
-# Extract major version number and check if it's version 10
-MAJOR_VERSION=$(echo "$DOTNET_VERSION" | cut -d'.' -f1)
-if [[ "$MAJOR_VERSION" != "10" ]]; then
-    echo "ERROR: .NET 10 is required, but version $DOTNET_VERSION is installed. Please install .NET 10 SDK."
+# Check if .NET 10 SDK is available
+echo "Checking for .NET 10 SDK..."
+if ! dotnet --list-sdks | grep -q "^10\."; then
+    echo "ERROR: .NET 10 SDK is not installed."
+    echo "Available SDKs:"
+    dotnet --list-sdks
+    echo "Please install .NET 10 SDK."
     exit 1
 fi
+
+echo "✅ .NET 10 SDK found"
 
 # Change to the camera server directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
