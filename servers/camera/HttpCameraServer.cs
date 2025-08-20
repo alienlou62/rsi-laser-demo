@@ -1,31 +1,12 @@
 #:package Newtonsoft.Json@13.0.3
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Linq;
-using Newtonsoft.Json;
-
 // ============================================================================================
 // MAIN APPLICATION SCRIPT (.NET 10 File-Based App Style)
-// Camera Server - Bridges RT Task data to UI clients  
-// Run with: dotnet run SimpleCameraServer.cs
+// Camera Server - Bridges RTTask data to UI clients
+// Run with (.NET 10): dotnet run HttpCameraServer.cs
 // ============================================================================================
-
-const string EXECUTABLE_NAME = "Camera Data Bridge (C# Server)";
 var shutdown = false;
 var exitCode = 0;
-
-Console.WriteLine("============================================");
-Console.WriteLine($" {EXECUTABLE_NAME}");
-Console.WriteLine("============================================");
-Console.WriteLine($"Started at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-Console.WriteLine();
 
 // RT Task communication via shared data files
 const string DATA_FILE_PATH = "/tmp/rsi_camera_data.json";
@@ -99,8 +80,8 @@ try
     Console.WriteLine("Available endpoints:");
     foreach (var ip in localIPs)
     {
-        Console.WriteLine($"  GET http://{ip}:50080/camera/frame - Get latest camera frame");
-        Console.WriteLine($"  GET http://{ip}:50080/status - Server status");
+        Console.WriteLine($"  GET http://{ip}:50080/camera/frame    - Get latest camera frame");
+        Console.WriteLine($"  GET http://{ip}:50080/status          - Server status");
     }
     Console.WriteLine();
 
@@ -253,9 +234,7 @@ catch (Exception ex)
 }
 
 Console.WriteLine();
-Console.WriteLine("============================================");
-Console.WriteLine($" {EXECUTABLE_NAME} - Exit Code: {exitCode}");
+Console.WriteLine($"Exit Code: {exitCode}");
 Console.WriteLine($"Ended at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-Console.WriteLine("============================================");
 
 Environment.Exit(exitCode);
