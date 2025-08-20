@@ -1,5 +1,16 @@
 #:package Newtonsoft.Json@13.0.3
 
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
+using Newtonsoft.Json;
+
 // ============================================================================================
 // MAIN APPLICATION SCRIPT (.NET 10 File-Based App Style)
 // Camera Server - Bridges RTTask data to UI clients
