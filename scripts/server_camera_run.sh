@@ -7,32 +7,62 @@
 #   - GET /status - Returns server health status
 # Uses .NET 10 file-based execution (no project files needed)
 
-echo "==============================================="
-echo " Http Camera Server (.NET 10 App Style)"
-echo "==============================================="
+
+## METHODS
+printTitleBox() {
+  local title="$1"
+  local padding=8
+
+  # Colors (blue for both border & text)
+  local RESET=$'\033[0m'
+  local COLOR=$'\033[38;5;39m'   # blue
+
+  # Width calculations
+  local inner=$(( ${#title} + padding * 2 ))
+
+  # Build box lines
+  local top="${COLOR}╭$(printf '─%.0s' $(seq 1 $inner))╮${RESET}"
+  local mid="${COLOR}│$(printf ' %.0s' $(seq 1 $padding))${title}$(printf ' %.0s' $(seq 1 $padding))│${RESET}"
+  local bot="${COLOR}╰$(printf '─%.0s' $(seq 1 $inner))╯${RESET}"
+
+  # Print
+  echo "$top"
+  echo "$mid"
+  echo "$bot"
+}
+
+
+## APP
+# Print title
+printTitleBox "Http Camera Server (.NET 10 app-style)"
 echo
 
 # Check if .NET is installed
 if ! command -v dotnet &> /dev/null; then
-    echo "Error: .NET is not installed or not in PATH"
-    echo "Please install .NET 10 SDK first"
+    echo "ERROR: .NET is not installed or not in PATH. Please install .NET 10 SDK."
     exit 1
 fi
 
-# Check .NET version
-DOTNET_VERSION=$(dotnet --version)
-echo "Detected .NET version: $DOTNET_VERSION"
+# Extract major version number and check if it's version 10
+MAJOR_VERSION=$(echo "$DOTNET_VERSION" | cut -d'.' -f1)
+if [[ "$MAJOR_VERSION" != "10" ]]; then
+    echo "ERROR: .NET 10 is required, but version $DOTNET_VERSION is installed. Please install .NET 10 SDK."
+    exit 1
+fi
 
-# Change to the script directory
+# Change to the camera server directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+CAMERA_DIR="$(cd "$SCRIPT_DIR/../servers/camera" && pwd)"
+cd "$CAMERA_DIR"
 
-echo "Running from: $SCRIPT_DIR"
+echo ".NET camera server dir:   $CAMERA_DIR"
 echo
 
 # Run HttpCameraServer.cs with .NET 10 app-style execution
-echo "Starting HTTP Camera Server..."
-dotnet run ../servers/camera/HttpCameraServer.cs
+echo "🟢 Starting HTTP Camera Server..."
+dotnet run HttpCameraServer.cs
 
 echo
-echo "Camera server ended."
+echo "🔴 Camera server ended."
+
+
