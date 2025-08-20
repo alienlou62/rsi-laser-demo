@@ -53,18 +53,16 @@ if ! dotnet --list-sdks | grep -q "^10\."; then
     exit 1
 fi
 
-echo "✅ .NET 10 SDK found"
+echo ".NET 10 SDK found."
+echo
 
 # Change to the camera server directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CAMERA_DIR="$(cd "$SCRIPT_DIR/../servers/camera" && pwd)"
 cd "$CAMERA_DIR"
 
-echo ".NET camera server dir:   $CAMERA_DIR"
-echo
-
 # Run HttpCameraServer.cs with .NET 10 app-style execution
-echo "🟢 Starting HTTP Camera Server..."
+echo "🟢 Starting HTTP Camera Server (dotnet run HttpCameraServer.cs)..."
 dotnet run HttpCameraServer.cs
 
 echo
