@@ -31,6 +31,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private RTTaskManagerStatus? _taskManagerStatus;
 
+    [ObservableProperty]
+    private ObservableCollection<int> _taskIds = new();
+
+    [ObservableProperty]
+    private ObservableCollection<RtTask> _tasks = new();
+
     //globals
     [ObservableProperty]
     private ObservableCollection<GlobalValueItem> _globalValues = [];
@@ -158,6 +164,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool _isCameraStreaming = false;
+    partial void OnIsCameraStreamingChanged(bool value)
+    {
+        if (value is false)
+        {
+            try
+            {
+                _ = Task.Run(async () => await DisconnectCameraAsync());
+            }
+            catch (Exception ex)
+            {
+                LogMessage($"Camera Streaming Disconnect Error: {ex.Message}");
+            }
+        }
+    }
 
     private CancellationTokenSource? _cameraStreamCancellation;
 
@@ -288,7 +308,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 if (result)
                 {
                     //reset global variables
-                    Dispatcher.UIThread.InvokeAsync(GlobalValues.Clear);
+                    await Dispatcher.UIThread.InvokeAsync(GlobalValues.Clear);
                     LogMessage("Task manager stopped successfully");
                 }
             }
@@ -355,7 +375,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             LogMessage($"Connecting to camera at {IpAddress}:{CameraPort}...");
 
-            bool success = await _cameraService.ConnectAsync(IpAddress, CameraPort);
+            // Use enhanced connection method with SSH fallback
+            bool success = await _cameraService.ConnectWithFallbackAsync(
+                IpAddress,
+                CameraPort,
+                _sshService,
+                SshUser,
+                SshPassword);
 
             if (success)
             {
@@ -711,6 +737,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 {
                     TaskManagerStatus = (ControllerStatus != null) ? await _rmpGrpcService.GetTaskManagerStatusAsync() : null;
 
+                    var taskIds = TaskManagerStatus.TaskIds.ToList();
+                    await UpdateTaskCollectionsAsync(taskIds);
+
+                    // update tasks
+                    var batch = await _rmpGrpcService.GetTaskBatchResponseAsync(TaskIds);
+                    foreach (var response in batch.Responses)
+                    {
+                        var task = Tasks.FirstOrDefault(t => t.Id == response.Id);
+                        var status = response.Status;
+
+                        if (task != null && status != null)
+                            task.UpdateTaskInfo(status);
+                    }
+
                     IsProgramRunning = TaskManagerStatus != null && TaskManagerStatus.State == RTTaskManagerState.Running;
                 }
                 catch { TaskManagerStatus = null; }
@@ -924,6 +964,54 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         // Update ball position from global values
         UpdateBallPositionFromGlobals();
+    }
+
+    private async Task UpdateTaskCollectionsAsync(List<int> taskIds)
+    {
+        // Update TaskIds collection on UI thread - sync with current task IDs
+        await Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            // Add IDs & Tasks
+            foreach (var id in taskIds.Where(id => !TaskIds.Contains(id)))
+            {
+                // manage id
+                TaskIds.Add(id);
+
+                // manage tasks
+                var task = new RtTask(id);
+
+                try
+                {
+                    var creationParameters = await _rmpGrpcService.GetTaskCreationParametersAsync(id);
+                    task.Function = creationParameters.FunctionName ?? $"Task_{id}"; // Fallback if function name is null
+                    task.Period = creationParameters.Period; // Fallback if period is null
+                }
+                catch (Exception ex)
+                {
+                    task.Function = $"Task_{id}"; // Fallback if GetTaskFunctionAsync fails
+                    LogMessage($"Failed to get task function for ID {id}: {ex.Message}");
+                }
+
+                Tasks.Add(task);
+            }
+
+            // Remove IDs & Tasks that no longer exist
+            for (int i = TaskIds.Count - 1; i >= 0; i--)
+            {
+                if (!taskIds.Contains(TaskIds[i]))
+                {
+                    var taskId = TaskIds[i];
+
+                    // manage id
+                    TaskIds.RemoveAt(i);
+
+                    // manage tasks
+                    var taskToRemove = Tasks.FirstOrDefault(t => t.Id == taskId);
+                    if (taskToRemove != null)
+                        Tasks.Remove(taskToRemove);
+                }
+            }
+        });
     }
 
     private async Task UpdateGlobalValuesAsync()

@@ -22,6 +22,10 @@ public interface IRmpGrpcService
     Task<RTTaskManagerStatus> GetTaskManagerStatusAsync(int index = 0);
     Task<bool> StopTaskManagerAsync();
     Task<RTTaskManagerResponse> SetBoolGlobalValueAsync(string name, bool value);
+
+    //tasks
+    Task<RTTaskCreationParameters> GetTaskCreationParametersAsync(int taskId);
+    Task<RTTaskBatchResponse> GetTaskBatchResponseAsync(IEnumerable<int> taskIds);
 }
 
 public class RmpGrpcService : IRmpGrpcService
@@ -225,4 +229,49 @@ public class RmpGrpcService : IRmpGrpcService
         return response;
     }
 
+    //tasks
+    public async Task<RTTaskCreationParameters> GetTaskCreationParametersAsync(int taskId)
+    {
+        if (!_isConnected)
+            throw new InvalidOperationException("Not connected to gRPC server");
+
+        if (_firstTaskManagerIndex is null || _firstTaskManagerIndex.HasValue is false)
+            throw new InvalidOperationException("No task manager index available. Call GetTaskManagerStatusAsync once to set.");
+
+        var response = await _rmpClient.RTTaskAsync(new()
+        {
+            Id = taskId,
+            ManagerId = _firstTaskManagerIndex.Value,
+            Header = infoOptimizationHeader
+        });
+
+        return response.Info.CreationParameters;
+    }
+
+    public async Task<RTTaskBatchResponse> GetTaskBatchResponseAsync(IEnumerable<int> taskIds)
+    {
+        if (!_isConnected)
+            throw new InvalidOperationException("Not connected to gRPC server");
+
+        if (_firstTaskManagerIndex is null || _firstTaskManagerIndex.HasValue is false)
+            throw new InvalidOperationException("No task manager index available. Call GetTaskManagerStatusAsync once to set.");
+
+        // request
+        var request = new RTTaskBatchRequest();
+
+        foreach (var id in taskIds)
+        {
+            request.Requests.Add(new RTTaskRequest()
+            {
+                Id = id,
+                ManagerId = _firstTaskManagerIndex.Value,
+                Header = statusOptimizationHeader,
+            });
+        }
+
+        // action
+        var response = await _rmpClient.RTTaskBatchAsync(request);
+
+        return response;
+    }
 }

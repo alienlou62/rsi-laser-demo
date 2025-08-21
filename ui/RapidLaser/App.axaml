@@ -150,6 +150,11 @@
             <Setter Property="Opacity" Value="0.5" />
         </Style>
 
+        <Style Selector="TextBlock.label">
+            <Setter Property="Opacity" Value="0.65" />
+            <Setter Property="FontWeight" Value="Light" />
+        </Style>
+
         <Style Selector="TextBlock.status-text">
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="SemiBold" />
