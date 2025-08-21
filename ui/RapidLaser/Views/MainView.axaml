@@ -841,16 +841,41 @@
                 </StackPanel>
             </Border>
 
-            <!--  MAIN Content  -->
+            <!--  CAMERA - MAIN  -->
             <Grid
                 Grid.Row="1"
                 Grid.Column="1"
                 Margin="0,0,12,0"
-                Background="Transparent">
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="Transparent"
+                RowDefinitions="* auto *">
+
+                <!--  responsive toggle  -->
+                <StackPanel
+                    Grid.Row="0"
+                    Margin="0,8"
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="4">
+                    <TextBlock
+                        Margin="0,-1,0,0"
+                        FontSize="12"
+                        Foreground="{StaticResource SubtleTextBrush}"
+                        Text="Responsive Size" />
+
+                    <Viewbox Width="18" Height="18">
+                        <CheckBox
+                            BorderThickness="0"
+                            Classes="theme-outline success"
+                            IsChecked="{Binding IsCanvasResponsive}"
+                            ToolTip.Tip="Toggle between responsive and fixed canvas size" />
+                    </Viewbox>
+                </StackPanel>
 
                 <!--  Image display area  -->
                 <Border
-                    Grid.Column="0"
+                    Grid.Row="1"
                     Padding="0"
                     BorderThickness="1"
                     Classes="card">
@@ -896,33 +921,6 @@
                                 ColumnDefinitions="*, Auto, *, Auto, *"
                                 Grid.IsSharedSizeScope="True"
                                 IsVisible="{Binding IsConnected}">
-
-                                <!--  Responsive/Fixed toggle at top right with black background  -->
-                                <Border
-                                    Grid.ColumnSpan="5"
-                                    Margin="0"
-                                    Padding="8"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Top"
-                                    Background="Transparent"
-                                    ZIndex="10">
-
-                                    <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <TextBlock
-                                            Margin="0,-1,0,0"
-                                            FontSize="12"
-                                            Foreground="{StaticResource SubtleTextBrush}"
-                                            Text="Responsive Size" />
-
-                                        <Viewbox Width="18" Height="18">
-                                            <CheckBox
-                                                BorderThickness="0"
-                                                Classes="theme-outline success"
-                                                IsChecked="{Binding IsCanvasResponsive}"
-                                                ToolTip.Tip="Toggle between responsive and fixed canvas size" />
-                                        </Viewbox>
-                                    </StackPanel>
-                                </Border>
 
                                 <!--  Left spacing column  -->
                                 <Border Grid.Column="0" />
@@ -1448,7 +1446,7 @@
                                                             Classes=" title"
                                                             FontWeight="Medium"
                                                             Foreground="#4CAF50"
-                                                            Text="Cycle" />
+                                                            Text="Cycle Target" />
 
                                                         <StackPanel Orientation="Horizontal" Spacing="2">
                                                             <TextBlock Classes="Mono value" Text="{Binding Period, StringFormat=N0}" />
