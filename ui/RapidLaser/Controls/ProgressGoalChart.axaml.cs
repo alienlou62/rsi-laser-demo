@@ -89,9 +89,9 @@ public partial class ProgressGoalChart : UserControl
         MaxLine.Width = Math.Min(maxPosition, availableWidth);
 
         // Update labels
-        TargetLabel.Text = $"Target\n{target:N0}";
-        AverageLabel.Text = $"Avg\n{average:N4}";
-        MaxLabel.Text = $"Max\n{maximum:N4}";
+        TargetLabel.Text = $"{target:N0}";
+        AverageLabel.Text = $"{average:N4}";
+        MaxLabel.Text = $"{maximum:N4}";
 
         // Position labels appropriately
         TargetLabel.Margin = new Thickness(Math.Max(0, targetPosition - 30), 0, 0, 0);
