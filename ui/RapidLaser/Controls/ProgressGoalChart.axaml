@@ -43,7 +43,7 @@
         </Grid>
 
         <!--  Labels  -->
-        <Grid>
+        <Grid IsVisible="False">
             <TextBlock
                 x:Name="TargetLabel"
                 HorizontalAlignment="Left"

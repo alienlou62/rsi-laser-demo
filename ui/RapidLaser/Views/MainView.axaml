@@ -1446,7 +1446,7 @@
                                                             Classes=" title"
                                                             FontWeight="Medium"
                                                             Foreground="#4CAF50"
-                                                            Text="Cycle Target" />
+                                                            Text="Cycle" />
 
                                                         <StackPanel Orientation="Horizontal" Spacing="2">
                                                             <TextBlock Classes="Mono value" Text="{Binding Period, StringFormat=N0}" />
@@ -1459,8 +1459,12 @@
                                                             Classes="title"
                                                             FontWeight="Medium"
                                                             Foreground="#64B5F6"
-                                                            Text="Cycle Avg" />
-                                                        <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMean, StringFormat=N4}" />
+                                                            Text="Average" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMean, StringFormat=N4}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
                                                     </StackPanel>
 
                                                     <StackPanel>
@@ -1468,8 +1472,12 @@
                                                             Classes=" title"
                                                             FontWeight="Medium"
                                                             Foreground="#F44336"
-                                                            Text="Cycle Max" />
-                                                        <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMax, StringFormat=N4}" />
+                                                            Text="Max" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMax, StringFormat=N4}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
                                                     </StackPanel>
 
                                                 </UniformGrid>
