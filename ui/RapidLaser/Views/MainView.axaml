@@ -61,12 +61,12 @@
                             FontSize="16"
                             FontWeight="SemiBold"
                             Foreground="{StaticResource TextBrush}"
-                            Text="RapidLaser" />
+                            Text="Real-Time Ball Tracker" />
                         <TextBlock
                             VerticalAlignment="Center"
                             FontSize="14"
                             Foreground="{StaticResource SubtleTextBrush}"
-                            Text="Real-time Laser Ball Tracker" />
+                            Text="RMP RTTasks + Camera + OpenCV" />
                     </StackPanel>
 
                     <!--  Button container  -->
@@ -343,7 +343,10 @@
                 Spacing="12">
 
                 <!--  gRPC Connection Card  -->
-                <Border Classes="card" ClipToBounds="True">
+                <Border
+                    Name="grpcCard"
+                    Classes="card"
+                    ClipToBounds="True">
 
                     <Grid>
                         <!--  Subtle gradient overlay  -->
@@ -398,6 +401,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
 
+                                <!--  title  -->
                                 <StackPanel
                                     Grid.Column="0"
                                     Orientation="Horizontal"
@@ -416,10 +420,11 @@
                                         Text="over gRPC" />
                                 </StackPanel>
 
+                                <!--  icon status  -->
                                 <icons:MaterialIcon
                                     Grid.Column="1"
-                                    Width="18"
-                                    Height="18"
+                                    Width="19"
+                                    Height="19"
                                     VerticalAlignment="Center">
                                     <icons:MaterialIcon.Styles>
                                         <Style Selector="ContentControl.is-connected icons|MaterialIcon">
@@ -432,10 +437,30 @@
                                         </Style>
                                     </icons:MaterialIcon.Styles>
                                 </icons:MaterialIcon>
+
+                                <!--  Disconnect Button  -->
+                                <Button
+                                    Grid.Column="1"
+                                    Margin="-4"
+                                    HorizontalAlignment="Right"
+                                    Classes="theme-soft danger"
+                                    Command="{Binding DisconnectCommand}"
+                                    Content="Disconnect"
+                                    FontSize="12">
+                                    <Button.IsVisible>
+                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                            <Binding Path="#grpcCard.IsPointerOver" />
+                                            <Binding Path="IsConnected" />
+                                        </MultiBinding>
+                                    </Button.IsVisible>
+                                </Button>
                             </Grid>
 
-                            <!--  Server Configuration (disabled when using mock or when connected)  -->
-                            <StackPanel Margin="0,12,0,0" Spacing="8">
+                            <!--  server config - connected  -->
+                            <StackPanel
+                                Margin="0,12,0,0"
+                                IsVisible="{Binding !IsConnected}"
+                                Spacing="8">
 
                                 <!--  IP Address  -->
                                 <controls:LabeledControl
@@ -476,17 +501,8 @@
                                     Content="Connect"
                                     IsEnabled="{Binding !IsConnecting}"
                                     IsVisible="{Binding !IsConnected}" />
+
                             </StackPanel>
-
-                            <Button
-                                Margin="0,10,0,0"
-                                HorizontalAlignment="Right"
-                                Classes="theme-soft danger"
-                                Command="{Binding DisconnectCommand}"
-                                Content="Disconnect"
-                                FontSize="12"
-                                IsVisible="{Binding IsConnected}" />
-
 
                             <!--  Error Display  -->
                             <TextBlock
@@ -495,103 +511,16 @@
                                 IsVisible="{Binding LastError, Converter={x:Static converters:BoolConverters.StringNotEmptyToBoolConverter}}"
                                 Text="{Binding LastError}"
                                 TextWrapping="Wrap" />
+
                         </StackPanel>
                     </Grid>
                 </Border>
 
-
-                <!--  Camera Card  -->
-                <Border Classes="card" IsEnabled="{Binding IsConnected}">
-
-                    <StackPanel>
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Orientation="Horizontal" Spacing="3">
-                                <TextBlock
-                                    FontSize="14"
-                                    FontWeight="SemiBold"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="Camera Server" />
-                                <TextBlock
-                                    Margin="0,0,0,1"
-                                    VerticalAlignment="Bottom"
-                                    FontSize="11"
-                                    FontWeight="Light"
-                                    Opacity="0.4"
-                                    Text="over HTTP" />
-                            </StackPanel>
-
-                            <icons:MaterialIcon
-                                Grid.Column="1"
-                                Width="17"
-                                Height="17"
-                                VerticalAlignment="Center"
-                                Classes.is-camera-connected="{Binding IsCameraConnected}"
-                                Classes.is-camera-not-connected="{Binding !IsCameraConnected}">
-                                <icons:MaterialIcon.Styles>
-                                    <Style Selector="icons|MaterialIcon.is-camera-connected">
-                                        <Setter Property="Kind" Value="LanCheck" />
-                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-                                    </Style>
-                                    <Style Selector="icons|MaterialIcon.is-camera-not-connected">
-                                        <Setter Property="Kind" Value="LanDisconnect" />
-                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-                                    </Style>
-                                </icons:MaterialIcon.Styles>
-                            </icons:MaterialIcon>
-                        </Grid>
-
-                        <StackPanel Spacing="8">
-
-                            <!--  Camera Configuration (disabled when not connected to RapidServer)  -->
-                            <StackPanel
-                                Margin="0,12,0,0"
-                                IsVisible="{Binding IsConnected}"
-                                Spacing="8">
-
-                                <!--  Camera Port  -->
-                                <controls:LabeledControl
-                                    IsEnabled="{Binding !IsCameraConnected}"
-                                    Label="Port"
-                                    LabelWidth="60">
-                                    <TextBox
-                                        IsEnabled="{Binding !IsCameraConnected}"
-                                        Text="{Binding CameraPort}"
-                                        ToolTip.Tip="Camera server port"
-                                        Watermark="50080" />
-                                </controls:LabeledControl>
-
-                                <!--  Connect/Disconnect Button  -->
-                                <Button
-                                    Margin="0,2,0,0"
-                                    HorizontalAlignment="Right"
-                                    Classes="theme-soft success"
-                                    Command="{Binding ConnectCameraCommand}"
-                                    Content="Connect"
-                                    IsEnabled="{Binding IsConnected}"
-                                    IsVisible="{Binding !IsCameraConnected}" />
-
-                                <Button
-                                    Margin="0,2,0,0"
-                                    HorizontalAlignment="Right"
-                                    Classes="theme-soft danger"
-                                    Command="{Binding DisconnectCameraCommand}"
-                                    Content="Disconnect"
-                                    IsVisible="{Binding IsCameraConnected}" />
-
-                            </StackPanel>
-                        </StackPanel>
-
-                    </StackPanel>
-                </Border>
-
                 <!--  SSH Card  -->
-                <Border Classes="card" IsEnabled="{Binding IsConnected}">
+                <Border
+                    Name="SshCard"
+                    Classes="card"
+                    IsEnabled="{Binding IsConnected}">
 
                     <StackPanel Spacing="8">
                         <Grid Margin="0,0,0,0">
@@ -600,12 +529,21 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock
-                                Grid.Column="0"
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="SSH" />
+                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Foreground="{StaticResource TextBrush}"
+                                    Text="SSH" />
+                                <TextBlock
+                                    Margin="0,0,0,1"
+                                    VerticalAlignment="Bottom"
+                                    FontSize="11"
+                                    FontWeight="Light"
+                                    Opacity="0.4"
+                                    Text="for sending commands" />
+                            </StackPanel>
 
                             <icons:MaterialIcon
                                 Grid.Column="1"
@@ -625,12 +563,34 @@
                                     </Style>
                                 </icons:MaterialIcon.Styles>
                             </icons:MaterialIcon>
+
+                            <!--  Test Connection Button  -->
+                            <Button
+                                Grid.Column="1"
+                                Margin="-4"
+                                HorizontalAlignment="Right"
+                                Classes="theme-soft"
+                                Command="{Binding TestSshConnectionCommand}"
+                                Content="Test Connection">
+                                <Button.IsVisible>
+                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                        <Binding Path="#SshCard.IsPointerOver" />
+                                        <Binding Path="IsSshAuthenticated" />
+                                    </MultiBinding>
+                                </Button.IsVisible>
+                            </Button>
+
                         </Grid>
 
-
                         <StackPanel IsVisible="{Binding IsConnected}" Spacing="8">
+                            <StackPanel.IsVisible>
+                                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                    <Binding Path="!IsSshAuthenticated" />
+                                    <Binding Path="IsConnected" />
+                                </MultiBinding>
+                            </StackPanel.IsVisible>
 
-                            <!--  usernmae  -->
+                            <!--  username  -->
                             <controls:LabeledControl
                                 IsEnabled="{Binding !IsSshAuthenticated}"
                                 Label="Username"
@@ -652,21 +612,165 @@
                                 HorizontalAlignment="Right"
                                 Classes="theme-soft"
                                 Command="{Binding TestSshConnectionCommand}"
-                                IsEnabled="{Binding IsConnected}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <icons:MaterialIcon
-                                        Width="16"
-                                        Height="16"
-                                        IsVisible="False"
-                                        Kind="Connection" />
-                                    <TextBlock Text="Test Connection" />
-                                </StackPanel>
-                            </Button>
+                                Content="Test Connection"
+                                IsVisible="{Binding !IsSshAuthenticated}" />
 
                         </StackPanel>
 
 
                     </StackPanel>
+                </Border>
+
+                <!--  Camera Card  -->
+                <Border
+                    Name="CameraCard"
+                    Classes="card"
+                    IsEnabled="{Binding IsConnected}">
+                    <Grid>
+
+                        <!--  Subtle gradient overlay  -->
+                        <actipro:MeshGradientPresenter Margin="-12" IsVisible="{Binding IsCameraConnected}">
+                            <actipro:MeshGradientPresenter.Styles>
+                                <Style Selector="actipro|MeshGradientPresenter">
+                                    <Style.Animations>
+                                        <Animation IterationCount="INFINITE" Duration="0:0:3">
+                                            <KeyFrame Cue="0%">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </KeyFrame>
+                                            <KeyFrame Cue="50%">
+                                                <Setter Property="Opacity" Value="0.3" />
+                                            </KeyFrame>
+                                            <KeyFrame Cue="100%">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </KeyFrame>
+                                        </Animation>
+                                    </Style.Animations>
+                                </Style>
+                            </actipro:MeshGradientPresenter.Styles>
+                            <actipro:MeshGradientNode Center="100%, 0%" Color="#304CAF50" />
+                            <actipro:MeshGradientNode Center="0%, 100%" Color="#00000000" />
+                        </actipro:MeshGradientPresenter>
+
+                        <actipro:MeshGradientPresenter Margin="-12" IsVisible="{Binding !IsCameraConnected}">
+                            <actipro:MeshGradientPresenter.Styles>
+                                <Style Selector="actipro|MeshGradientPresenter">
+                                    <Style.Animations>
+                                        <Animation IterationCount="INFINITE" Duration="0:0:3">
+                                            <KeyFrame Cue="0%">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </KeyFrame>
+                                            <KeyFrame Cue="50%">
+                                                <Setter Property="Opacity" Value="0.3" />
+                                            </KeyFrame>
+                                            <KeyFrame Cue="100%">
+                                                <Setter Property="Opacity" Value="1.0" />
+                                            </KeyFrame>
+                                        </Animation>
+                                    </Style.Animations>
+                                </Style>
+                            </actipro:MeshGradientPresenter.Styles>
+                            <actipro:MeshGradientNode Center="100%, 0%" Color="#30F44336" />
+                            <actipro:MeshGradientNode Center="0%, 100%" Color="#00000000" />
+                        </actipro:MeshGradientPresenter>
+
+                        <StackPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Orientation="Horizontal" Spacing="3">
+                                    <TextBlock
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="Camera Server" />
+                                    <TextBlock
+                                        Margin="0,0,0,1"
+                                        VerticalAlignment="Bottom"
+                                        FontSize="11"
+                                        FontWeight="Light"
+                                        Opacity="0.4"
+                                        Text="over HTTP" />
+                                </StackPanel>
+
+                                <icons:MaterialIcon
+                                    Grid.Column="1"
+                                    Width="17"
+                                    Height="17"
+                                    VerticalAlignment="Center"
+                                    Classes.is-camera-connected="{Binding IsCameraConnected}"
+                                    Classes.is-camera-not-connected="{Binding !IsCameraConnected}">
+                                    <icons:MaterialIcon.Styles>
+                                        <Style Selector="icons|MaterialIcon.is-camera-connected">
+                                            <Setter Property="Kind" Value="LanCheck" />
+                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                        </Style>
+                                        <Style Selector="icons|MaterialIcon.is-camera-not-connected">
+                                            <Setter Property="Kind" Value="LanDisconnect" />
+                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                        </Style>
+                                    </icons:MaterialIcon.Styles>
+                                </icons:MaterialIcon>
+
+                                <Button
+                                    Grid.Column="1"
+                                    Margin="-4"
+                                    HorizontalAlignment="Right"
+                                    Classes="theme-soft danger"
+                                    Command="{Binding DisconnectCameraCommand}"
+                                    Content="Disconnect">
+                                    <Button.IsVisible>
+                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                            <Binding Path="#CameraCard.IsPointerOver" />
+                                            <Binding Path="IsCameraConnected" />
+                                        </MultiBinding>
+                                    </Button.IsVisible>
+                                </Button>
+
+                            </Grid>
+
+                            <StackPanel Spacing="8">
+
+                                <!--  Camera Configuration (disabled when not connected to RapidServer)  -->
+                                <StackPanel Margin="0,12,0,0" Spacing="8">
+                                    <StackPanel.IsVisible>
+                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                            <Binding Path="!IsCameraConnected" />
+                                            <Binding Path="IsConnected" />
+                                        </MultiBinding>
+                                    </StackPanel.IsVisible>
+
+                                    <!--  Camera Port  -->
+                                    <controls:LabeledControl
+                                        IsEnabled="{Binding !IsCameraConnected}"
+                                        Label="Port"
+                                        LabelWidth="60">
+                                        <TextBox
+                                            IsEnabled="{Binding !IsCameraConnected}"
+                                            Text="{Binding CameraPort}"
+                                            ToolTip.Tip="Camera server port"
+                                            Watermark="50080" />
+                                    </controls:LabeledControl>
+
+                                    <!--  Connect/Disconnect Button  -->
+                                    <Button
+                                        Margin="0,2,0,0"
+                                        HorizontalAlignment="Right"
+                                        Classes="theme-soft success"
+                                        Command="{Binding ConnectCameraCommand}"
+                                        Content="Connect"
+                                        IsEnabled="{Binding IsConnected}"
+                                        IsVisible="{Binding !IsCameraConnected}" />
+
+                                </StackPanel>
+                            </StackPanel>
+
+                        </StackPanel>
+
+                    </Grid>
                 </Border>
 
             </StackPanel>
@@ -737,7 +841,7 @@
                 </StackPanel>
             </Border>
 
-            <!--  Main/Middle Content  -->
+            <!--  MAIN Content  -->
             <Grid
                 Grid.Row="1"
                 Grid.Column="1"
@@ -940,6 +1044,12 @@
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
                                                     Text="{Binding Program_BallRadius, StringFormat='{}Radius: {0:F0}'}" />
+
+                                                <TextBlock
+                                                    Margin="0,1,0,-1"
+                                                    Classes="Mono"
+                                                    Foreground="{StaticResource TextBrush}"
+                                                    Text="Sample Rate: 1 ms" />
                                             </StackPanel>
 
                                         </Grid>
@@ -1198,301 +1308,478 @@
             </Grid>
 
             <!--  Right sidebar - stacked cards  -->
-            <ScrollViewer Grid.Row="1" Grid.Column="2">
-                <StackPanel
-                    Margin="0"
-                    VerticalAlignment="Top"
-                    Spacing="12">
+            <TabControl
+                Grid.Row="1"
+                Grid.Column="2"
+                BorderThickness="0">
+                <TabControl.Styles>
 
-                    <!--  Server Card  -->
-                    <Border Classes="card">
-                        <StackPanel IsEnabled="{Binding IsConnected}">
+                    <Style Selector="TabControl">
+                        <Setter Property="Padding" Value="0" />
+                    </Style>
 
-                            <TextBlock
-                                FontSize="14"
-                                FontWeight="SemiBold"
-                                Foreground="{StaticResource TextBrush}"
-                                Text="RMP Status" />
+                    <Style Selector="TabItem">
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="Padding" Value="0 0 12 12" />
+                    </Style>
 
-                            <StackPanel
-                                Margin="0,12,0,0"
-                                IsVisible="{Binding IsConnected}"
-                                Spacing="12">
+                    <Style Selector="TabItem &gt; TextBlock">
+                        <Setter Property="FontSize" Value="12" />
+                    </Style>
 
-                                <!--  controller  -->
-                                <controls:StatusLabel
-                                    Title="Controller"
-                                    IsActive="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                    TitleOpacity="1">
-                                    <controls:StatusLabel.Styles>
-                                        <Style Selector="controls|StatusLabel[IsActive=true]">
-                                            <Setter Property="Value" Value="Created" />
-                                        </Style>
-                                        <Style Selector="controls|StatusLabel[IsActive=false]">
-                                            <Setter Property="Value" Value="Not created" />
-                                        </Style>
-                                    </controls:StatusLabel.Styles>
-                                </controls:StatusLabel>
+                    <Style Selector="TabItem:selected /template/ Border#PART_SelectedPipe, TabItem:pointerover /template/ Border#PART_SelectedPipe">
+                        <Setter Property="Height" Value="0" />
+                    </Style>
 
-                                <controls:StatusLabel
-                                    Title="Counter"
-                                    Margin="0,-10,0,0"
-                                    IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                    IsMonoFont="True"
-                                    Value="{Binding ControllerStatus.SampleCounter, FallbackValue='-', StringFormat=N0}" />
+                    <Style Selector="TabItem:not(:selected)">
+                        <Setter Property="Opacity" Value="0.5" />
+                    </Style>
 
-                                <!--  network  -->
-                                <controls:StatusLabel
-                                    Title="EtherCAT Network"
-                                    IsActive="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
-                                    IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                    TitleOpacity="1"
-                                    Value="{Binding NetworkStatus.State, FallbackValue='-'}" />
+                    <Style Selector="TabItem:pointerover:not(:selected)">
+                        <Setter Property="Opacity" Value="0.75" />
+                    </Style>
 
-                                <controls:StatusLabel
-                                    Title="Counter"
-                                    Margin="0,-10,0,0"
-                                    IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
-                                    IsMonoFont="True"
-                                    IsValueVisible="{Binding $self.IsEnabled}"
-                                    Value="{Binding NetworkStatus.Counter, FallbackValue='-', StringFormat=N0}" />
+                    <Style Selector="TabItem:selected">
+                        <Setter Property="FontWeight" Value="SemiBold" />
+                        <Setter Property="BorderThickness" Value="0" />
+                    </Style>
 
-                                <!--  taskmanager  -->
-                                <controls:StatusLabel
-                                    Title="TaskManager"
-                                    IsActive="{Binding TaskManagerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                    IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                    IsValueVisible="{Binding $self.IsEnabled}"
-                                    TitleOpacity="1"
-                                    Value="{Binding TaskManagerStatus.State, FallbackValue='-'}" />
+                </TabControl.Styles>
 
-                                <ItemsControl
-                                    Margin="0,-10,0,0"
-                                    HorizontalAlignment="Stretch"
-                                    FontSize="12"
-                                    ItemsSource="{Binding GlobalValues}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="0,2,0,0" ColumnDefinitions="*,auto">
-                                                <TextBlock Opacity="60" Text="{Binding Name}" />
+                <TabItem Header="RMP Overview">
+                    <ScrollViewer>
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding Tasks}">
 
-                                                <!--  numeric  -->
-                                                <TextBlock
-                                                    Grid.Column="1"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Bottom"
-                                                    Classes="Mono"
-                                                    IsVisible="{Binding IsNumeric}"
-                                                    Text="{Binding Value}" />
+                                <ItemsControl.Styles>
 
-                                                <!--  bool  -->
-                                                <icons:MaterialIcon
-                                                    Grid.Column="1"
-                                                    Width="14"
-                                                    Height="14"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Bottom"
-                                                    Classes.is-false="{Binding Value, Converter={x:Static converters:BoolConverters.StringToNotBoolConverter}}"
-                                                    Classes.is-true="{Binding Value, Converter={x:Static converters:BoolConverters.StringToBoolConverter}}"
-                                                    IsVisible="{Binding !IsNumeric}">
-                                                    <icons:MaterialIcon.Styles>
+                                    <Style Selector="TextBlock.title">
+                                        <Setter Property="FontSize" Value="11" />
+                                    </Style>
 
-                                                        <Style Selector="icons|MaterialIcon.is-true">
-                                                            <Setter Property="Kind" Value="CheckBold" />
-                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-                                                            <Setter Property="Margin" Value="0 0 -1 2" />
-                                                        </Style>
+                                    <Style Selector="TextBlock.value">
+                                        <Setter Property="FontSize" Value="16" />
+                                    </Style>
 
-                                                        <Style Selector="icons|MaterialIcon.is-false">
-                                                            <Setter Property="Kind" Value="CloseBold" />
-                                                            <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-                                                            <Setter Property="Margin" Value="0 0 -2 2" />
-                                                        </Style>
+                                    <Style Selector="TextBlock.unit">
+                                        <Setter Property="FontSize" Value="10" />
+                                        <Setter Property="VerticalAlignment" Value="Bottom" />
+                                    </Style>
 
-                                                    </icons:MaterialIcon.Styles>
-                                                </icons:MaterialIcon>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                                </ItemsControl.Styles>
 
-                                <controls:StatusLabel
-                                    Title="Tasks"
-                                    Margin="0,0,0,0"
-                                    IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                    IsMonoFont="True"
-                                    IsValueVisible="{Binding $self.IsEnabled}"
-                                    TitleOpacity="1"
-                                    Value="{Binding TaskManagerStatus.TaskIds.Count, FallbackValue='-'}" />
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="12" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
 
-                            </StackPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Classes="card">
+
+                                            <StackPanel Spacing="8">
+
+                                                <!--  title  -->
+                                                <Grid>
+
+                                                    <StackPanel
+                                                        Grid.Column="0"
+                                                        Orientation="Horizontal"
+                                                        Spacing="3">
+                                                        <TextBlock
+                                                            FontSize="14"
+                                                            FontWeight="SemiBold"
+                                                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}"
+                                                            Text="{Binding Function}" />
+                                                        <TextBlock
+                                                            Margin="0,0,0,1"
+                                                            VerticalAlignment="Bottom"
+                                                            FontSize="11"
+                                                            FontWeight="Light"
+                                                            Opacity="0.4"
+                                                            Text="RTTask" />
+                                                    </StackPanel>
+
+                                                    <TextBlock
+                                                        HorizontalAlignment="Right"
+                                                        VerticalAlignment="Center"
+                                                        Text="{Binding State}" />
+
+                                                </Grid>
+
+                                                <TextBlock IsVisible="False" Text="{Binding Id}" />
+
+                                                <UniformGrid Columns="3">
+
+                                                    <StackPanel>
+                                                        <TextBlock Classes="label title" Text="Cycle" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono value" Text="{Binding Period, StringFormat=N0}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                    <StackPanel>
+                                                        <TextBlock Classes="label title" Text="Start Δ" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono value" Text="{Binding StartTimeDeltaMean, StringFormat=N4}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                    <StackPanel IsVisible="False">
+                                                        <TextBlock Classes="label title" Text="Last Cycle (ms)" />
+                                                        <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeLast, StringFormat=N4}" />
+                                                    </StackPanel>
+                                                </UniformGrid>
+
+                                                <Panel>
+                                                    <!--  Horizontal Progress/Goal Bar here  -->
+                                                    <controls:ProgressGoalChart
+                                                        Margin="0,8"
+                                                        Average="{Binding ExecutionTimeMean}"
+                                                        Maximum="{Binding ExecutionTimeMax}"
+                                                        Target="{Binding Period}" />
+                                                </Panel>
+
+                                                <UniformGrid Columns="3">
+
+                                                    <StackPanel>
+                                                        <TextBlock Classes="label title" Text="Cycle #" />
+                                                        <TextBlock Classes="Mono value" Text="{Binding ExecutionCount, StringFormat=N0}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel>
+                                                        <TextBlock
+                                                            Classes="title"
+                                                            FontWeight="Regular"
+                                                            Foreground="#64B5F6"
+                                                            Text="Cycle Avg" />
+                                                        <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMean, StringFormat=N4}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel>
+                                                        <TextBlock
+                                                            Classes=" title"
+                                                            Foreground="#F44336"
+                                                            Text="Cycle Max" />
+                                                        <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMax, StringFormat=N4}" />
+                                                    </StackPanel>
+
+                                                </UniformGrid>
+
+                                            </StackPanel>
+                                        </Border>
+
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
-                    </Border>
+                    </ScrollViewer>
+                </TabItem>
 
-                    <!--  Program Card  -->
-                    <Border Classes="card" IsEnabled="{Binding IsConnected}">
-                        <Border.Styles>
+                <TabItem Header="Configuration">
+                    <ScrollViewer>
+                        <StackPanel
+                            Margin="0"
+                            VerticalAlignment="Top"
+                            Spacing="12">
 
-                            <Style Selector="icons|MaterialIcon">
-                                <Setter Property="Margin" Value="0 0 0 -2" />
-                                <Setter Property="Background" Value="Transparent" />
-                            </Style>
+                            <!--  Server Card  -->
+                            <Border Classes="card">
+                                <StackPanel IsEnabled="{Binding IsConnected}">
 
-                            <Style Selector="icons|MaterialIcon[Tag=True]">
-                                <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
-                                <Setter Property="Kind" Value="Link" />
-                                <Setter Property="ToolTip.Tip" Value="Linked to a global" />
-                                <Setter Property="ToolTip.ShowDelay" Value="0" />
-                            </Style>
+                                    <TextBlock
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        Foreground="{StaticResource TextBrush}"
+                                        Text="RMP Status" />
 
-                            <Style Selector="icons|MaterialIcon[Tag=False]">
-                                <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
-                                <Setter Property="Kind" Value="LinkOff" />
-                                <Setter Property="ToolTip.Tip" Value="Not linked to a global" />
-                                <Setter Property="ToolTip.ShowDelay" Value="0" />
-                            </Style>
+                                    <StackPanel
+                                        Margin="0,12,0,0"
+                                        IsVisible="{Binding IsConnected}"
+                                        Spacing="12">
 
-                            <Style Selector="AutoCompleteBox">
-                                <Setter Property="Margin" Value="0 0 0 -1" />
-                                <Setter Property="MinWidth" Value="120" />
-                                <Setter Property="Padding" Value="2" />
-                                <Setter Property="Background" Value="Transparent" />
-                                <Setter Property="BorderThickness" Value="0,0,0,1" />
-                                <Setter Property="FilterMode" Value="ContainsOrdinal" />
-                                <Setter Property="MinimumPopulateDelay" Value="0" />
-                                <Setter Property="MinimumPrefixLength" Value="0" />
-                                <Setter Property="Watermark" Value="Select global.." />
-                                <Setter Property="behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick" Value="True" />
-                            </Style>
+                                        <!--  controller  -->
+                                        <controls:StatusLabel
+                                            Title="Controller"
+                                            IsActive="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            TitleOpacity="1">
+                                            <controls:StatusLabel.Styles>
+                                                <Style Selector="controls|StatusLabel[IsActive=true]">
+                                                    <Setter Property="Value" Value="Created" />
+                                                </Style>
+                                                <Style Selector="controls|StatusLabel[IsActive=false]">
+                                                    <Setter Property="Value" Value="Not created" />
+                                                </Style>
+                                            </controls:StatusLabel.Styles>
+                                        </controls:StatusLabel>
 
-                            <Style Selector="controls|StatusLabel[IsActive=true]">
-                                <!--<Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                        <controls:StatusLabel
+                                            Title="Counter"
+                                            Margin="0,-10,0,0"
+                                            IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            IsMonoFont="True"
+                                            Value="{Binding ControllerStatus.SampleCounter, FallbackValue='-', StringFormat=N0}" />
+
+                                        <!--  network  -->
+                                        <controls:StatusLabel
+                                            Title="EtherCAT Network"
+                                            IsActive="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            TitleOpacity="1"
+                                            Value="{Binding NetworkStatus.State, FallbackValue='-'}" />
+
+                                        <controls:StatusLabel
+                                            Title="Counter"
+                                            Margin="0,-10,0,0"
+                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsMonoFont="True"
+                                            IsValueVisible="{Binding $self.IsEnabled}"
+                                            Value="{Binding NetworkStatus.Counter, FallbackValue='-', StringFormat=N0}" />
+
+                                        <!--  taskmanager  -->
+                                        <controls:StatusLabel
+                                            Title="TaskManager"
+                                            IsActive="{Binding TaskManagerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            IsValueVisible="{Binding $self.IsEnabled}"
+                                            TitleOpacity="1"
+                                            Value="{Binding TaskManagerStatus.State, FallbackValue='-'}" />
+
+                                        <ItemsControl
+                                            Margin="0,-10,0,0"
+                                            HorizontalAlignment="Stretch"
+                                            FontSize="12"
+                                            ItemsSource="{Binding GlobalValues}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,2,0,0" ColumnDefinitions="*,auto">
+                                                        <TextBlock Opacity="60" Text="{Binding Name}" />
+
+                                                        <!--  numeric  -->
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Bottom"
+                                                            Classes="Mono"
+                                                            IsVisible="{Binding IsNumeric}"
+                                                            Text="{Binding Value}" />
+
+                                                        <!--  bool  -->
+                                                        <icons:MaterialIcon
+                                                            Grid.Column="1"
+                                                            Width="14"
+                                                            Height="14"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Bottom"
+                                                            Classes.is-false="{Binding Value, Converter={x:Static converters:BoolConverters.StringToNotBoolConverter}}"
+                                                            Classes.is-true="{Binding Value, Converter={x:Static converters:BoolConverters.StringToBoolConverter}}"
+                                                            IsVisible="{Binding !IsNumeric}">
+                                                            <icons:MaterialIcon.Styles>
+
+                                                                <Style Selector="icons|MaterialIcon.is-true">
+                                                                    <Setter Property="Kind" Value="CheckBold" />
+                                                                    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                                                    <Setter Property="Margin" Value="0 0 -1 2" />
+                                                                </Style>
+
+                                                                <Style Selector="icons|MaterialIcon.is-false">
+                                                                    <Setter Property="Kind" Value="CloseBold" />
+                                                                    <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                                                    <Setter Property="Margin" Value="0 0 -2 2" />
+                                                                </Style>
+
+                                                            </icons:MaterialIcon.Styles>
+                                                        </icons:MaterialIcon>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <controls:StatusLabel
+                                            Title="Tasks"
+                                            Margin="0,0,0,0"
+                                            IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            IsMonoFont="True"
+                                            IsValueVisible="{Binding $self.IsEnabled}"
+                                            TitleOpacity="1"
+                                            Value="{Binding TaskManagerStatus.TaskIds.Count, FallbackValue='-'}" />
+
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!--  Program Card  -->
+                            <Border Classes="card" IsEnabled="{Binding IsConnected}">
+                                <Border.Styles>
+
+                                    <Style Selector="icons|MaterialIcon">
+                                        <Setter Property="Margin" Value="0 0 0 -2" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                    </Style>
+
+                                    <Style Selector="icons|MaterialIcon[Tag=True]">
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
+                                        <Setter Property="Kind" Value="Link" />
+                                        <Setter Property="ToolTip.Tip" Value="Linked to a global" />
+                                        <Setter Property="ToolTip.ShowDelay" Value="0" />
+                                    </Style>
+
+                                    <Style Selector="icons|MaterialIcon[Tag=False]">
+                                        <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" />
+                                        <Setter Property="Kind" Value="LinkOff" />
+                                        <Setter Property="ToolTip.Tip" Value="Not linked to a global" />
+                                        <Setter Property="ToolTip.ShowDelay" Value="0" />
+                                    </Style>
+
+                                    <Style Selector="AutoCompleteBox">
+                                        <Setter Property="Margin" Value="0 0 0 -1" />
+                                        <Setter Property="MinWidth" Value="120" />
+                                        <Setter Property="Padding" Value="2" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0,0,0,1" />
+                                        <Setter Property="FilterMode" Value="ContainsOrdinal" />
+                                        <Setter Property="MinimumPopulateDelay" Value="0" />
+                                        <Setter Property="MinimumPrefixLength" Value="0" />
+                                        <Setter Property="Watermark" Value="Select global.." />
+                                        <Setter Property="behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick" Value="True" />
+                                    </Style>
+
+                                    <Style Selector="controls|StatusLabel[IsActive=true]">
+                                        <!--<Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}" />
                                 <Setter Property="TitleOpacity" Value="1" />
                                 <Setter Property="FontWeight" Value="Medium" />-->
-                            </Style>
+                                    </Style>
 
-                            <Style Selector="controls|StatusLabel[IsActive=false]">
-                                <!--  <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" /> -->
-                                <Setter Property="TitleOpacity" Value="0.6" />
-                            </Style>
+                                    <Style Selector="controls|StatusLabel[IsActive=false]">
+                                        <!--  <Setter Property="Foreground" Value="{actipro:ThemeResource ControlBackgroundBrushSolidDanger}" /> -->
+                                        <Setter Property="TitleOpacity" Value="0.6" />
+                                    </Style>
 
-                        </Border.Styles>
+                                </Border.Styles>
 
-                        <Grid>
-                            <!--  Main content  -->
-                            <StackPanel>
-                                <TextBlock
-                                    FontSize="14"
-                                    FontWeight="SemiBold"
-                                    Foreground="{StaticResource TextBrush}"
-                                    Text="Mappings" />
-
-                                <StackPanel
-                                    Margin="0,12,0,0"
-                                    IsVisible="{Binding IsProgramRunning}"
-                                    Spacing="6">
-
-                                    <!--  ball x  -->
-                                    <DockPanel LastChildFill="True">
-                                        <controls:StatusLabel Title="Ball Center X" IsActive="{Binding Global_BallXValid}" />
+                                <Grid>
+                                    <!--  Main content  -->
+                                    <StackPanel>
+                                        <TextBlock
+                                            FontSize="14"
+                                            FontWeight="SemiBold"
+                                            Foreground="{StaticResource TextBrush}"
+                                            Text="Mappings" />
 
                                         <StackPanel
-                                            HorizontalAlignment="Right"
-                                            Orientation="Horizontal"
-                                            Spacing="8">
+                                            Margin="0,12,0,0"
+                                            IsVisible="{Binding IsProgramRunning}"
+                                            Spacing="6">
 
-                                            <AutoCompleteBox
-                                                behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                                Classes="theme-soft"
-                                                ItemsSource="{Binding GlobalValues}"
-                                                Text="{Binding Global_BallX}"
-                                                ValueMemberBinding="{Binding Name}">
-                                                <AutoCompleteBox.InnerRightContent>
-                                                    <icons:MaterialIcon Tag="{Binding Global_BallXValid}" />
-                                                </AutoCompleteBox.InnerRightContent>
-                                            </AutoCompleteBox>
+                                            <!--  ball x  -->
+                                            <DockPanel LastChildFill="True">
+                                                <controls:StatusLabel Title="Ball Center X" IsActive="{Binding Global_BallXValid}" />
+
+                                                <StackPanel
+                                                    HorizontalAlignment="Right"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8">
+
+                                                    <AutoCompleteBox
+                                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                        Classes="theme-soft"
+                                                        ItemsSource="{Binding GlobalValues}"
+                                                        Text="{Binding Global_BallX}"
+                                                        ValueMemberBinding="{Binding Name}">
+                                                        <AutoCompleteBox.InnerRightContent>
+                                                            <icons:MaterialIcon Tag="{Binding Global_BallXValid}" />
+                                                        </AutoCompleteBox.InnerRightContent>
+                                                    </AutoCompleteBox>
+
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <!--  ball y  -->
+                                            <DockPanel LastChildFill="True">
+                                                <controls:StatusLabel Title="Ball Center Y" IsActive="{Binding Global_BallYValid}" />
+
+                                                <StackPanel
+                                                    HorizontalAlignment="Right"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8">
+
+                                                    <AutoCompleteBox
+                                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                        Classes="theme-soft"
+                                                        ItemsSource="{Binding GlobalValues}"
+                                                        Text="{Binding Global_BallY}"
+                                                        ValueMemberBinding="{Binding Name}">
+                                                        <AutoCompleteBox.InnerRightContent>
+                                                            <icons:MaterialIcon Tag="{Binding Global_BallYValid}" />
+                                                        </AutoCompleteBox.InnerRightContent>
+                                                    </AutoCompleteBox>
+
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <!--  ball radius  -->
+                                            <DockPanel LastChildFill="True">
+                                                <controls:StatusLabel Title="Ball Radius" IsActive="{Binding Global_BallRadiusValid}" />
+
+                                                <StackPanel
+                                                    HorizontalAlignment="Right"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8">
+
+                                                    <AutoCompleteBox
+                                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                        Classes="theme-soft"
+                                                        ItemsSource="{Binding GlobalValues}"
+                                                        Text="{Binding Global_BallRadius}"
+                                                        ValueMemberBinding="{Binding Name}">
+                                                        <AutoCompleteBox.InnerRightContent>
+                                                            <icons:MaterialIcon Tag="{Binding Global_BallRadiusValid}" />
+                                                        </AutoCompleteBox.InnerRightContent>
+                                                    </AutoCompleteBox>
+
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <!--  is motion enabled  -->
+                                            <DockPanel LastChildFill="True">
+                                                <controls:StatusLabel Title="Is Motion Enabled" IsActive="{Binding Global_IsMotionEnabledValid}" />
+
+                                                <StackPanel
+                                                    HorizontalAlignment="Right"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8">
+
+                                                    <AutoCompleteBox
+                                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                        Classes="theme-soft"
+                                                        ItemsSource="{Binding GlobalValues}"
+                                                        Text="{Binding Global_IsMotionEnabled}"
+                                                        ValueMemberBinding="{Binding Name}">
+                                                        <AutoCompleteBox.InnerRightContent>
+                                                            <icons:MaterialIcon Tag="{Binding Global_IsMotionEnabledValid}" />
+                                                        </AutoCompleteBox.InnerRightContent>
+                                                    </AutoCompleteBox>
+
+                                                </StackPanel>
+                                            </DockPanel>
 
                                         </StackPanel>
-                                    </DockPanel>
-
-                                    <!--  ball y  -->
-                                    <DockPanel LastChildFill="True">
-                                        <controls:StatusLabel Title="Ball Center Y" IsActive="{Binding Global_BallYValid}" />
-
-                                        <StackPanel
-                                            HorizontalAlignment="Right"
-                                            Orientation="Horizontal"
-                                            Spacing="8">
-
-                                            <AutoCompleteBox
-                                                behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                                Classes="theme-soft"
-                                                ItemsSource="{Binding GlobalValues}"
-                                                Text="{Binding Global_BallY}"
-                                                ValueMemberBinding="{Binding Name}">
-                                                <AutoCompleteBox.InnerRightContent>
-                                                    <icons:MaterialIcon Tag="{Binding Global_BallYValid}" />
-                                                </AutoCompleteBox.InnerRightContent>
-                                            </AutoCompleteBox>
-
-                                        </StackPanel>
-                                    </DockPanel>
-
-                                    <!--  ball radius  -->
-                                    <DockPanel LastChildFill="True">
-                                        <controls:StatusLabel Title="Ball Radius" IsActive="{Binding Global_BallRadiusValid}" />
-
-                                        <StackPanel
-                                            HorizontalAlignment="Right"
-                                            Orientation="Horizontal"
-                                            Spacing="8">
-
-                                            <AutoCompleteBox
-                                                behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                                Classes="theme-soft"
-                                                ItemsSource="{Binding GlobalValues}"
-                                                Text="{Binding Global_BallRadius}"
-                                                ValueMemberBinding="{Binding Name}">
-                                                <AutoCompleteBox.InnerRightContent>
-                                                    <icons:MaterialIcon Tag="{Binding Global_BallRadiusValid}" />
-                                                </AutoCompleteBox.InnerRightContent>
-                                            </AutoCompleteBox>
-
-                                        </StackPanel>
-                                    </DockPanel>
-
-                                    <!--  is motion enabled  -->
-                                    <DockPanel LastChildFill="True">
-                                        <controls:StatusLabel Title="Is Motion Enabled" IsActive="{Binding Global_IsMotionEnabledValid}" />
-
-                                        <StackPanel
-                                            HorizontalAlignment="Right"
-                                            Orientation="Horizontal"
-                                            Spacing="8">
-
-                                            <AutoCompleteBox
-                                                behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
-                                                Classes="theme-soft"
-                                                ItemsSource="{Binding GlobalValues}"
-                                                Text="{Binding Global_IsMotionEnabled}"
-                                                ValueMemberBinding="{Binding Name}">
-                                                <AutoCompleteBox.InnerRightContent>
-                                                    <icons:MaterialIcon Tag="{Binding Global_IsMotionEnabledValid}" />
-                                                </AutoCompleteBox.InnerRightContent>
-                                            </AutoCompleteBox>
-
-                                        </StackPanel>
-                                    </DockPanel>
-
-                                </StackPanel>
-                            </StackPanel>
+                                    </StackPanel>
 
 
-                        </Grid>
-                    </Border>
+                                </Grid>
+                            </Border>
 
-                </StackPanel>
-            </ScrollViewer>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+            </TabControl>
 
         </Grid>
 

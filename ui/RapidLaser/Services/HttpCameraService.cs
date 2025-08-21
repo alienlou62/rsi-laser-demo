@@ -24,6 +24,7 @@ public interface ICameraService
     int ImageHeight { get; }
 
     Task<bool> ConnectAsync(string ip, int port);
+    Task<bool> ConnectWithFallbackAsync(string ip, int port, ISshService sshService, string sshUser, string sshPassword);
     Task DisconnectAsync();
     Task<bool> InitializeAsync();
     Task<bool> StartGrabbingAsync();
@@ -80,6 +81,79 @@ public class HttpCameraService : ICameraService
         {
             Console.WriteLine($"Failed to connect to HTTP camera service at {_serverUrl}: {ex.Message}");
             _isConnected = false;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Enhanced connection method that attempts to start the camera server via SSH if initial connection fails.
+    /// This provides a seamless fallback mechanism for users when the camera server is not running.
+    /// </summary>
+    /// <param name="ip">IP address of the camera server</param>
+    /// <param name="port">Port of the camera server</param>
+    /// <param name="sshService">SSH service for remote command execution</param>
+    /// <param name="sshUser">SSH username</param>
+    /// <param name="sshPassword">SSH password</param>
+    /// <returns>True if connection successful, false otherwise</returns>
+    public async Task<bool> ConnectWithFallbackAsync(string ip, int port, ISshService sshService, string sshUser, string sshPassword)
+    {
+        Console.WriteLine($"HttpCameraService: Attempting enhanced connection to {ip}:{port}");
+
+        // First attempt: Try direct connection
+        bool initialConnectionSuccess = await ConnectAsync(ip, port);
+        if (initialConnectionSuccess)
+        {
+            Console.WriteLine("HttpCameraService: Direct connection successful");
+            return true;
+        }
+
+        Console.WriteLine("HttpCameraService: Initial connection failed, attempting to start server via SSH");
+
+        // Validate required parameters for SSH fallback
+        if (sshService == null)
+        {
+            Console.WriteLine("HttpCameraService: SSH service not provided, cannot start server remotely");
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(sshUser) || string.IsNullOrWhiteSpace(sshPassword))
+        {
+            Console.WriteLine("HttpCameraService: SSH credentials not provided, cannot start server remotely");
+            return false;
+        }
+
+        try
+        {
+            // Attempt to start the camera server via SSH as a background process
+            const string startServerCommand = "cd ~/Documents/rsi-laser-demo && bash scripts/server_camera_run.sh";
+            Console.WriteLine($"HttpCameraService: Executing SSH background command: {startServerCommand}");
+
+            string sshResult = await sshService.RunSshCommandAsync(startServerCommand, sshUser, sshPassword, ip, waitForOutput: false);
+            Console.WriteLine($"HttpCameraService: SSH background command result: {(string.IsNullOrEmpty(sshResult) ? "No output" : sshResult.Substring(0, Math.Min(100, sshResult.Length)))}");
+
+            // Give the server more time to start up (camera server needs time to initialize)
+            Console.WriteLine("HttpCameraService: Waiting 10 seconds for background server to start...");
+            await Task.Delay(10000); // Longer delay for server startup
+
+            // Second attempt: Try connecting again after starting the server
+            Console.WriteLine("HttpCameraService: Retrying connection after background server startup");
+            bool retryConnectionSuccess = await ConnectAsync(ip, port);
+
+            if (retryConnectionSuccess)
+            {
+                Console.WriteLine("HttpCameraService: Connection successful after background server startup");
+                return true;
+            }
+            else
+            {
+                Console.WriteLine("HttpCameraService: Connection still failed after attempting to start background server");
+                Console.WriteLine("HttpCameraService: The server may need more time to start or there may be an issue");
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"HttpCameraService: Failed to start server via SSH: {ex.Message}");
             return false;
         }
     }
