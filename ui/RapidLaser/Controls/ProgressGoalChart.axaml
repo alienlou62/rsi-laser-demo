@@ -15,30 +15,40 @@
             <!--  Max line  -->
             <Border
                 x:Name="MaxLine"
-                Height="28"
+                Height="30"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 Background="#40F44336"
-                CornerRadius="0 2 2 0" />
+                CornerRadius="0 1 1 0" />
 
             <!--  Average filled bar  -->
             <Border
                 x:Name="AverageBar"
-                Height="20"
+                Height="30"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 Background="#64B5F6"
-                CornerRadius="0 2 2 0" />
+                CornerRadius="0 1 1 0" />
 
             <!--  Target line  -->
             <Border
                 x:Name="TargetLine"
-                Width="3"
-                Height="34"
+                Width="4"
+                Height="42"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                Background="#4CAF50"
-                CornerRadius="1" />
+                BorderBrush="#000"
+                BorderThickness="1"
+                ClipToBounds="True"
+                CornerRadius="2"
+                ZIndex="100">
+                <Panel
+                    Width="2"
+                    Height="42"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Background="#4CAF50" />
+            </Border>
 
         </Grid>
 

@@ -1411,7 +1411,7 @@
                                                 <UniformGrid Columns="2">
 
                                                     <StackPanel>
-                                                        <TextBlock Classes="label title" Text="Cycle #" />
+                                                        <TextBlock Classes="label title" Text="Cycles" />
                                                         <TextBlock Classes="Mono value" Text="{Binding ExecutionCount, StringFormat=N0}" />
                                                     </StackPanel>
 
