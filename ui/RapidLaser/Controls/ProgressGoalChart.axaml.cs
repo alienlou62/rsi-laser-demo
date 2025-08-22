@@ -85,7 +85,7 @@ public partial class ProgressGoalChart : UserControl
         TargetLine.Margin = new Thickness(targetPosition, 0, 0, 0);
 
         // Update max line position  
-        var maxPosition = Math.Min(maximum * scale, availableWidth - 2);
+        var maxPosition = Math.Min(maximum * scale, availableWidth);
         MaxLine.Width = Math.Min(maxPosition, availableWidth);
 
         // Update labels
