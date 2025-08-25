@@ -405,16 +405,25 @@ public static class BoolConverters
 
         var totalMs = executionCount * periodMs;
         var totalSeconds = totalMs / 1000.0;
-        var totalMinutes = totalSeconds / 60.0;
-        var totalHours = totalMinutes / 60.0;
-        var totalDays = totalHours / 24.0;
 
-        // Choose appropriate unit based on magnitude
-        return totalDays >= 1.0 ? $"{totalDays:F1}d"
-            : totalHours >= 1.0 ? $"{totalHours:F1}h"
-            : totalMinutes >= 1.0 ? $"{totalMinutes:F1}m"
-            : totalSeconds >= 1.0 ? $"{totalSeconds:F1}s"
-            : $"{totalMs:F0}ms";
+        // Calculate time components
+        var days = (int)(totalSeconds / 86400);
+        var hours = (int)((totalSeconds % 86400) / 3600);
+        var minutes = (int)((totalSeconds % 3600) / 60);
+        var seconds = (int)(totalSeconds % 60);
+
+        // Build result string with available units
+        var parts = new List<string>();
+        if (days > 0) parts.Add($"{days}d");
+        if (hours > 0) parts.Add($"{hours}h");
+        if (minutes > 0) parts.Add($"{minutes}m");
+
+        // If we have larger units, don't show seconds/ms
+        if (parts.Count > 0)
+            return string.Join(" ", parts);
+
+        // For smaller durations, show seconds or milliseconds
+        return totalSeconds >= 1.0 ? $"{seconds}s" : $"{totalMs:F0}ms";
     });
 }
 
