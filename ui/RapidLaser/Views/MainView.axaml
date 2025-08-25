@@ -846,16 +846,29 @@
                 Grid.Row="1"
                 Grid.Column="1"
                 Margin="0,0,12,0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
                 Background="Transparent"
+                Classes.is-responsive="{Binding IsCanvasResponsive}"
                 RowDefinitions="* auto *">
+
+                <!--  Use styles to conditionally set alignment based on responsive mode  -->
+                <Grid.Styles>
+                    <Style Selector="Grid">
+                        <Setter Property="HorizontalAlignment" Value="Center" />
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                    </Style>
+                    <!--  When responsive mode is active, stretch to fill available space  -->
+                    <Style Selector="Grid.is-responsive">
+                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                        <Setter Property="VerticalAlignment" Value="Stretch" />
+                    </Style>
+                </Grid.Styles>
 
                 <!--  responsive toggle  -->
                 <StackPanel
                     Grid.Row="0"
                     Margin="0,8"
                     HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
                     IsVisible="{Binding IsConnected}"
                     Orientation="Horizontal"
                     Spacing="4">
@@ -878,6 +891,8 @@
                 <Border
                     Grid.Row="1"
                     Padding="0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
                     BorderThickness="1"
                     Classes="card">
 
@@ -917,10 +932,10 @@
                                     Text="Connect to the demo's RapidServer to view camera feeds" />
                             </StackPanel>
 
-                            <!--  Connected State - Camera Feeds  -->
+                            <!--  Camera Feeds  -->
                             <Grid
                                 ClipToBounds="True"
-                                ColumnDefinitions="*, Auto, *, Auto, *"
+                                ColumnDefinitions="auto, *, auto, *, auto"
                                 Grid.IsSharedSizeScope="True"
                                 IsVisible="{Binding IsConnected}">
 
@@ -932,16 +947,18 @@
                                     Grid.Column="1"
                                     Margin="8,8,4,8"
                                     Padding="4,0,4,2"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
                                     Background="#40555555"
                                     CornerRadius="2">
                                     <Grid>
 
-                                        <Grid RowDefinitions="auto * auto *" RowSpacing="2">
+                                        <Grid RowDefinitions="auto * auto" RowSpacing="2">
 
                                             <!--  Header with size info  -->
-                                            <Grid Grid.Row="0" ColumnDefinitions="* auto">
+                                            <Grid
+                                                Grid.Row="0"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch"
+                                                ColumnDefinitions="* auto">
                                                 <TextBlock
                                                     Grid.Column="0"
                                                     FontWeight="SemiBold"
@@ -1065,16 +1082,18 @@
                                     Grid.Column="3"
                                     Margin="4,8,8,8"
                                     Padding="4,0,4,2"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
                                     Background="#40555555"
                                     CornerRadius="2">
                                     <Grid>
 
-                                        <Grid RowDefinitions="auto * auto *" RowSpacing="2">
+                                        <Grid RowDefinitions="auto * auto" RowSpacing="2">
 
                                             <!--  Header with size info  -->
-                                            <Grid Grid.Row="0" ColumnDefinitions="* auto">
+                                            <Grid
+                                                Grid.Row="0"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch"
+                                                ColumnDefinitions="* auto">
                                                 <TextBlock
                                                     Grid.Column="0"
                                                     FontWeight="SemiBold"
