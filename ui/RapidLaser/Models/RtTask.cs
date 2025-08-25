@@ -20,22 +20,22 @@ public partial class RtTask : ObservableObject
     private long _executionCount = 0;
 
     [ObservableProperty]
-    private ulong _executionTimeMax = 0;
+    private double _executionTimeMax = 0;
 
     [ObservableProperty]
-    private ulong _executionTimeMin = 0;
+    private double _executionTimeMin = 0;
 
     [ObservableProperty]
     private double _executionTimeMean = 0;
 
     [ObservableProperty]
-    private ulong _executionTimeLast = 0;
+    private double _executionTimeLast = 0;
 
     [ObservableProperty]
-    private ulong _startTimeDeltaLast = 0;
+    private double _startTimeDeltaLast = 0;
 
     [ObservableProperty]
-    private ulong _startTimeDeltaMax = 0;
+    private double _startTimeDeltaMax = 0;
 
     [ObservableProperty]
     private double _startTimeDeltaMean = 0;
@@ -56,12 +56,12 @@ public partial class RtTask : ObservableObject
     {
         State = status.State;
         ExecutionCount = status.ExecutionCount;
-        ExecutionTimeMax = status.ExecutionTimeMax / 1_000_000;  // Convert nanoseconds to milliseconds
-        ExecutionTimeMin = status.ExecutionTimeMin / 1_000_000;  // Convert nanoseconds to milliseconds
+        ExecutionTimeMax = status.ExecutionTimeMax / 1_000_000.0;  // Convert nanoseconds to milliseconds
+        ExecutionTimeMin = status.ExecutionTimeMin / 1_000_000.0;  // Convert nanoseconds to milliseconds
         ExecutionTimeMean = status.ExecutionTimeMean / 1_000_000.0;  // Convert nanoseconds to milliseconds
-        ExecutionTimeLast = status.ExecutionTimeLast / 1_000_000;  // Convert nanoseconds to milliseconds
-        StartTimeDeltaLast = status.StartTimeDeltaLast / 1_000_000;  // Convert nanoseconds to milliseconds
-        StartTimeDeltaMax = status.StartTimeDeltaMax / 1_000_000;  // Convert nanoseconds to milliseconds
+        ExecutionTimeLast = status.ExecutionTimeLast / 1_000_000.0;  // Convert nanoseconds to milliseconds
+        StartTimeDeltaLast = status.StartTimeDeltaLast / 1_000_000.0;  // Convert nanoseconds to milliseconds
+        StartTimeDeltaMax = status.StartTimeDeltaMax / 1_000_000.0;  // Convert nanoseconds to milliseconds
         StartTimeDeltaMean = status.StartTimeDeltaMean / 1_000_000.0;  // Convert nanoseconds to milliseconds
         ErrorMessage = status.ErrorMessage;
     }

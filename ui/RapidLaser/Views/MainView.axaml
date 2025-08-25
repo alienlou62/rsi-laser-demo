@@ -856,6 +856,7 @@
                     Grid.Row="0"
                     Margin="0,8"
                     HorizontalAlignment="Right"
+                    IsVisible="{Binding IsConnected}"
                     Orientation="Horizontal"
                     Spacing="4">
                     <TextBlock
@@ -890,6 +891,7 @@
 
                             <!--  Disconnected Card  -->
                             <StackPanel
+                                Margin="18"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 IsVisible="{Binding !IsConnected}">
@@ -1264,19 +1266,19 @@
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    Text="{Binding CameraCenterX, StringFormat='{}X: {0:F0}'}" />
+                                                    Text="{Binding CameraCenterX, StringFormat='{}X: {0:N0}'}" />
 
                                                 <TextBlock
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    Text="{Binding CameraCenterY, StringFormat='{}Y: {0:F0}'}" />
+                                                    Text="{Binding CameraCenterY, StringFormat='{}Y: {0:N0}'}" />
 
                                                 <TextBlock
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    Text="{Binding CameraRadius, StringFormat='{}Radius: {0:F0}'}" />
+                                                    Text="{Binding CameraRadius, StringFormat='{}Radius: {0:N0}'}" />
 
                                                 <TextBlock
                                                     Margin="0,1,0,-1"
@@ -1286,7 +1288,7 @@
                                                 <TextBlock
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
-                                                    Text="{Binding CameraFrameNumber, FallbackValue='-', StringFormat='Frames: {0}'}" />
+                                                    Text="{Binding CameraFrameNumber, FallbackValue='-', StringFormat='Frames: {0:N0}'}" />
 
                                             </StackPanel>
 
@@ -1374,74 +1376,89 @@
 
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Classes="card">
+                                        <Border Classes="card" Classes.disabled="{Binding State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}">
+                                            <Border.Styles>
+                                                <Style Selector="Border.disabled">
+                                                    <Setter Property="Opacity" Value="0.5" />
+                                                </Style>
+                                            </Border.Styles>
 
-                                            <StackPanel Spacing="8">
+                                            <StackPanel Spacing="0">
 
                                                 <!--  title  -->
-                                                <Grid>
+                                                <StackPanel Spacing="0">
 
-                                                    <StackPanel
-                                                        Grid.Column="0"
-                                                        Orientation="Horizontal"
-                                                        Spacing="3">
-                                                        <TextBlock
-                                                            FontSize="14"
-                                                            FontWeight="SemiBold"
-                                                            Foreground="{actipro:ThemeResource ControlBackgroundBrushSolidSuccess}"
-                                                            Text="{Binding Function}" />
+                                                    <!--  top row  -->
+                                                    <Grid>
+
+                                                        <StackPanel
+                                                            Grid.Column="0"
+                                                            Orientation="Horizontal"
+                                                            Spacing="3">
+                                                            <TextBlock
+                                                                FontSize="14"
+                                                                FontWeight="SemiBold"
+                                                                Text="{Binding Function}" />
+                                                            <TextBlock
+                                                                Margin="0,0,0,1"
+                                                                VerticalAlignment="Bottom"
+                                                                FontSize="11"
+                                                                FontWeight="Light"
+                                                                Opacity="0.4"
+                                                                Text="RTTask" />
+                                                        </StackPanel>
+
                                                         <TextBlock
                                                             Margin="0,0,0,1"
+                                                            HorizontalAlignment="Right"
                                                             VerticalAlignment="Bottom"
                                                             FontSize="11"
                                                             FontWeight="Light"
-                                                            Opacity="0.4"
-                                                            Text="RTTask" />
+                                                            Text="{Binding State}" />
+
+                                                    </Grid>
+
+                                                    <!--  bottom row  -->
+                                                    <StackPanel
+                                                        Grid.Column="0"
+                                                        HorizontalAlignment="Right"
+                                                        IsVisible="False"
+                                                        Orientation="Horizontal"
+                                                        Spacing="3">
+
+                                                        <TextBlock
+                                                            Classes="Mono label unit"
+                                                            Text="{Binding ExecutionCount, StringFormat=N0}"
+                                                            ToolTip.ShowDelay="0"
+                                                            ToolTip.Tip="Cycle count" />
+
+                                                        <TextBlock
+                                                            Classes="Mono label unit"
+                                                            FontSize="10"
+                                                            Text="•" />
+
+                                                        <TextBlock
+                                                            Classes="Mono label unit"
+                                                            ToolTip.ShowDelay="0"
+                                                            ToolTip.Tip="Runtime">
+                                                            <TextBlock.Text>
+                                                                <MultiBinding Converter="{x:Static converters:BoolConverters.ExecutionCountPeriodToRuntimeConverter}">
+                                                                    <Binding Path="ExecutionCount" />
+                                                                    <Binding Path="Period" />
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+
                                                     </StackPanel>
 
-                                                    <TextBlock
-                                                        HorizontalAlignment="Right"
-                                                        VerticalAlignment="Center"
-                                                        Text="{Binding State}" />
-
-                                                </Grid>
+                                                </StackPanel>
 
                                                 <TextBlock IsVisible="False" Text="{Binding Id}" />
 
-                                                <UniformGrid Columns="2">
+                                                <!--  top fields  -->
+                                                <UniformGrid Margin="0,14,0,0" Columns="3">
 
-                                                    <StackPanel>
-                                                        <TextBlock Classes="label title" Text="Cycles" />
-                                                        <TextBlock Classes="Mono value" Text="{Binding ExecutionCount, StringFormat=N0}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel>
-                                                        <TextBlock Classes="label title" Text="Start Δ" />
-
-                                                        <StackPanel Orientation="Horizontal" Spacing="2">
-                                                            <TextBlock Classes="Mono value" Text="{Binding StartTimeDeltaMean, StringFormat=N4}" />
-                                                            <TextBlock Classes="label unit" Text="ms" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-                                                    <StackPanel IsVisible="False">
-                                                        <TextBlock Classes="label title" Text="Last Cycle (ms)" />
-                                                        <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeLast, StringFormat=N4}" />
-                                                    </StackPanel>
-                                                </UniformGrid>
-
-                                                <Panel>
-                                                    <!--  Horizontal Progress/Goal Bar here  -->
-                                                    <controls:ProgressGoalChart
-                                                        Margin="0,8"
-                                                        Average="{Binding ExecutionTimeMean}"
-                                                        Maximum="{Binding ExecutionTimeMax}"
-                                                        Target="{Binding Period}" />
-                                                </Panel>
-
-                                                <UniformGrid Columns="3">
-
-                                                    <StackPanel>
+                                                    <StackPanel Spacing="-2">
                                                         <TextBlock
                                                             Classes=" title"
                                                             FontWeight="Medium"
@@ -1454,7 +1471,7 @@
                                                         </StackPanel>
                                                     </StackPanel>
 
-                                                    <StackPanel>
+                                                    <StackPanel Spacing="-2">
                                                         <TextBlock
                                                             Classes="title"
                                                             FontWeight="Medium"
@@ -1467,7 +1484,7 @@
                                                         </StackPanel>
                                                     </StackPanel>
 
-                                                    <StackPanel>
+                                                    <StackPanel Spacing="-2">
                                                         <TextBlock
                                                             Classes=" title"
                                                             FontWeight="Medium"
@@ -1478,6 +1495,46 @@
                                                             <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMax, StringFormat=N4}" />
                                                             <TextBlock Classes="label unit" Text="ms" />
                                                         </StackPanel>
+                                                    </StackPanel>
+
+                                                </UniformGrid>
+
+                                                <!--  progress/goal bar  -->
+                                                <Panel Margin="0,0,0,0">
+                                                    <controls:ProgressGoalChart
+                                                        Margin="0,4,0,4"
+                                                        Average="{Binding ExecutionTimeMean}"
+                                                        Maximum="{Binding ExecutionTimeMax}"
+                                                        Target="{Binding Period}" />
+                                                </Panel>
+
+                                                <!--  bottom fields  -->
+                                                <UniformGrid Margin="0,12,0,0" Columns="3">
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock Classes="label title" Text="Start delta avg" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono " Text="{Binding StartTimeDeltaMean, StringFormat=N4}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock Classes="label title" Text="Runtime" />
+                                                        <TextBlock Classes="Mono">
+                                                            <TextBlock.Text>
+                                                                <MultiBinding Converter="{x:Static converters:BoolConverters.ExecutionCountPeriodToRuntimeConverter}">
+                                                                    <Binding Path="ExecutionCount" />
+                                                                    <Binding Path="Period" />
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </StackPanel>
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock Classes="label title" Text="Cycles" />
+                                                        <TextBlock Classes="Mono " Text="{Binding ExecutionCount, StringFormat=N0}" />
                                                     </StackPanel>
 
                                                 </UniformGrid>

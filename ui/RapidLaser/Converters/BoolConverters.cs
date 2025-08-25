@@ -344,6 +344,78 @@ public static class BoolConverters
         // Default to null for unrecognized values
         return null;
     });
+
+    /// <summary>
+    /// Converts execution count (samples) to runtime duration string
+    /// Takes the cycle period (in ms) as a converter parameter
+    /// Usage: {Binding ExecutionCount, Converter={x:Static converters:BoolConverters.ExecutionCountToRuntimeConverter}, ConverterParameter={Binding Period}}
+    /// </summary>
+    public static readonly IValueConverter ExecutionCountToRuntimeConverter = new FuncValueConverter<long, object?, string>((executionCount, parameter) =>
+    {
+        if (executionCount <= 0) return "0s";
+
+        // Default to 1ms if no parameter provided
+        double periodMs = 1.0;
+        if (parameter != null)
+        {
+            if (parameter is int intPeriod)
+                periodMs = intPeriod;
+            else if (parameter is double doublePeriod)
+                periodMs = doublePeriod;
+            else if (double.TryParse(parameter.ToString(), out double parsedPeriod))
+                periodMs = parsedPeriod;
+        }
+
+        var totalMs = executionCount * periodMs;
+        var totalSeconds = totalMs / 1000.0;
+        var totalMinutes = totalSeconds / 60.0;
+        var totalHours = totalMinutes / 60.0;
+        var totalDays = totalHours / 24.0;
+
+        // Choose appropriate unit based on magnitude
+        return totalDays >= 1.0 ? $"{totalDays:F1}d"
+            : totalHours >= 1.0 ? $"{totalHours:F1}h"
+            : totalMinutes >= 1.0 ? $"{totalMinutes:F1}m"
+            : totalSeconds >= 1.0 ? $"{totalSeconds:F1}s"
+            : $"{totalMs:F0}ms";
+    });
+
+    /// <summary>
+    /// Converts execution count and period to runtime duration string using MultiBinding
+    /// First binding: ExecutionCount (long)
+    /// Second binding: Period (int/double) in milliseconds
+    /// Usage: 
+    /// <MultiBinding Converter="{x:Static converters:BoolConverters.ExecutionCountPeriodToRuntimeConverter}">
+    ///     <Binding Path="ExecutionCount" />
+    ///     <Binding Path="Period" />
+    /// </MultiBinding>
+    /// </summary>
+    public static readonly FuncMultiValueConverter<object?, string> ExecutionCountPeriodToRuntimeConverter = new(values =>
+    {
+        var valueList = values.ToList();
+        if (valueList.Count < 2) return "0s";
+
+        // Parse execution count
+        if (!long.TryParse(valueList[0]?.ToString(), out long executionCount) || executionCount <= 0)
+            return "0s";
+
+        // Parse period
+        if (!double.TryParse(valueList[1]?.ToString(), out double periodMs) || periodMs <= 0)
+            periodMs = 1.0; // Default to 1ms
+
+        var totalMs = executionCount * periodMs;
+        var totalSeconds = totalMs / 1000.0;
+        var totalMinutes = totalSeconds / 60.0;
+        var totalHours = totalMinutes / 60.0;
+        var totalDays = totalHours / 24.0;
+
+        // Choose appropriate unit based on magnitude
+        return totalDays >= 1.0 ? $"{totalDays:F1}d"
+            : totalHours >= 1.0 ? $"{totalHours:F1}h"
+            : totalMinutes >= 1.0 ? $"{totalMinutes:F1}m"
+            : totalSeconds >= 1.0 ? $"{totalSeconds:F1}s"
+            : $"{totalMs:F0}ms";
+    });
 }
 
 public static class StringConverters
