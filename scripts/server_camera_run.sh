@@ -69,5 +69,3 @@ dotnet run HttpCameraServer.cs
 
 echo
 echo "🔴 Camera server ended."
-
-

@@ -125,7 +125,7 @@ public class HttpCameraService : ICameraService
         try
         {
             // Attempt to start the camera server via SSH as a background process
-            const string startServerCommand = "cd ~/Documents/rsi-laser-demo && bash scripts/server_camera_run.sh";
+            const string startServerCommand = "nohup bash -c 'cd ~/Documents/rsi-laser-demo && bash scripts/server_camera_run.sh' > ~/camera_server.log 2>&1 &";
             Console.WriteLine($"HttpCameraService: Executing SSH background command: {startServerCommand}");
 
             string sshResult = await sshService.RunSshCommandAsync(startServerCommand, sshUser, sshPassword, ip, waitForOutput: false);

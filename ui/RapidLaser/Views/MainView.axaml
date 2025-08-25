@@ -1240,7 +1240,7 @@
                                                     Width="15"
                                                     Height="15"
                                                     Kind="CircleOffOutline" />
-                                                <TextBlock VerticalAlignment="Center" Text="Motion OFF" />
+                                                <TextBlock VerticalAlignment="Center" Text="Motion" />
                                             </StackPanel>
                                         </Template>
                                     </Setter>
@@ -1254,7 +1254,7 @@
                                                     Width="15"
                                                     Height="15"
                                                     Kind="CircleSlice8" />
-                                                <TextBlock VerticalAlignment="Center" Text="Motion ON" />
+                                                <TextBlock VerticalAlignment="Center" Text="Motion" />
                                             </StackPanel>
                                         </Template>
                                     </Setter>
@@ -1283,7 +1283,7 @@
                                                     Width="16"
                                                     Height="16"
                                                     Kind="VideoOff" />
-                                                <TextBlock VerticalAlignment="Center" Text="Camera OFF" />
+                                                <TextBlock VerticalAlignment="Center" Text="Camera" />
                                             </StackPanel>
                                         </Template>
                                     </Setter>
@@ -1296,8 +1296,8 @@
                                                 <icons:MaterialIcon
                                                     Width="16"
                                                     Height="16"
-                                                    Kind="VideoCheck" />
-                                                <TextBlock VerticalAlignment="Center" Text="Camera ON" />
+                                                    Kind="Video" />
+                                                <TextBlock VerticalAlignment="Center" Text="Camera" />
                                             </StackPanel>
                                         </Template>
                                     </Setter>
