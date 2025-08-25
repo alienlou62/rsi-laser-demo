@@ -7,10 +7,10 @@
         <Grid>
             <!--  Background bar  -->
             <Border
-                Height="36"
+                Height="30"
                 VerticalAlignment="Center"
                 Background="#90333333"
-                CornerRadius="2" />
+                CornerRadius="1" />
 
             <!--  Max line  -->
             <Border
@@ -19,7 +19,7 @@
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 Background="#40F44336"
-                CornerRadius="0 1 1 0" />
+                CornerRadius="2" />
 
             <!--  Average filled bar  -->
             <Border
@@ -28,13 +28,13 @@
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 Background="#64B5F6"
-                CornerRadius="0 1 1 0" />
+                CornerRadius="2" />
 
             <!--  Target line  -->
             <Border
                 x:Name="TargetLine"
                 Width="4"
-                Height="42"
+                Height="36"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 BorderBrush="#000"
