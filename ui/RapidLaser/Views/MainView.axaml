@@ -69,177 +69,6 @@
                             Text="RMP RTTasks + Camera + OpenCV" />
                     </StackPanel>
 
-                    <!--  Button container  -->
-                    <StackPanel
-                        Margin="0"
-                        HorizontalAlignment="Center"
-                        IsVisible="{Binding IsConnected}"
-                        Orientation="Horizontal"
-                        Spacing="6">
-
-                        <!--  Start button  -->
-                        <Button
-                            HorizontalAlignment="Stretch"
-                            Classes="theme-soft success"
-                            Command="{Binding ProgramRunCommand}"
-                            IsVisible="{Binding !IsProgramRunning}"
-                            ToolTip.Tip="{Binding SshRunCommand}">
-                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                <icons:MaterialIcon
-                                    Width="20"
-                                    Height="20"
-                                    Kind="CogPlayOutline" />
-                                <TextBlock VerticalAlignment="Center" Text="Configure RMP &amp; Run Tasks" />
-                            </StackPanel>
-                        </Button>
-
-                        <!--  Kill button  -->
-                        <Button
-                            HorizontalAlignment="Stretch"
-                            Classes="theme-soft danger"
-                            Command="{Binding ProgramStopCommand}"
-                            IsVisible="{Binding IsProgramRunning}"
-                            ToolTip.Tip="RTTaskManager.Shutdown() ">
-                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                <icons:MaterialIcon
-                                    Width="16"
-                                    Height="16"
-                                    Kind="Skull" />
-                                <TextBlock VerticalAlignment="Center" Text="Kill Program" />
-                            </StackPanel>
-                        </Button>
-
-                        <!--  Pause/Resume button  -->
-                        <Panel IsVisible="False">
-                            <!--  Pause  -->
-                            <Button
-                                HorizontalAlignment="Stretch"
-                                Classes="theme-soft accent"
-                                Command="{Binding ToggleMotionPauseCommand}"
-                                IsVisible="{Binding !IsProgramPaused}">
-                                <StackPanel Orientation="Horizontal" Spacing="2">
-                                    <icons:MaterialIcon
-                                        Width="19"
-                                        Height="19"
-                                        Kind="Pause" />
-                                    <TextBlock VerticalAlignment="Center" Text="Pause Program" />
-                                </StackPanel>
-                            </Button>
-
-                            <!--  Resume  -->
-                            <Button
-                                HorizontalAlignment="Stretch"
-                                Classes="theme-soft success"
-                                Command="{Binding ToggleMotionPauseCommand}"
-                                IsVisible="{Binding IsProgramPaused}">
-                                <StackPanel Orientation="Horizontal" Spacing="0">
-                                    <icons:MaterialIcon
-                                        Width="20"
-                                        Height="20"
-                                        Kind="PlayOutline" />
-                                    <TextBlock VerticalAlignment="Center" Text="Resume Program" />
-                                </StackPanel>
-                            </Button>
-                        </Panel>
-
-                        <!--  Separator  -->
-                        <Border
-                            Width="1"
-                            Height="24"
-                            Margin="4,0"
-                            Background="{StaticResource SubtleTextBrush}"
-                            IsVisible="{Binding IsProgramRunning}"
-                            Opacity="0.1" />
-
-                        <!--  Motion Enable/Disable Toggle  -->
-                        <ToggleButton
-                            HorizontalAlignment="Stretch"
-                            Classes="theme-soft"
-                            Classes.danger="{Binding !Program_IsMotionEnabled}"
-                            Classes.success="{Binding Program_IsMotionEnabled}"
-                            Command="{Binding ToggleProgramMotionEnabledCommand}"
-                            CommandParameter="{Binding $self.IsChecked}"
-                            IsChecked="{Binding Program_IsMotionEnabled}"
-                            IsEnabled="{Binding Global_IsMotionEnabledValid}"
-                            IsVisible="{Binding IsProgramRunning}"
-                            ToolTip.Tip="Enable/Disable Motion Control">
-                            <ToggleButton.Styles>
-                                <!--  Unchecked (Motion Disabled)  -->
-                                <Style Selector="ToggleButton">
-                                    <Setter Property="Content">
-                                        <Template>
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <icons:MaterialIcon
-                                                    Width="16"
-                                                    Height="16"
-                                                    Kind="MotionPause" />
-                                                <TextBlock VerticalAlignment="Center" Text="Motion OFF" />
-                                            </StackPanel>
-                                        </Template>
-                                    </Setter>
-                                </Style>
-                                <!--  Checked (Motion Enabled)  -->
-                                <Style Selector="ToggleButton:checked">
-                                    <Setter Property="Content">
-                                        <Template>
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <icons:MaterialIcon
-                                                    Width="16"
-                                                    Height="16"
-                                                    Kind="MotionPlay" />
-                                                <TextBlock VerticalAlignment="Center" Text="Motion ON" />
-                                            </StackPanel>
-                                        </Template>
-                                    </Setter>
-                                </Style>
-                            </ToggleButton.Styles>
-                        </ToggleButton>
-
-                        <!--  Camera Toggle  -->
-                        <ToggleButton
-                            HorizontalAlignment="Stretch"
-                            Classes="theme-soft"
-                            Classes.danger="{Binding !IsCameraStreaming}"
-                            Classes.success="{Binding IsCameraStreaming}"
-                            Command="{Binding ToggleCameraStreamCommand}"
-                            IsChecked="{Binding IsCameraStreaming, Mode=OneWay}"
-                            IsEnabled="{Binding IsCameraConnected}"
-                            IsVisible="{Binding IsProgramRunning}"
-                            ToolTip.Tip="Start/Stop Camera Stream">
-                            <ToggleButton.Styles>
-                                <!--  Unchecked (Camera Off)  -->
-                                <Style Selector="ToggleButton">
-                                    <Setter Property="Content">
-                                        <Template>
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <icons:MaterialIcon
-                                                    Width="16"
-                                                    Height="16"
-                                                    Kind="VideoOff" />
-                                                <TextBlock VerticalAlignment="Center" Text="Camera OFF" />
-                                            </StackPanel>
-                                        </Template>
-                                    </Setter>
-                                </Style>
-                                <!--  Checked (Camera On)  -->
-                                <Style Selector="ToggleButton:checked">
-                                    <Setter Property="Content">
-                                        <Template>
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <icons:MaterialIcon
-                                                    Width="16"
-                                                    Height="16"
-                                                    Kind="VideoCheck" />
-                                                <TextBlock VerticalAlignment="Center" Text="Camera ON" />
-                                            </StackPanel>
-                                        </Template>
-                                    </Setter>
-                                </Style>
-                            </ToggleButton.Styles>
-                        </ToggleButton>
-
-                    </StackPanel>
-
                     <!--  Right side content with status and custom window controls  -->
                     <StackPanel
                         Margin="0,0,0,0"
@@ -853,8 +682,8 @@
                 <!--  Use styles to conditionally set alignment based on responsive mode  -->
                 <Grid.Styles>
                     <Style Selector="Grid">
-                        <Setter Property="HorizontalAlignment" Value="Center" />
-                        <Setter Property="VerticalAlignment" Value="Center" />
+                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                        <Setter Property="VerticalAlignment" Value="Stretch" />
                     </Style>
                     <!--  When responsive mode is active, stretch to fill available space  -->
                     <Style Selector="Grid.is-responsive">
@@ -862,30 +691,6 @@
                         <Setter Property="VerticalAlignment" Value="Stretch" />
                     </Style>
                 </Grid.Styles>
-
-                <!--  responsive toggle  -->
-                <StackPanel
-                    Grid.Row="0"
-                    Margin="0,8"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    IsVisible="{Binding IsConnected}"
-                    Orientation="Horizontal"
-                    Spacing="4">
-                    <TextBlock
-                        Margin="0,-1,0,0"
-                        FontSize="12"
-                        Foreground="{StaticResource SubtleTextBrush}"
-                        Text="Responsive Size" />
-
-                    <Viewbox Width="18" Height="18">
-                        <CheckBox
-                            BorderThickness="0"
-                            Classes="theme-outline success"
-                            IsChecked="{Binding IsCanvasResponsive}"
-                            ToolTip.Tip="Toggle between responsive and fixed canvas size" />
-                    </Viewbox>
-                </StackPanel>
 
                 <!--  Image display area  -->
                 <Border
@@ -1324,6 +1129,235 @@
                     </Border>
 
                 </Border>
+
+                <!--  action buttons  -->
+                <Border
+                    Grid.Row="2"
+                    Padding="10"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Classes="card">
+                    <StackPanel
+                        Margin="0"
+                        HorizontalAlignment="Center"
+                        IsVisible="{Binding IsConnected}"
+                        Orientation="Horizontal"
+                        Spacing="6">
+
+                        <!--  Start button  -->
+                        <Button
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-soft success"
+                            Command="{Binding ProgramRunCommand}"
+                            IsVisible="{Binding !IsProgramRunning}"
+                            ToolTip.Tip="{Binding SshRunCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <icons:MaterialIcon
+                                    Width="20"
+                                    Height="20"
+                                    Kind="CogPlayOutline" />
+                                <TextBlock VerticalAlignment="Center" Text="Configure RMP &amp; Run Tasks" />
+                            </StackPanel>
+                        </Button>
+
+                        <!--  Kill button  -->
+                        <Button
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-soft danger"
+                            Command="{Binding ProgramStopCommand}"
+                            IsVisible="{Binding IsProgramRunning}"
+                            ToolTip.Tip="RTTaskManager.Shutdown() ">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <icons:MaterialIcon
+                                    Width="16"
+                                    Height="16"
+                                    Kind="Skull" />
+                                <TextBlock VerticalAlignment="Center" Text="Kill Program" />
+                            </StackPanel>
+                        </Button>
+
+                        <!--  Pause/Resume button  -->
+                        <Panel IsVisible="False">
+                            <!--  Pause  -->
+                            <Button
+                                HorizontalAlignment="Stretch"
+                                Classes="theme-soft accent"
+                                Command="{Binding ToggleMotionPauseCommand}"
+                                IsVisible="{Binding !IsProgramPaused}">
+                                <StackPanel Orientation="Horizontal" Spacing="2">
+                                    <icons:MaterialIcon
+                                        Width="19"
+                                        Height="19"
+                                        Kind="Pause" />
+                                    <TextBlock VerticalAlignment="Center" Text="Pause Program" />
+                                </StackPanel>
+                            </Button>
+
+                            <!--  Resume  -->
+                            <Button
+                                HorizontalAlignment="Stretch"
+                                Classes="theme-soft success"
+                                Command="{Binding ToggleMotionPauseCommand}"
+                                IsVisible="{Binding IsProgramPaused}">
+                                <StackPanel Orientation="Horizontal" Spacing="0">
+                                    <icons:MaterialIcon
+                                        Width="20"
+                                        Height="20"
+                                        Kind="PlayOutline" />
+                                    <TextBlock VerticalAlignment="Center" Text="Resume Program" />
+                                </StackPanel>
+                            </Button>
+                        </Panel>
+
+                        <!--  Separator  -->
+                        <Border
+                            Width="1"
+                            Height="24"
+                            Margin="4,0"
+                            Background="{StaticResource SubtleTextBrush}"
+                            IsVisible="{Binding IsProgramRunning}"
+                            Opacity="0.1" />
+
+                        <!--  Motion Enable/Disable Toggle  -->
+                        <ToggleButton
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-soft"
+                            Classes.danger="{Binding !Program_IsMotionEnabled}"
+                            Classes.success="{Binding Program_IsMotionEnabled}"
+                            Command="{Binding ToggleProgramMotionEnabledCommand}"
+                            CommandParameter="{Binding $self.IsChecked}"
+                            IsChecked="{Binding Program_IsMotionEnabled}"
+                            IsEnabled="{Binding Global_IsMotionEnabledValid}"
+                            IsVisible="{Binding IsProgramRunning}"
+                            ToolTip.Tip="Enable/Disable Motion Control">
+                            <ToggleButton.Styles>
+                                <!--  Unchecked (Motion Disabled)  -->
+                                <Style Selector="ToggleButton">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="MotionPause" />
+                                                <TextBlock VerticalAlignment="Center" Text="Motion OFF" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                                <!--  Checked (Motion Enabled)  -->
+                                <Style Selector="ToggleButton:checked">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="MotionPlay" />
+                                                <TextBlock VerticalAlignment="Center" Text="Motion ON" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                            </ToggleButton.Styles>
+                        </ToggleButton>
+
+                        <!--  Camera Toggle  -->
+                        <ToggleButton
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-soft"
+                            Classes.danger="{Binding !IsCameraStreaming}"
+                            Classes.success="{Binding IsCameraStreaming}"
+                            Command="{Binding ToggleCameraStreamCommand}"
+                            IsChecked="{Binding IsCameraStreaming, Mode=OneWay}"
+                            IsEnabled="{Binding IsCameraConnected}"
+                            IsVisible="{Binding IsProgramRunning}"
+                            ToolTip.Tip="Start/Stop Camera Stream">
+                            <ToggleButton.Styles>
+                                <!--  Unchecked (Camera Off)  -->
+                                <Style Selector="ToggleButton">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="VideoOff" />
+                                                <TextBlock VerticalAlignment="Center" Text="Camera OFF" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                                <!--  Checked (Camera On)  -->
+                                <Style Selector="ToggleButton:checked">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="VideoCheck" />
+                                                <TextBlock VerticalAlignment="Center" Text="Camera ON" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                            </ToggleButton.Styles>
+                        </ToggleButton>
+
+                        <!--  Separator  -->
+                        <Border
+                            Width="1"
+                            Height="24"
+                            Margin="4,0"
+                            Background="{StaticResource SubtleTextBrush}"
+                            IsVisible="{Binding IsProgramRunning}"
+                            Opacity="0.1" />
+
+                        <!--  is responsive  -->
+                        <ToggleButton
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-subtle"
+                            IsChecked="{Binding IsCanvasResponsive}">
+                            <ToggleButton.Styles>
+
+                                <!--  fixed size  -->
+                                <Style Selector="ToggleButton">
+                                    <Setter Property="ToolTip.Tip" Value="Fixed layout" />
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="ArrowCollapse" />
+                                                <TextBlock VerticalAlignment="Center" Text="Layout" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+
+                                <!--  responsive size  -->
+                                <Style Selector="ToggleButton:checked">
+                                    <Setter Property="ToolTip.Tip" Value="Responsive layout" />
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Kind="ArrowExpand" />
+                                                <TextBlock VerticalAlignment="Center" Text="Layout" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+
+                            </ToggleButton.Styles>
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+
             </Grid>
 
             <!--  Right sidebar - stacked cards  -->
@@ -1364,209 +1398,6 @@
                     </Style>
 
                 </TabControl.Styles>
-
-                <TabItem Header="RMP Overview">
-                    <ScrollViewer>
-                        <StackPanel>
-                            <ItemsControl ItemsSource="{Binding Tasks}">
-
-                                <ItemsControl.Styles>
-
-                                    <Style Selector="TextBlock.title">
-                                        <Setter Property="FontSize" Value="11" />
-                                    </Style>
-
-                                    <Style Selector="TextBlock.value">
-                                        <Setter Property="FontSize" Value="16" />
-                                    </Style>
-
-                                    <Style Selector="TextBlock.unit">
-                                        <Setter Property="FontSize" Value="10" />
-                                        <Setter Property="VerticalAlignment" Value="Bottom" />
-                                    </Style>
-
-                                </ItemsControl.Styles>
-
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Spacing="12" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Classes="card" Classes.disabled="{Binding State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}">
-                                            <Border.Styles>
-                                                <Style Selector="Border.disabled">
-                                                    <Setter Property="Opacity" Value="0.5" />
-                                                </Style>
-                                            </Border.Styles>
-
-                                            <StackPanel Spacing="0">
-
-                                                <!--  title  -->
-                                                <StackPanel Spacing="0">
-
-                                                    <!--  top row  -->
-                                                    <Grid>
-
-                                                        <StackPanel
-                                                            Grid.Column="0"
-                                                            Orientation="Horizontal"
-                                                            Spacing="3">
-                                                            <TextBlock
-                                                                FontSize="14"
-                                                                FontWeight="SemiBold"
-                                                                Text="{Binding Function}" />
-                                                            <TextBlock
-                                                                Margin="0,0,0,1"
-                                                                VerticalAlignment="Bottom"
-                                                                FontSize="11"
-                                                                FontWeight="Light"
-                                                                Opacity="0.4"
-                                                                Text="RTTask" />
-                                                        </StackPanel>
-
-                                                        <TextBlock
-                                                            Margin="0,0,0,1"
-                                                            HorizontalAlignment="Right"
-                                                            VerticalAlignment="Bottom"
-                                                            FontSize="11"
-                                                            FontWeight="Light"
-                                                            Text="{Binding State}" />
-
-                                                    </Grid>
-
-                                                    <!--  bottom row  -->
-                                                    <StackPanel
-                                                        Grid.Column="0"
-                                                        HorizontalAlignment="Right"
-                                                        IsVisible="False"
-                                                        Orientation="Horizontal"
-                                                        Spacing="3">
-
-                                                        <TextBlock
-                                                            Classes="Mono label unit"
-                                                            Text="{Binding ExecutionCount, StringFormat=N0}"
-                                                            ToolTip.ShowDelay="0"
-                                                            ToolTip.Tip="Cycle count" />
-
-                                                        <TextBlock
-                                                            Classes="Mono label unit"
-                                                            FontSize="10"
-                                                            Text="•" />
-
-                                                        <TextBlock
-                                                            Classes="Mono label unit"
-                                                            ToolTip.ShowDelay="0"
-                                                            ToolTip.Tip="Runtime">
-                                                            <TextBlock.Text>
-                                                                <MultiBinding Converter="{x:Static converters:BoolConverters.ExecutionCountPeriodToRuntimeConverter}">
-                                                                    <Binding Path="ExecutionCount" />
-                                                                    <Binding Path="Period" />
-                                                                </MultiBinding>
-                                                            </TextBlock.Text>
-                                                        </TextBlock>
-
-                                                    </StackPanel>
-
-                                                </StackPanel>
-
-                                                <TextBlock IsVisible="False" Text="{Binding Id}" />
-
-                                                <!--  top fields  -->
-                                                <UniformGrid Margin="0,14,0,0" Columns="3">
-
-                                                    <StackPanel Spacing="-2">
-                                                        <TextBlock
-                                                            Classes=" title"
-                                                            FontWeight="Medium"
-                                                            Foreground="#4CAF50"
-                                                            Text="Cycle" />
-
-                                                        <StackPanel Orientation="Horizontal" Spacing="2">
-                                                            <TextBlock Classes="Mono value" Text="{Binding Period, StringFormat=N0}" />
-                                                            <TextBlock Classes="label unit" Text="ms" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-                                                    <StackPanel Spacing="-2">
-                                                        <TextBlock
-                                                            Classes="title"
-                                                            FontWeight="Medium"
-                                                            Foreground="#64B5F6"
-                                                            Text="Average" />
-
-                                                        <StackPanel Orientation="Horizontal" Spacing="2">
-                                                            <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMean, StringFormat=N4}" />
-                                                            <TextBlock Classes="label unit" Text="ms" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-                                                    <StackPanel Spacing="-2">
-                                                        <TextBlock
-                                                            Classes=" title"
-                                                            FontWeight="Medium"
-                                                            Foreground="#F44336"
-                                                            Text="Max" />
-
-                                                        <StackPanel Orientation="Horizontal" Spacing="2">
-                                                            <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMax, StringFormat=N4}" />
-                                                            <TextBlock Classes="label unit" Text="ms" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-                                                </UniformGrid>
-
-                                                <!--  progress/goal bar  -->
-                                                <Panel Margin="0,0,0,0">
-                                                    <controls:ProgressGoalChart
-                                                        Margin="0,4,0,4"
-                                                        Average="{Binding ExecutionTimeMean}"
-                                                        Maximum="{Binding ExecutionTimeMax}"
-                                                        Target="{Binding Period}" />
-                                                </Panel>
-
-                                                <!--  bottom fields  -->
-                                                <UniformGrid Margin="0,12,0,0" Columns="3">
-
-                                                    <StackPanel Spacing="-2">
-                                                        <TextBlock Classes="label title" Text="Start delta avg" />
-
-                                                        <StackPanel Orientation="Horizontal" Spacing="2">
-                                                            <TextBlock Classes="Mono " Text="{Binding StartTimeDeltaMean, StringFormat=N4}" />
-                                                            <TextBlock Classes="label unit" Text="ms" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-                                                    <StackPanel Spacing="-2">
-                                                        <TextBlock Classes="label title" Text="Runtime" />
-                                                        <TextBlock Classes="Mono">
-                                                            <TextBlock.Text>
-                                                                <MultiBinding Converter="{x:Static converters:BoolConverters.ExecutionCountPeriodToRuntimeConverter}">
-                                                                    <Binding Path="ExecutionCount" />
-                                                                    <Binding Path="Period" />
-                                                                </MultiBinding>
-                                                            </TextBlock.Text>
-                                                        </TextBlock>
-                                                    </StackPanel>
-
-                                                    <StackPanel Spacing="-2">
-                                                        <TextBlock Classes="label title" Text="Cycles" />
-                                                        <TextBlock Classes="Mono " Text="{Binding ExecutionCount, StringFormat=N0}" />
-                                                    </StackPanel>
-
-                                                </UniformGrid>
-
-                                            </StackPanel>
-                                        </Border>
-
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </StackPanel>
-                    </ScrollViewer>
-                </TabItem>
 
                 <TabItem Header="Configuration">
                     <ScrollViewer>
@@ -1862,6 +1693,209 @@
                                 </Grid>
                             </Border>
 
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="RMP Overview">
+                    <ScrollViewer>
+                        <StackPanel>
+                            <ItemsControl ItemsSource="{Binding Tasks}">
+
+                                <ItemsControl.Styles>
+
+                                    <Style Selector="TextBlock.title">
+                                        <Setter Property="FontSize" Value="11" />
+                                    </Style>
+
+                                    <Style Selector="TextBlock.value">
+                                        <Setter Property="FontSize" Value="16" />
+                                    </Style>
+
+                                    <Style Selector="TextBlock.unit">
+                                        <Setter Property="FontSize" Value="10" />
+                                        <Setter Property="VerticalAlignment" Value="Bottom" />
+                                    </Style>
+
+                                </ItemsControl.Styles>
+
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="12" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Classes="card" Classes.disabled="{Binding State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}">
+                                            <Border.Styles>
+                                                <Style Selector="Border.disabled">
+                                                    <Setter Property="Opacity" Value="0.5" />
+                                                </Style>
+                                            </Border.Styles>
+
+                                            <StackPanel Spacing="0">
+
+                                                <!--  title  -->
+                                                <StackPanel Spacing="0">
+
+                                                    <!--  top row  -->
+                                                    <Grid>
+
+                                                        <StackPanel
+                                                            Grid.Column="0"
+                                                            Orientation="Horizontal"
+                                                            Spacing="3">
+                                                            <TextBlock
+                                                                FontSize="14"
+                                                                FontWeight="SemiBold"
+                                                                Text="{Binding Function}" />
+                                                            <TextBlock
+                                                                Margin="0,0,0,1"
+                                                                VerticalAlignment="Bottom"
+                                                                FontSize="11"
+                                                                FontWeight="Light"
+                                                                Opacity="0.4"
+                                                                Text="RTTask" />
+                                                        </StackPanel>
+
+                                                        <TextBlock
+                                                            Margin="0,0,0,1"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Bottom"
+                                                            FontSize="11"
+                                                            FontWeight="Light"
+                                                            Text="{Binding State}" />
+
+                                                    </Grid>
+
+                                                    <!--  bottom row  -->
+                                                    <StackPanel
+                                                        Grid.Column="0"
+                                                        HorizontalAlignment="Right"
+                                                        IsVisible="False"
+                                                        Orientation="Horizontal"
+                                                        Spacing="3">
+
+                                                        <TextBlock
+                                                            Classes="Mono label unit"
+                                                            Text="{Binding ExecutionCount, StringFormat=N0}"
+                                                            ToolTip.ShowDelay="0"
+                                                            ToolTip.Tip="Cycle count" />
+
+                                                        <TextBlock
+                                                            Classes="Mono label unit"
+                                                            FontSize="10"
+                                                            Text="•" />
+
+                                                        <TextBlock
+                                                            Classes="Mono label unit"
+                                                            ToolTip.ShowDelay="0"
+                                                            ToolTip.Tip="Runtime">
+                                                            <TextBlock.Text>
+                                                                <MultiBinding Converter="{x:Static converters:BoolConverters.ExecutionCountPeriodToRuntimeConverter}">
+                                                                    <Binding Path="ExecutionCount" />
+                                                                    <Binding Path="Period" />
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+
+                                                    </StackPanel>
+
+                                                </StackPanel>
+
+                                                <TextBlock IsVisible="False" Text="{Binding Id}" />
+
+                                                <!--  top fields  -->
+                                                <UniformGrid Margin="0,14,0,0" Columns="3">
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock
+                                                            Classes=" title"
+                                                            FontWeight="Medium"
+                                                            Foreground="#4CAF50"
+                                                            Text="Cycle" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono value" Text="{Binding Period, StringFormat=N0}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock
+                                                            Classes="title"
+                                                            FontWeight="Medium"
+                                                            Foreground="#64B5F6"
+                                                            Text="Average" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMean, StringFormat=N4}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock
+                                                            Classes=" title"
+                                                            FontWeight="Medium"
+                                                            Foreground="#F44336"
+                                                            Text="Max" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono value" Text="{Binding ExecutionTimeMax, StringFormat=N4}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                </UniformGrid>
+
+                                                <!--  progress/goal bar  -->
+                                                <Panel Margin="0,0,0,0">
+                                                    <controls:ProgressGoalChart
+                                                        Margin="0,4,0,4"
+                                                        Average="{Binding ExecutionTimeMean}"
+                                                        Maximum="{Binding ExecutionTimeMax}"
+                                                        Target="{Binding Period}" />
+                                                </Panel>
+
+                                                <!--  bottom fields  -->
+                                                <UniformGrid Margin="0,12,0,0" Columns="3">
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock Classes="label title" Text="Start delta avg" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono " Text="{Binding StartTimeDeltaMean, StringFormat=N4}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock Classes="label title" Text="Runtime" />
+                                                        <TextBlock Classes="Mono">
+                                                            <TextBlock.Text>
+                                                                <MultiBinding Converter="{x:Static converters:BoolConverters.ExecutionCountPeriodToRuntimeConverter}">
+                                                                    <Binding Path="ExecutionCount" />
+                                                                    <Binding Path="Period" />
+                                                                </MultiBinding>
+                                                            </TextBlock.Text>
+                                                        </TextBlock>
+                                                    </StackPanel>
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock Classes="label title" Text="Cycles" />
+                                                        <TextBlock Classes="Mono " Text="{Binding ExecutionCount, StringFormat=N0}" />
+                                                    </StackPanel>
+
+                                                </UniformGrid>
+
+                                            </StackPanel>
+                                        </Border>
+
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
