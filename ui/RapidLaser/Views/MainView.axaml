@@ -1133,7 +1133,7 @@
                 <!--  action buttons  -->
                 <Border
                     Grid.Row="2"
-                    Padding="10"
+                    Padding="8.5"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Bottom"
                     Classes="card">
