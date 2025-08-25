@@ -196,8 +196,9 @@
             <Setter Property="Padding" Value="{StaticResource CardPadding}" />
             <Setter Property="Background">
                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                    <GradientStop Offset="0" Color="#1F1F1F" />
-                    <GradientStop Offset="1" Color="#1A1A1A" />
+                    <GradientStop Offset="0" Color="#262626" />
+                    <!-- <GradientStop Offset="1" Color="#1A1A1A" /> -->
+                    <GradientStop Offset="1" Color="#1F1F1F" />
                 </LinearGradientBrush>
             </Setter>
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />

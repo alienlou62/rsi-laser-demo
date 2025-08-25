@@ -9,17 +9,28 @@
             <Border
                 Height="30"
                 VerticalAlignment="Center"
-                Background="#90333333"
+                Background="#90444444"
                 CornerRadius="1" />
 
             <!--  Max line  -->
             <Border
                 x:Name="MaxLine"
-                Height="30"
+                Width="4"
+                Height="36"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                Background="#40F44336"
-                CornerRadius="2" />
+                BorderBrush="#000"
+                BorderThickness="1"
+                ClipToBounds="True"
+                CornerRadius="2"
+                ZIndex="0">
+                <Panel
+                    Width="2"
+                    Height="42"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Background="#F44336" />
+            </Border>
 
             <!--  Average filled bar  -->
             <Border
