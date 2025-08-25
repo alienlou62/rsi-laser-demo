@@ -51,6 +51,9 @@
             <FontFamily x:Key="Saira">avares://RapidLaser/Assets/Fonts/SairaSemiCondensed#Saira SemiCondensed</FontFamily>
             <FontFamily x:Key="ShareTechMono">avares://RapidLaser/Assets/Fonts/ShareTechMono#Share Tech Mono</FontFamily>
 
+            <!--  Actipro Override  -->
+            <Thickness x:Key="ActiproThemeButtonBorderThicknessChecked">2</Thickness>
+
             <!--  Control Resources  -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://RapidLaser/Controls/LabeledControl.axaml" />

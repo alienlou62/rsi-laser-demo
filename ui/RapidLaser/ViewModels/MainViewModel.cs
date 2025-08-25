@@ -164,20 +164,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool _isCameraStreaming = false;
-    partial void OnIsCameraStreamingChanged(bool value)
-    {
-        if (value is false)
-        {
-            try
-            {
-                _ = Task.Run(async () => await DisconnectCameraAsync());
-            }
-            catch (Exception ex)
-            {
-                LogMessage($"Camera Streaming Disconnect Error: {ex.Message}");
-            }
-        }
-    }
+    // partial void OnIsCameraStreamingChanged(bool value)
+    // {
+    //     if (value is false)
+    //     {
+    //         try
+    //         {
+    //             _ = Task.Run(async () => await DisconnectCameraAsync());
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             LogMessage($"Camera Streaming Disconnect Error: {ex.Message}");
+    //         }
+    //     }
+    // }
 
     private CancellationTokenSource? _cameraStreamCancellation;
 
