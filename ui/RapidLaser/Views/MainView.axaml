@@ -1213,7 +1213,7 @@
                         <Border
                             Width="1"
                             Height="24"
-                            Margin="4,0"
+                            Margin="8,0"
                             Background="{StaticResource SubtleTextBrush}"
                             IsVisible="{Binding IsProgramRunning}"
                             Opacity="0.1" />
@@ -1221,7 +1221,7 @@
                         <!--  Motion Enable/Disable Toggle  -->
                         <ToggleButton
                             HorizontalAlignment="Stretch"
-                            Classes="theme-soft"
+                            Classes="theme-subtle"
                             Classes.danger="{Binding !Program_IsMotionEnabled}"
                             Classes.success="{Binding Program_IsMotionEnabled}"
                             Command="{Binding ToggleProgramMotionEnabledCommand}"
@@ -1237,9 +1237,9 @@
                                         <Template>
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <icons:MaterialIcon
-                                                    Width="16"
-                                                    Height="16"
-                                                    Kind="MotionPause" />
+                                                    Width="15"
+                                                    Height="15"
+                                                    Kind="CircleOffOutline" />
                                                 <TextBlock VerticalAlignment="Center" Text="Motion OFF" />
                                             </StackPanel>
                                         </Template>
@@ -1251,9 +1251,9 @@
                                         <Template>
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <icons:MaterialIcon
-                                                    Width="16"
-                                                    Height="16"
-                                                    Kind="MotionPlay" />
+                                                    Width="15"
+                                                    Height="15"
+                                                    Kind="CircleSlice8" />
                                                 <TextBlock VerticalAlignment="Center" Text="Motion ON" />
                                             </StackPanel>
                                         </Template>
@@ -1265,7 +1265,7 @@
                         <!--  Camera Toggle  -->
                         <ToggleButton
                             HorizontalAlignment="Stretch"
-                            Classes="theme-soft"
+                            Classes="theme-subtle"
                             Classes.danger="{Binding !IsCameraStreaming}"
                             Classes.success="{Binding IsCameraStreaming}"
                             Command="{Binding ToggleCameraStreamCommand}"
@@ -1309,7 +1309,7 @@
                         <Border
                             Width="1"
                             Height="24"
-                            Margin="4,0"
+                            Margin="8,0"
                             Background="{StaticResource SubtleTextBrush}"
                             IsVisible="{Binding IsProgramRunning}"
                             Opacity="0.1" />
