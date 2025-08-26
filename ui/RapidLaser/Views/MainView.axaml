@@ -751,6 +751,7 @@
                                                 VerticalAlignment="Bottom"
                                                 FontSize="11"
                                                 FontWeight="Light"
+                                                IsVisible="False"
                                                 Text="{Binding State}" />
 
                                         </Grid>
@@ -1960,7 +1961,22 @@
                                                             VerticalAlignment="Bottom"
                                                             FontSize="11"
                                                             FontWeight="Light"
+                                                            IsVisible="False"
                                                             Text="{Binding State}" />
+
+                                                        <controls:ProgressRing
+                                                            Width="15"
+                                                            Height="15"
+                                                            Margin="-1,-3,-1,-1"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Center"
+                                                            AnimationDuration="1.25"
+                                                            ArcAnimationDuration="1.75"
+                                                            IsArcAnimationEnabled="True"
+                                                            IsSpinning="True"
+                                                            IsVisible="{Binding State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Waiting'}"
+                                                            RingColor="#777"
+                                                            RingThickness="9" />
 
                                                     </Grid>
 

@@ -12,7 +12,7 @@
     Height="1080"
     Background="Transparent"
     CanResize="True"
-    CornerRadius="{StaticResource StandardCornerRadius}"
+    CornerRadius="{DynamicResource StandardCornerRadius}"
     ExtendClientAreaChromeHints="NoChrome"
     ExtendClientAreaToDecorationsHint="True"
     Icon="/Assets/avalonia-logo.ico"
@@ -22,16 +22,16 @@
         <!--  Sleek dark gradient background using Actipro MeshGradientPresenter  -->
         <actipro:MeshGradientPresenter
             VerticalAlignment="Stretch"
-            Background="{StaticResource DarkBackgroundColor}"
-            CornerRadius="{StaticResource StandardCornerRadius}">
-            <actipro:MeshGradientNode Center="0%, 0%" Color="#FF121212" />
+            Background="{DynamicResource DarkBackgroundColor}"
+            CornerRadius="{DynamicResource StandardCornerRadius}">
+            <!-- <actipro:MeshGradientNode Center="0%, 0%" Color="#FF121212" />
             <actipro:MeshGradientNode Center="100%, 0%" Color="#FF1E1E1E" />
             <actipro:MeshGradientNode Center="0%, 100%" Color="#FF1A1A1A" />
-            <actipro:MeshGradientNode Center="100%, 100%" Color="#FF232323" />
+            <actipro:MeshGradientNode Center="100%, 100%" Color="#FF232323" />-->
         </actipro:MeshGradientPresenter>
 
         <!--  Simple borderless window with corner radius  -->
-        <Border CornerRadius="{StaticResource StandardCornerRadius}">
+        <Border CornerRadius="{DynamicResource StandardCornerRadius}">
             <views:MainView />
         </Border>
 
