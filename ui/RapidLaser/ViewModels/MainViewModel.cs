@@ -204,6 +204,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         else
         {
+            IsProgramRunning = false;
+
             // stop polling
             _updateTimer?.Stop();
             _updateTimer = null;
@@ -753,7 +755,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
                     IsProgramRunning = TaskManagerStatus != null && TaskManagerStatus.State == RTTaskManagerState.Running;
                 }
-                catch { TaskManagerStatus = null; }
+                catch
+                {
+                    TaskManagerStatus = null;
+                }
 
                 //tm globals
                 if (TaskManagerStatus != null)
