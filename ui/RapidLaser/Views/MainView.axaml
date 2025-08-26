@@ -1329,11 +1329,11 @@
                     Padding="8.5"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Bottom"
-                    Classes="card">
+                    Classes="card"
+                    IsVisible="{Binding IsConnected}">
                     <StackPanel
                         Margin="0"
                         HorizontalAlignment="Center"
-                        IsVisible="{Binding IsConnected}"
                         Orientation="Horizontal"
                         Spacing="6">
 
@@ -1560,7 +1560,8 @@
             <TabControl
                 Grid.Row="1"
                 Grid.Column="2"
-                BorderThickness="0">
+                BorderThickness="0"
+                IsVisible="{Binding IsProgramRunning}">
                 <TabControl.Styles>
 
                     <Style Selector="TabControl">
