@@ -1,0 +1,83 @@
+<ResourceDictionary
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:RapidLaser.Controls">
+
+    <Design.PreviewWith>
+        <Border Padding="20" Background="#fefefe">
+            <StackPanel Orientation="Horizontal" Spacing="20">
+                <!--  Default spinning red ring with arc animation  -->
+                <controls:ProgressRing
+                    Width="50"
+                    Height="50"
+                    ArcAnimationDuration="2"
+                    ArcLength="75"
+                    IsArcAnimationEnabled="True"
+                    IsSpinning="True"
+                    MaxArcLength="90"
+                    MinArcLength="30"
+                    RingColor="Red"
+                    RingThickness="6" />
+
+                <!--  Large blue static ring  -->
+                <controls:ProgressRing
+                    Width="80"
+                    Height="80"
+                    ArcLength="50"
+                    IsSpinning="False"
+                    RingColor="Blue"
+                    RingThickness="6" />
+
+                <!--  Small green spinning ring with arc animation  -->
+                <controls:ProgressRing
+                    Width="20"
+                    Height="20"
+                    AnimationDuration="1"
+                    ArcAnimationDuration="1.5"
+                    ArcLength="90"
+                    IsArcAnimationEnabled="True"
+                    IsSpinning="True"
+                    MaxArcLength="80"
+                    MinArcLength="20"
+                    RingColor="Green"
+                    RingThickness="12" />
+
+                <!--  Orange ring with different arc animation  -->
+                <controls:ProgressRing
+                    Width="60"
+                    Height="60"
+                    AnimationDuration="3"
+                    ArcAnimationDuration="4"
+                    ArcLength="30"
+                    IsArcAnimationEnabled="True"
+                    IsSpinning="True"
+                    MaxArcLength="70"
+                    MinArcLength="10"
+                    RingColor="Orange"
+                    RingThickness="3" />
+            </StackPanel>
+        </Border>
+    </Design.PreviewWith>
+
+    <ControlTheme x:Key="{x:Type controls:ProgressRing}" TargetType="controls:ProgressRing">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Viewbox>
+                    <Canvas
+                        x:Name="PART_CanvasElement"
+                        Width="100"
+                        Height="100">
+                        <Path
+                            x:Name="PART_ProgressRingElement"
+                            Fill="Transparent"
+                            RenderTransformOrigin="0.5,0.5"
+                            Stroke="{TemplateBinding RingColor}"
+                            StrokeLineCap="Round"
+                            StrokeThickness="{TemplateBinding RingThickness}" />
+                    </Canvas>
+                </Viewbox>
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+
+</ResourceDictionary>

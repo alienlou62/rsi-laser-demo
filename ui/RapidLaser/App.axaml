@@ -11,7 +11,7 @@
         <ResourceDictionary>
 
             <!--  Dark theme colors  -->
-            <Color x:Key="DarkBackgroundColor">#121212</Color>
+            <Color x:Key="DarkBackgroundColor">#0a0a0a</Color>
             <Color x:Key="SidebarColor">#1E1E1E</Color>
             <Color x:Key="TopBarColor">#1E1E1E</Color>
             <Color x:Key="MainContentColor">#121212</Color>
@@ -58,6 +58,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://RapidLaser/Controls/LabeledControl.axaml" />
                 <ResourceInclude Source="avares://RapidLaser/Controls/StatusLabel.axaml" />
+                <ResourceInclude Source="avares://RapidLaser/Controls/ProgressRing.axaml" />
             </ResourceDictionary.MergedDictionaries>
 
         </ResourceDictionary>
@@ -196,9 +197,9 @@
             <Setter Property="Padding" Value="{StaticResource CardPadding}" />
             <Setter Property="Background">
                 <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
-                    <GradientStop Offset="0" Color="#262626" />
+                    <GradientStop Offset="0" Color="#222222" />
                     <!-- <GradientStop Offset="1" Color="#1A1A1A" /> -->
-                    <GradientStop Offset="1" Color="#1F1F1F" />
+                    <GradientStop Offset="1" Color="#1A1A1A" />
                 </LinearGradientBrush>
             </Setter>
             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
