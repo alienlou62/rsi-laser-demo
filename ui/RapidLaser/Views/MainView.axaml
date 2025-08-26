@@ -635,7 +635,6 @@
                             Padding="4,4,3,3"
                             Classes="theme-subtle"
                             Command="{Binding ClearLogOutputCommand}"
-                            IsEnabled="{Binding IsConnected}"
                             Opacity="0.5"
                             ToolTip.Tip="Clear output">
                             <Button.Styles>
