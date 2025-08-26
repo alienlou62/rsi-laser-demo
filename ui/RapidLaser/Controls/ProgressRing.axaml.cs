@@ -62,6 +62,11 @@ public class ProgressRing : TemplatedControl
 
         _spinTimer?.Stop();
         _spinTimer = null;
+
+        // Clean up cached geometry objects
+        _pathGeometry = null;
+        _pathFigure = null;
+        _arcSegment = null;
     }
 
     private Avalonia.Controls.Shapes.Path? _progressRingElement;
@@ -69,6 +74,11 @@ public class ProgressRing : TemplatedControl
     private Animation? _arcLengthAnimation;
     private DispatcherTimer? _spinTimer;
     private double _currentSpinAngle = 0;
+    
+    // Cached geometry objects for performance
+    private PathGeometry? _pathGeometry;
+    private PathFigure? _pathFigure;
+    private ArcSegment? _arcSegment;
 
     public IBrush RingColor
     {
@@ -180,12 +190,11 @@ public class ProgressRing : TemplatedControl
         // Calculate arc angle from ArcLength percentage
         var arcAngle = Math.Max(1, Math.Min(100, ArcLength)) / 100.0 * 360.0;
 
-        // Create the arc path geometry
-        var geometry = CreateArcGeometry(centerX, centerY, radius, 0, arcAngle);
-        _progressRingElement.Data = geometry;
+        // Create or update the arc path geometry efficiently
+        UpdateArcGeometry(centerX, centerY, radius, 0, arcAngle);
     }
 
-    private Geometry CreateArcGeometry(double centerX, double centerY, double radius, double startAngle, double sweepAngle)
+    private void UpdateArcGeometry(double centerX, double centerY, double radius, double startAngle, double sweepAngle)
     {
         // Convert angles to radians (start from top, going clockwise)
         var startRadians = (startAngle - 90) * Math.PI / 180.0;
@@ -200,27 +209,26 @@ public class ProgressRing : TemplatedControl
         // Determine if this is a large arc (> 180 degrees)
         var isLargeArc = sweepAngle > 180;
 
-        // Create path geometry
-        var pathGeometry = new PathGeometry();
-        var pathFigure = new PathFigure
+        // Create geometry objects only once, then reuse and update them
+        if (_pathGeometry == null || _pathFigure == null || _arcSegment == null)
         {
-            StartPoint = new Point(startX, startY),
-            IsClosed = false
-        };
+            _pathGeometry = new PathGeometry();
+            _pathFigure = new PathFigure { IsClosed = false };
+            _arcSegment = new ArcSegment
+            {
+                SweepDirection = SweepDirection.Clockwise
+            };
+            
+            _pathFigure.Segments?.Add(_arcSegment);
+            _pathGeometry.Figures?.Add(_pathFigure);
+            _progressRingElement!.Data = _pathGeometry;
+        }
 
-        // Add arc segment
-        var arcSegment = new ArcSegment
-        {
-            Point = new Point(endX, endY),
-            Size = new Size(radius, radius),
-            SweepDirection = SweepDirection.Clockwise,
-            IsLargeArc = isLargeArc
-        };
-
-        pathFigure.Segments?.Add(arcSegment);
-        pathGeometry.Figures?.Add(pathFigure);
-
-        return pathGeometry;
+        // Update the existing geometry objects instead of recreating them
+        _pathFigure.StartPoint = new Point(startX, startY);
+        _arcSegment.Point = new Point(endX, endY);
+        _arcSegment.Size = new Size(radius, radius);
+        _arcSegment.IsLargeArc = isLargeArc;
     }
 
     private void UpdateArcAnimation()
