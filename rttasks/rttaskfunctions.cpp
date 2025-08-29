@@ -71,6 +71,16 @@ RSI_TASK(Initialize)
   data->targetX = 0.0;
   data->targetY = 0.0;
 
+  data->firmwareTimingDeltaMax = 0;
+  data->firmwareTimingDeltaMaxSampleCount = 0;
+  data->networkTimingDeltaMax = 0;
+  data->networkTimingDeltaMaxSampleCount = 0;
+  data->networkTimingReceiveDeltaMax = 0;
+  data->networkTimingReceiveDeltaMaxSampleCount = 0;
+
+  // Enable network timing
+  RTMotionControllerGet()->NetworkTimingEnableSet(true);
+
   // Setup the camera
   CameraHelpers::ConfigureCamera(g_camera);
   CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
@@ -304,4 +314,49 @@ RSI_TASK(OutputImage)
 
   // Reset flags after writing
   frameReader.flags() = 0;
+}
+
+template<typename T>
+bool atomic_max(std::atomic<T>& target, T value) {
+  T old = target.load(std::memory_order_relaxed);
+  while (old < value &&
+         !target.compare_exchange_weak(old, value,
+                                       std::memory_order_release,
+                                       std::memory_order_relaxed)) {
+  }
+
+  // Return true if we updated the max
+  return old < value;
+}
+
+RSI_TASK(RecordTimingMetrics)
+{
+  static const uint64_t FIRMWARE_TIMING_DELTA_ADDR = 
+    RTMotionControllerGet()->AddressGet(RSIControllerAddressType::RSIControllerAddressTypeFIRMWARE_TIMING_DELTA);
+
+  static const uint64_t NETWORK_TIMING_DELTA_ADDR = 
+    RTMotionControllerGet()->AddressGet(RSIControllerAddressType::RSIControllerAddressTypeNETWORK_TIMING_DELTA);
+
+  static const uint64_t NETWORK_TIMING_RECEIVE_DELTA_ADDR = 
+    RTMotionControllerGet()->AddressGet(RSIControllerAddressType::RSIControllerAddressTypeNETWORK_TIMING_RECEIVE_DELTA);
+
+  int32_t sampleCount = RTMotionControllerGet()->SampleCounterGet();
+  int32_t networkCount = RTMotionControllerGet()->NetworkCounterGet();
+
+  int32_t firmwareTimingDelta = RTMotionControllerGet()->MemoryGet(FIRMWARE_TIMING_DELTA_ADDR);
+  int32_t networkTimingDelta = RTMotionControllerGet()->MemoryGet(NETWORK_TIMING_DELTA_ADDR);
+  int32_t networkTimingReceiveDelta = RTMotionControllerGet()->MemoryGet(NETWORK_TIMING_RECEIVE_DELTA_ADDR);
+
+  // Update max values and their corresponding sample counts
+  if (atomic_max(data->firmwareTimingDeltaMax, firmwareTimingDelta)) {
+    atomic_max(data->firmwareTimingDeltaMaxSampleCount, sampleCount);
+  }
+
+  if (atomic_max(data->networkTimingDeltaMax, networkTimingDelta)) {
+    atomic_max(data->networkTimingDeltaMaxSampleCount, sampleCount);
+  }
+
+  if (atomic_max(data->networkTimingReceiveDeltaMax, networkTimingReceiveDelta)) {
+    atomic_max(data->networkTimingReceiveDeltaMaxSampleCount, sampleCount);
+  }
 }

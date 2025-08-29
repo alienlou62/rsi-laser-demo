@@ -94,6 +94,14 @@ struct GlobalData
   RSI_GLOBAL(bool, newTarget);
   RSI_GLOBAL(double, targetX);
   RSI_GLOBAL(double, targetY);
+
+  // Timing Metrics
+  RSI_GLOBAL(int32_t, firmwareTimingDeltaMax);
+  RSI_GLOBAL(int32_t, firmwareTimingDeltaMaxSampleCount);
+  RSI_GLOBAL(int32_t, networkTimingDeltaMax);
+  RSI_GLOBAL(int32_t, networkTimingDeltaMaxSampleCount);
+  RSI_GLOBAL(int32_t, networkTimingReceiveDeltaMax);
+  RSI_GLOBAL(int32_t, networkTimingReceiveDeltaMaxSampleCount);
 };
 
 inline constexpr GlobalMetadataMap<RSI::RapidCode::RealTimeTasks::GlobalMaxSize> GlobalMetadata(
@@ -127,6 +135,14 @@ inline constexpr GlobalMetadataMap<RSI::RapidCode::RealTimeTasks::GlobalMaxSize>
   REGISTER_GLOBAL(newTarget),
   REGISTER_GLOBAL(targetX),
   REGISTER_GLOBAL(targetY),
+
+  // Timing Metrics
+  REGISTER_GLOBAL(firmwareTimingDeltaMax),
+  REGISTER_GLOBAL(firmwareTimingDeltaMaxSampleCount),
+  REGISTER_GLOBAL(networkTimingDeltaMax),
+  REGISTER_GLOBAL(networkTimingDeltaMaxSampleCount),
+  REGISTER_GLOBAL(networkTimingReceiveDeltaMax),
+  REGISTER_GLOBAL(networkTimingReceiveDeltaMaxSampleCount)
 });
 
 extern "C"
