@@ -71,7 +71,7 @@
           <LibraryName>RTTaskFunctions</LibraryName>
           <LibraryDirectory />
           <UserLabel>MoveMotors</UserLabel>
-          <Priority>High</Priority>
+          <Priority>Highest</Priority>
           <Repeats>-1</Repeats>
           <Period>1</Period>
           <Phase>0</Phase>
@@ -82,9 +82,20 @@
           <LibraryName>RTTaskFunctions</LibraryName>
           <LibraryDirectory />
           <UserLabel>OutputImage</UserLabel>
-          <Priority>Low</Priority>
+          <Priority>Lowest</Priority>
           <Repeats>-1</Repeats>
           <Period>16</Period>
+          <Phase>0</Phase>
+          <EnableTiming>true</EnableTiming>
+        </RTTask>
+        <RTTask>
+          <FunctionName>RecordTimingMetrics</FunctionName>
+          <LibraryName>RTTaskFunctions</LibraryName>
+          <LibraryDirectory />
+          <UserLabel>RecordTimingMetrics</UserLabel>
+          <Priority>High</Priority>
+          <Repeats>-1</Repeats>
+          <Period>1</Period>
           <Phase>0</Phase>
           <EnableTiming>true</EnableTiming>
         </RTTask>
