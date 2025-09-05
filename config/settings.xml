@@ -40,7 +40,7 @@
       <RTTaskDirectory>/rsi</RTTaskDirectory>
       <Platform>Linux</Platform>
       <NodeName />
-      <CpuCore>6</CpuCore>
+      <CpuCore>4</CpuCore>
       <UserLabel>LaserTracking</UserLabel>
       <NoRmp>false</NoRmp>
       <RTTasks>
