@@ -40,7 +40,7 @@
       <RTTaskDirectory>/rsi</RTTaskDirectory>
       <Platform>Linux</Platform>
       <NodeName />
-      <CpuCore>4</CpuCore>
+      <CpuCore>5</CpuCore>
       <UserLabel>LaserTracking</UserLabel>
       <NoRmp>false</NoRmp>
       <RTTasks>
@@ -49,11 +49,11 @@
           <LibraryName>RTTaskFunctions</LibraryName>
           <LibraryDirectory />
           <UserLabel>Initialize</UserLabel>
-          <Priority>Medium</Priority>
+          <Priority>Lowest</Priority>
           <Repeats>0</Repeats>
           <Period>1</Period>
           <Phase>0</Phase>
-          <EnableTiming>false</EnableTiming>
+          <EnableTiming>true</EnableTiming>
         </RTTask>
         <RTTask>
           <FunctionName>DetectBall</FunctionName>
@@ -82,7 +82,7 @@
           <LibraryName>RTTaskFunctions</LibraryName>
           <LibraryDirectory />
           <UserLabel>OutputImage</UserLabel>
-          <Priority>Lowest</Priority>
+          <Priority>Low</Priority>
           <Repeats>-1</Repeats>
           <Period>16</Period>
           <Phase>0</Phase>
