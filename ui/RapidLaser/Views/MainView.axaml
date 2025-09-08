@@ -1421,7 +1421,7 @@
                             Classes.success="{Binding Program_IsMotionEnabled}"
                             Command="{Binding ToggleProgramMotionEnabledCommand}"
                             CommandParameter="{Binding $self.IsChecked}"
-                            IsChecked="{Binding Program_IsMotionEnabled}"
+                            IsChecked="{Binding Program_IsMotionEnabled, FallbackValue=False, TargetNullValue=False}"
                             IsEnabled="{Binding Global_IsMotionEnabledValid}"
                             IsVisible="{Binding IsProgramRunning}"
                             ToolTip.Tip="Enable/Disable Motion Control">
@@ -1464,7 +1464,7 @@
                             Classes.danger="{Binding !IsCameraStreaming}"
                             Classes.success="{Binding IsCameraStreaming}"
                             Command="{Binding ToggleCameraStreamCommand}"
-                            IsChecked="{Binding IsCameraStreaming, Mode=OneWay}"
+                            IsChecked="{Binding IsCameraStreaming, Mode=OneWay, FallbackValue=False, TargetNullValue=False}"
                             IsEnabled="{Binding IsCameraConnected}"
                             IsVisible="{Binding IsProgramRunning}"
                             ToolTip.Tip="Start/Stop Camera Stream">
@@ -2083,15 +2083,6 @@
                                                 <UniformGrid Margin="0,12,0,0" Columns="3">
 
                                                     <StackPanel Spacing="-2">
-                                                        <TextBlock Classes="label title" Text="Start delta avg" />
-
-                                                        <StackPanel Orientation="Horizontal" Spacing="2">
-                                                            <TextBlock Classes="Mono " Text="{Binding StartTimeDeltaMean, StringFormat=N4}" />
-                                                            <TextBlock Classes="label unit" Text="ms" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-                                                    <StackPanel Spacing="-2">
                                                         <TextBlock Classes="label title" Text="Runtime" />
                                                         <TextBlock Classes="Mono">
                                                             <TextBlock.Text>
@@ -2106,6 +2097,15 @@
                                                     <StackPanel Spacing="-2">
                                                         <TextBlock Classes="label title" Text="Cycles" />
                                                         <TextBlock Classes="Mono " Text="{Binding ExecutionCount, StringFormat=N0}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel Spacing="-2">
+                                                        <TextBlock Classes="label title" Text="Start delta max" />
+
+                                                        <StackPanel Orientation="Horizontal" Spacing="2">
+                                                            <TextBlock Classes="Mono " Text="{Binding StartTimeDeltaMax, StringFormat=N4}" />
+                                                            <TextBlock Classes="label unit" Text="ms" />
+                                                        </StackPanel>
                                                     </StackPanel>
 
                                                 </UniformGrid>
