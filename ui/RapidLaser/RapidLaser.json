@@ -1,0 +1,20 @@
+{
+  "Settings": {
+    "server_IpAddress": "localhost",
+    "server_Port": 50061,
+    "server_AutoReconnect": true,
+
+    "cameraServer_Port": 50080,
+
+    "ssh_Username": "",
+    "ssh_Password": "",
+    "ssh_RunCommand": "rsiconfig /etc/laser_demo/settings.xml --cpu-affinity 7 --primary-nic enp1s0",
+
+    "polling_IntervalMs": 10,
+
+    "global_BallX": "",
+    "global_BallY": "",
+    "global_BallRadius": "",
+    "global_IsMotionEnabled": ""
+  }
+}
