@@ -673,6 +673,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _mainWindow?.Close();
     }
 
+    //tasks
+    [RelayCommand]
+    private void Tasks_TimingReset()
+    {
+        try
+        {
+            if (_rmpGrpcService != null && TaskIds.Count > 0)
+            {
+                _ = _rmpGrpcService.Tasks_TimingResetAsync(TaskIds);
+                LogMessage("Task timing metrics reset");
+            }
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Reset Timing Error: {ex.Message}");
+        }
+    }
 
     /** CONSTRUCTOR **/
     public MainViewModel()

@@ -1893,7 +1893,7 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="RMP RTTasks">
+                <TabItem x:Name="RmpRtTaskTabItem" Header="RMP RTTasks">
                     <ScrollViewer>
                         <StackPanel>
                             <ItemsControl ItemsSource="{Binding Tasks}">
@@ -2121,6 +2121,27 @@
                 </TabItem>
 
             </TabControl>
+
+            <Button
+                Grid.Row="1"
+                Grid.Column="2"
+                Margin="0,-2,0,0"
+                Padding="4"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Classes="theme-subtle"
+                Command="{Binding Tasks_TimingResetCommand}"
+                IsEnabled="{Binding !!TaskIds.Count}"
+                ToolTip.Tip="Reset timing metrics"
+                ZIndex="10">
+                <Button.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="IsProgramRunning" />
+                        <Binding Path="#RmpRtTaskTabItem.IsSelected" />
+                    </MultiBinding>
+                </Button.IsVisible>
+                <icons:MaterialIcon Kind="TimerRefreshOutline" />
+            </Button>
 
         </Grid>
 

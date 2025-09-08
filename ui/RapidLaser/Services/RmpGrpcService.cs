@@ -26,6 +26,7 @@ public interface IRmpGrpcService
     //tasks
     Task<RTTaskCreationParameters> GetTaskCreationParametersAsync(int taskId);
     Task<RTTaskBatchResponse> GetTaskBatchResponseAsync(IEnumerable<int> taskIds);
+    Task Tasks_TimingResetAsync(IEnumerable<int> taskIds);
 }
 
 public class RmpGrpcService : IRmpGrpcService
@@ -273,5 +274,31 @@ public class RmpGrpcService : IRmpGrpcService
         var response = await _rmpClient.RTTaskBatchAsync(request);
 
         return response;
+    }
+
+    public async Task Tasks_TimingResetAsync(IEnumerable<int> taskIds)
+    {
+        if (!_isConnected)
+            throw new InvalidOperationException("Not connected to gRPC server");
+
+        if (_firstTaskManagerIndex is null || _firstTaskManagerIndex.HasValue is false)
+            throw new InvalidOperationException("No task manager index available. Call GetTaskManagerStatusAsync once to set.");
+
+        // request
+        var request = new RTTaskBatchRequest();
+
+        foreach (var id in taskIds)
+        {
+            request.Requests.Add(new RTTaskRequest()
+            {
+                Id = id,
+                ManagerId = _firstTaskManagerIndex.Value,
+                Header = statusOptimizationHeader,
+                Action = new RTTaskAction { TimingReset = new() }
+            });
+        }
+
+        // action
+        await _rmpClient.RTTaskBatchAsync(request);
     }
 }
