@@ -29,6 +29,9 @@
     <!-- Microsoft Configuration packages -->
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.7" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="9.0.7" />
+    <!-- Microsoft Dependency Injection packages -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
     <!-- JSON serialization -->
     <PackageVersion Include="System.Text.Json" Version="9.0.0" />
   </ItemGroup>

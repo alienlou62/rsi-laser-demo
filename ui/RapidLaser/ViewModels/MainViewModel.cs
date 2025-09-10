@@ -703,12 +703,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     /** CONSTRUCTOR **/
-    public MainViewModel()
+    public MainViewModel(ISshService sshService, ICameraService cameraService, IRmpGrpcService rmpGrpcService)
     {
-        //services
-        _sshService     = new SshService();
-        _cameraService  = new HttpCameraService(); // Remove hardcoded URL
-        _rmpGrpcService = new RmpGrpcService();
+        // services
+        _sshService     = sshService ?? throw new ArgumentNullException(nameof(sshService));
+        _cameraService  = cameraService ?? throw new ArgumentNullException(nameof(cameraService));
+        _rmpGrpcService = rmpGrpcService ?? throw new ArgumentNullException(nameof(rmpGrpcService));
 
         // load ui settings from file
         StorageLoad();
