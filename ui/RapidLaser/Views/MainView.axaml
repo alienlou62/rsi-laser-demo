@@ -1666,7 +1666,7 @@
                                             Value="{Binding TaskManagerStatus.State, FallbackValue='-'}" />
 
                                         <controls:StatusLabel
-                                            Title="Cycle Count"
+                                            Title="Cycles"
                                             Margin="0,-10,0,0"
                                             IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsMonoFont="True"
@@ -1674,7 +1674,7 @@
                                             Value="{Binding TaskManagerStatus.CycleCount, FallbackValue='-', StringFormat=N0}" />
 
                                         <controls:StatusLabel
-                                            Title="Start Time Delta Max"
+                                            Title="Start delta max"
                                             Margin="0,-10,0,0"
                                             IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsMonoFont="True"
@@ -1963,7 +1963,7 @@
                                             Value="{Binding TaskManagerStatus.State, FallbackValue='-'}" />
 
                                         <controls:StatusLabel
-                                            Title="Cycle Count"
+                                            Title="Cycles"
                                             Margin="0,-10,0,0"
                                             IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsMonoFont="True"
@@ -1971,7 +1971,7 @@
                                             Value="{Binding TaskManagerStatus.CycleCount, FallbackValue='-', StringFormat=N0}" />
 
                                         <controls:StatusLabel
-                                            Title="Start Time Delta Max"
+                                            Title="Start delta max"
                                             Margin="0,-10,0,0"
                                             IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsMonoFont="True"
