@@ -2095,7 +2095,7 @@
                                                                     IsSpinning="True"
                                                                     IsVisible="{Binding State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Waiting'}"
                                                                     RingColor="#777"
-                                                                    RingThickness="7" />
+                                                                    RingThickness="6" />
                                                             </Panel>
 
                                                             <icons:MaterialIcon
