@@ -1,5 +1,5 @@
 
-namespace RapidLaser.Converters;
+namespace RapidLaser.Globals;
 
 public static class GlobalConverters
 {
@@ -101,7 +101,7 @@ public static class GlobalConverters
     /// <summary>
     /// Converts a value to boolean by comparing with a parameter string
     /// Returns true if the value equals the parameter, false otherwise
-    /// Usage: {Binding SomeProperty, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter=ExpectedValue}
+    /// Usage: {Binding SomeProperty, Converter={x:Static converters:globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter=ExpectedValue}
     /// </summary>
     public static readonly IValueConverter StringEqualsParameterConverter = new FuncValueConverter<object?, object?, bool>((value, parameter) =>
     {
@@ -344,7 +344,7 @@ public static class GlobalConverters
     /// <summary>
     /// Converts execution count (samples) to runtime duration string
     /// Takes the cycle period (in ms) as a converter parameter
-    /// Usage: {Binding ExecutionCount, Converter={x:Static converters:GlobalConverters.ExecutionCountToRuntimeConverter}, ConverterParameter={Binding Period}}
+    /// Usage: {Binding ExecutionCount, Converter={x:Static converters:globals:GlobalConverters.ExecutionCountToRuntimeConverter}, ConverterParameter={Binding Period}}
     /// </summary>
     public static readonly IValueConverter ExecutionCountToRuntimeConverter = new FuncValueConverter<long, object?, string>((executionCount, parameter) =>
     {
@@ -381,7 +381,7 @@ public static class GlobalConverters
     /// First binding: ExecutionCount (long)
     /// Second binding: Period (int/double) in milliseconds
     /// Usage: 
-    /// <MultiBinding Converter="{x:Static converters:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
+    /// <MultiBinding Converter="{x:Static converters:globals:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
     ///     <Binding Path="ExecutionCount" />
     ///     <Binding Path="Period" />
     /// </MultiBinding>
@@ -453,6 +453,4 @@ public static class GlobalConverters
             _ => "?"
         });
     #endregion
-
-
 }

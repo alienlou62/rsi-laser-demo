@@ -5,8 +5,8 @@
     xmlns:actipro="http://schemas.actiprosoftware.com/avaloniaui"
     xmlns:behaviors="using:RapidLaser.Behaviors"
     xmlns:controls="using:RapidLaser.Controls"
-    xmlns:converters="using:RapidLaser.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:globals="using:RapidLaser.Globals"
     xmlns:icons="using:Material.Icons.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:RapidLaser.ViewModels"
@@ -337,7 +337,7 @@
                             <TextBlock
                                 Margin="0,8,0,0"
                                 Foreground="#F44336"
-                                IsVisible="{Binding LastError, Converter={x:Static converters:GlobalConverters.StringNotEmptyToBoolConverter}}"
+                                IsVisible="{Binding LastError, Converter={x:Static globals:GlobalConverters.StringNotEmptyToBoolConverter}}"
                                 Text="{Binding LastError}"
                                 TextWrapping="Wrap" />
 
@@ -712,7 +712,7 @@
 
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Classes="card" Classes.disabled="{Binding State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}">
+                            <Border Classes="card" Classes.disabled="{Binding State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}">
                                 <Border.Styles>
                                     <Style Selector="Border.disabled">
                                         <Setter Property="Opacity" Value="0.5" />
@@ -779,7 +779,7 @@
                                                 ToolTip.ShowDelay="0"
                                                 ToolTip.Tip="Runtime">
                                                 <TextBlock.Text>
-                                                    <MultiBinding Converter="{x:Static converters:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
+                                                    <MultiBinding Converter="{x:Static globals:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
                                                         <Binding Path="ExecutionCount" />
                                                         <Binding Path="Period" />
                                                     </MultiBinding>
@@ -861,7 +861,7 @@
                                             <TextBlock Classes="label title" Text="Runtime" />
                                             <TextBlock Classes="Mono">
                                                 <TextBlock.Text>
-                                                    <MultiBinding Converter="{x:Static converters:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
+                                                    <MultiBinding Converter="{x:Static globals:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
                                                         <Binding Path="ExecutionCount" />
                                                         <Binding Path="Period" />
                                                     </MultiBinding>
@@ -968,13 +968,13 @@
                                                     FontSize="10"
                                                     Foreground="{StaticResource SubtleTextBrush}"
                                                     Opacity="0.8"
-                                                    Text="{Binding IsCanvasResponsive, Converter={x:Static converters:GlobalConverters.BoolToSizeInfoConverter}}" />
+                                                    Text="{Binding IsCanvasResponsive, Converter={x:Static globals:GlobalConverters.BoolToSizeInfoConverter}}" />
                                             </Grid>
 
                                             <!--  render canvas with viewbox for scaling  -->
                                             <Viewbox
                                                 Grid.Row="1"
-                                                Stretch="{Binding IsCanvasResponsive, Converter={x:Static converters:GlobalConverters.ResponsiveStretchConverter}}"
+                                                Stretch="{Binding IsCanvasResponsive, Converter={x:Static globals:GlobalConverters.ResponsiveStretchConverter}}"
                                                 StretchDirection="Both">
                                                 <Canvas
                                                     Name="RenderCanvas"
@@ -991,26 +991,26 @@
                                                         <!--  ellipse size (diameter = radius * 2)  -->
                                                         <Ellipse.Width>
                                                             <Binding
-                                                                Converter="{x:Static converters:GlobalConverters.RadiusToDiameterConverter}"
+                                                                Converter="{x:Static globals:GlobalConverters.RadiusToDiameterConverter}"
                                                                 FallbackValue="10"
                                                                 Path="Program_BallRadius" />
                                                         </Ellipse.Width>
                                                         <Ellipse.Height>
                                                             <Binding
-                                                                Converter="{x:Static converters:GlobalConverters.RadiusToDiameterConverter}"
+                                                                Converter="{x:Static globals:GlobalConverters.RadiusToDiameterConverter}"
                                                                 FallbackValue="10"
                                                                 Path="Program_BallRadius" />
                                                         </Ellipse.Height>
 
                                                         <!--  canvas position (center - radius for top-left positioning)  -->
                                                         <Canvas.Left>
-                                                            <MultiBinding Converter="{x:Static converters:GlobalConverters.BallPositionToCenterOffsetConverter}">
+                                                            <MultiBinding Converter="{x:Static globals:GlobalConverters.BallPositionToCenterOffsetConverter}">
                                                                 <Binding FallbackValue="320" Path="Program_BallX" />
                                                                 <Binding FallbackValue="10" Path="Program_BallRadius" />
                                                             </MultiBinding>
                                                         </Canvas.Left>
                                                         <Canvas.Top>
-                                                            <MultiBinding Converter="{x:Static converters:GlobalConverters.BallYPositionToCenterOffsetConverter}">
+                                                            <MultiBinding Converter="{x:Static globals:GlobalConverters.BallYPositionToCenterOffsetConverter}">
                                                                 <Binding FallbackValue="240" Path="Program_BallY" />
                                                                 <Binding FallbackValue="10" Path="Program_BallRadius" />
                                                             </MultiBinding>
@@ -1110,7 +1110,7 @@
                                                         FontSize="10"
                                                         Foreground="{StaticResource SubtleTextBrush}"
                                                         Opacity="0.8"
-                                                        Text="{Binding IsCanvasResponsive, Converter={x:Static converters:GlobalConverters.BoolToSizeInfoConverter}}" />
+                                                        Text="{Binding IsCanvasResponsive, Converter={x:Static globals:GlobalConverters.BoolToSizeInfoConverter}}" />
 
                                                     <!--  camera streaming icon  -->
                                                     <icons:MaterialIcon
@@ -1168,7 +1168,7 @@
                                             <!--  camera canvas with viewbox for scaling  -->
                                             <Viewbox
                                                 Grid.Row="1"
-                                                Stretch="{Binding IsCanvasResponsive, Converter={x:Static converters:GlobalConverters.ResponsiveStretchConverter}}"
+                                                Stretch="{Binding IsCanvasResponsive, Converter={x:Static globals:GlobalConverters.ResponsiveStretchConverter}}"
                                                 StretchDirection="Both">
                                                 <Canvas
                                                     Name="CameraCanvas"
@@ -1196,26 +1196,26 @@
                                                         <!--  ellipse size (diameter = radius * 2)  -->
                                                         <Ellipse.Width>
                                                             <Binding
-                                                                Converter="{x:Static converters:GlobalConverters.RadiusToDiameterConverter}"
+                                                                Converter="{x:Static globals:GlobalConverters.RadiusToDiameterConverter}"
                                                                 FallbackValue="10"
                                                                 Path="CameraRadius" />
                                                         </Ellipse.Width>
                                                         <Ellipse.Height>
                                                             <Binding
-                                                                Converter="{x:Static converters:GlobalConverters.RadiusToDiameterConverter}"
+                                                                Converter="{x:Static globals:GlobalConverters.RadiusToDiameterConverter}"
                                                                 FallbackValue="10"
                                                                 Path="CameraRadius" />
                                                         </Ellipse.Height>
 
                                                         <!--  canvas position (center - radius for top-left positioning)  -->
                                                         <Canvas.Left>
-                                                            <MultiBinding Converter="{x:Static converters:GlobalConverters.BallPositionToCenterOffsetConverter}">
+                                                            <MultiBinding Converter="{x:Static globals:GlobalConverters.BallPositionToCenterOffsetConverter}">
                                                                 <Binding FallbackValue="320" Path="CameraCenterX" />
                                                                 <Binding FallbackValue="10" Path="CameraRadius" />
                                                             </MultiBinding>
                                                         </Canvas.Left>
                                                         <Canvas.Top>
-                                                            <MultiBinding Converter="{x:Static converters:GlobalConverters.BallYPositionToCenterOffsetConverter}">
+                                                            <MultiBinding Converter="{x:Static globals:GlobalConverters.BallYPositionToCenterOffsetConverter}">
                                                                 <Binding FallbackValue="240" Path="CameraCenterY" />
                                                                 <Binding FallbackValue="10" Path="CameraRadius" />
                                                             </MultiBinding>
@@ -1643,7 +1643,7 @@
                                         <!--  network  -->
                                         <controls:StatusLabel
                                             Title="EtherCAT Network"
-                                            IsActive="{Binding NetworkStatus.State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsActive="{Binding NetworkStatus.State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
                                             TitleOpacity="1"
                                             Value="{Binding NetworkStatus.State, FallbackValue='-'}" />
@@ -1651,7 +1651,7 @@
                                         <controls:StatusLabel
                                             Title="Counter"
                                             Margin="0,-10,0,0"
-                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsMonoFont="True"
                                             IsValueVisible="{Binding $self.IsEnabled}"
                                             Value="{Binding NetworkStatus.Counter, FallbackValue='-', StringFormat=N0}" />
@@ -1668,7 +1668,7 @@
                                         <controls:StatusLabel
                                             Title="Cycles"
                                             Margin="0,-10,0,0"
-                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsMonoFont="True"
                                             IsValueVisible="{Binding $self.IsEnabled}"
                                             Value="{Binding TaskManagerStatus.CycleCount, FallbackValue='-', StringFormat=N0}" />
@@ -1676,7 +1676,7 @@
                                         <controls:StatusLabel
                                             Title="Start delta max"
                                             Margin="0,-10,0,0"
-                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsMonoFont="True"
                                             IsValueVisible="{Binding $self.IsEnabled}"
                                             Value="{Binding TaskManagerStatus.StartTimeDeltaMax, FallbackValue='-', StringFormat=N0}" />
@@ -1724,8 +1724,8 @@
                                                             Height="14"
                                                             HorizontalAlignment="Right"
                                                             VerticalAlignment="Bottom"
-                                                            Classes.is-false="{Binding Value, Converter={x:Static converters:GlobalConverters.StringToNotBoolConverter}}"
-                                                            Classes.is-true="{Binding Value, Converter={x:Static converters:GlobalConverters.StringToBoolConverter}}"
+                                                            Classes.is-false="{Binding Value, Converter={x:Static globals:GlobalConverters.StringToNotBoolConverter}}"
+                                                            Classes.is-true="{Binding Value, Converter={x:Static globals:GlobalConverters.StringToBoolConverter}}"
                                                             IsVisible="{Binding !IsNumeric}">
                                                             <icons:MaterialIcon.Styles>
 
@@ -1965,7 +1965,7 @@
                                         <controls:StatusLabel
                                             Title="Cycles"
                                             Margin="0,-10,0,0"
-                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsMonoFont="True"
                                             IsValueVisible="{Binding $self.IsEnabled}"
                                             Value="{Binding TaskManagerStatus.CycleCount, FallbackValue='-', StringFormat=N0}" />
@@ -1973,7 +1973,7 @@
                                         <controls:StatusLabel
                                             Title="Start delta max"
                                             Margin="0,-10,0,0"
-                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
                                             IsMonoFont="True"
                                             IsValueVisible="{Binding $self.IsEnabled}"
                                             Value="{Binding TaskManagerStatus.StartTimeDeltaMax, FallbackValue='-', StringFormat=N0}" />
@@ -2019,7 +2019,7 @@
 
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Classes="card" Classes.disabled="{Binding State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}">
+                                        <Border Classes="card" Classes.disabled="{Binding State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}">
                                             <Border.Styles>
                                                 <Style Selector="Border.disabled">
                                                     <Setter Property="Opacity" Value="0.65" />
@@ -2081,7 +2081,7 @@
                                                                     FontSize="10"
                                                                     FontWeight="Bold"
                                                                     Foreground="#777"
-                                                                    Text="{Binding Priority, Converter={x:Static converters:GlobalConverters.TaskPriorityToShortStringConverter}}"
+                                                                    Text="{Binding Priority, Converter={x:Static globals:GlobalConverters.TaskPriorityToShortStringConverter}}"
                                                                     TextInputOptions.AutoCapitalization="True" />
 
                                                                 <controls:ProgressRing
@@ -2093,7 +2093,7 @@
                                                                     ArcAnimationDuration="1.75"
                                                                     IsArcAnimationEnabled="True"
                                                                     IsSpinning="True"
-                                                                    IsVisible="{Binding State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Waiting'}"
+                                                                    IsVisible="{Binding State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Waiting'}"
                                                                     RingColor="#777"
                                                                     RingThickness="" />
                                                             </Panel>
@@ -2102,7 +2102,7 @@
                                                                 Margin="-1,-2,-1,0"
                                                                 VerticalAlignment="Center"
                                                                 Foreground="#777"
-                                                                IsVisible="{Binding State, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}"
+                                                                IsVisible="{Binding State, Converter={x:Static globals:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}"
                                                                 Kind="SkullCrossbones" />
 
                                                         </StackPanel>
@@ -2133,7 +2133,7 @@
                                                             ToolTip.ShowDelay="0"
                                                             ToolTip.Tip="Runtime">
                                                             <TextBlock.Text>
-                                                                <MultiBinding Converter="{x:Static converters:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
+                                                                <MultiBinding Converter="{x:Static globals:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
                                                                     <Binding Path="ExecutionCount" />
                                                                     <Binding Path="Period" />
                                                                 </MultiBinding>
@@ -2206,7 +2206,7 @@
                                                         <TextBlock Classes="label title" Text="Runtime" />
                                                         <TextBlock Classes="Mono">
                                                             <TextBlock.Text>
-                                                                <MultiBinding Converter="{x:Static converters:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
+                                                                <MultiBinding Converter="{x:Static globals:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
                                                                     <Binding Path="ExecutionCount" />
                                                                     <Binding Path="Period" />
                                                                 </MultiBinding>
