@@ -2,7 +2,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:RapidLaser.Controls"
-    xmlns:globals="using:RapidLaser.Globals">
+    xmlns:resources="using:RapidLaser.Resources">
 
     <Design.PreviewWith>
         <controls:StatusLabel />
@@ -32,7 +32,7 @@
                         VerticalAlignment="Center"
                         FontSize="12"
                         FontWeight="SemiBold"
-                        Foreground="{TemplateBinding IsActive, Converter={x:Static globals:GlobalConverters.StatusColorConverter}}"
+                        Foreground="{TemplateBinding IsActive, Converter={x:Static resources:Converters.StatusColorConverter}}"
                         IsVisible="{TemplateBinding IsValueVisible}"
                         Text="{TemplateBinding Value}" />
                 </Grid>
