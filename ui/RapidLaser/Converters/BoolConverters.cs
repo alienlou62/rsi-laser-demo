@@ -434,4 +434,29 @@ public static class StringConverters
     /// </summary>
     public static readonly FuncValueConverter<string?, bool> IsNotNullOrEmpty =
         new(str => !string.IsNullOrEmpty(str));
+
+    /// <summary>
+    /// Convert string to capital letters
+    /// </summary>
+    public static readonly FuncValueConverter<object, string> ToUpperConverter =
+        new(obj => obj?.ToString()?.ToUpper(CultureInfo.CurrentCulture) ?? string.Empty);
+
+
+
+    /// <summary>
+    /// TaskPriority enum to short string
+    /// </summary>
+    public static readonly FuncValueConverter<object, string> TaskPriorityToShortStringConverter =
+        new(obj => obj switch
+        {
+            TaskPriority.Nonrealtime => "NR",
+            TaskPriority.Lowest => "LT",
+            TaskPriority.Low => "L",
+            TaskPriority.Mediumlow => "ML",
+            TaskPriority.Medium => "M",
+            TaskPriority.Mediumhigh => "MH",
+            TaskPriority.High => "H",
+            TaskPriority.Highest => "HT",
+            _ => "?"
+        });
 }

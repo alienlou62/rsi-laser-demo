@@ -2041,9 +2041,7 @@
                                                             <TextBlock
                                                                 FontSize="14"
                                                                 FontWeight="SemiBold"
-                                                                Text="{Binding Function}"
-                                                                ToolTip.ShowDelay="0"
-                                                                ToolTip.Tip="{Binding Priority, StringFormat='{}Priority: {0}'}" />
+                                                                Text="{Binding Function}" />
                                                             <TextBlock
                                                                 Margin="0,0,0,1"
                                                                 VerticalAlignment="Bottom"
@@ -2063,27 +2061,51 @@
                                                             IsVisible="False"
                                                             Text="{Binding State}" />
 
-                                                        <controls:ProgressRing
-                                                            Width="15"
-                                                            Height="15"
-                                                            Margin="-1,-3,-1,-1"
+                                                        <!--  right side  -->
+                                                        <StackPanel
                                                             HorizontalAlignment="Right"
-                                                            VerticalAlignment="Center"
-                                                            AnimationDuration="1.25"
-                                                            ArcAnimationDuration="1.75"
-                                                            IsArcAnimationEnabled="True"
-                                                            IsSpinning="True"
-                                                            IsVisible="{Binding State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Waiting'}"
-                                                            RingColor="#777"
-                                                            RingThickness="9" />
+                                                            Orientation="Horizontal"
+                                                            Spacing="6">
 
-                                                        <icons:MaterialIcon
-                                                            Margin="-1,-3,-1,0"
-                                                            HorizontalAlignment="Right"
-                                                            VerticalAlignment="Center"
-                                                            Foreground="#777"
-                                                            IsVisible="{Binding State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}"
-                                                            Kind="SkullCrossbones" />
+                                                            <Panel
+                                                                Margin="0,0,-1,0"
+                                                                ToolTip.ShowDelay="0"
+                                                                ToolTip.Tip="{Binding Priority, StringFormat='{}Priority: {0}'}">
+                                                                <TextBlock
+                                                                    MinHeight="0"
+                                                                    Margin="0,-1,0,0"
+                                                                    Padding="0"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center"
+                                                                    Classes="Mono"
+                                                                    FontSize="10"
+                                                                    FontWeight="Bold"
+                                                                    Foreground="#777"
+                                                                    Text="{Binding Priority, Converter={x:Static converters:StringConverters.TaskPriorityToShortStringConverter}}"
+                                                                    TextInputOptions.AutoCapitalization="True" />
+
+                                                                <controls:ProgressRing
+                                                                    Width="19"
+                                                                    Height="19"
+                                                                    Margin="-1,-2,-1,-1"
+                                                                    VerticalAlignment="Center"
+                                                                    AnimationDuration="1.25"
+                                                                    ArcAnimationDuration="1.75"
+                                                                    IsArcAnimationEnabled="True"
+                                                                    IsSpinning="True"
+                                                                    IsVisible="{Binding State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Waiting'}"
+                                                                    RingColor="#777"
+                                                                    RingThickness="7" />
+                                                            </Panel>
+
+                                                            <icons:MaterialIcon
+                                                                Margin="-1,-2,-1,0"
+                                                                VerticalAlignment="Center"
+                                                                Foreground="#777"
+                                                                IsVisible="{Binding State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Disabled'}"
+                                                                Kind="SkullCrossbones" />
+
+                                                        </StackPanel>
 
                                                     </Grid>
 
