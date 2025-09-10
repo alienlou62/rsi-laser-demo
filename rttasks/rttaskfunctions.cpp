@@ -1,14 +1,14 @@
-//camera
+// camera
 #include <opencv2/opencv.hpp>
 #include <pylon/PylonIncludes.h>
 
-//src
+// src
 #include "rttaskglobals.h"
 #include "camera_helpers.h"
 #include "image_processing.h"
 #include "shared_data_helpers.h"
 
-//system
+// system
 #include <iostream>
 #include <string>
 #include <chrono>
@@ -51,6 +51,7 @@ RSI_TASK(Initialize)
   data->cameraReady = false;
   data->cameraGrabbing = false;
   data->frameGrabFailures = 0;
+  data->cameraFPS = 0.0;
 
   data->ballDetected = false;
   data->ballDetectionFailures = 0;
@@ -71,7 +72,6 @@ RSI_TASK(Initialize)
   data->targetX = 0.0;
   data->targetY = 0.0;
 
-  data->currentFPS = 0.0;
   data->firmwareTimingDeltaMax = 0;
   data->firmwareTimingDeltaMaxSampleCount = 0;
   data->networkTimingDeltaMax = 0;
@@ -113,32 +113,36 @@ RSI_TASK(MoveMotors)
   static constexpr double POS_Y_LIMIT = 0.14;
 
   // Check if the system is initialized and motion is enabled
-  if (!data->initialized) return;
-  if (!data->motionEnabled) return;
-  if (!data->multiAxisReady) return;
+  if (!data->initialized)
+    return;
+  if (!data->motionEnabled)
+    return;
+  if (!data->multiAxisReady)
+    return;
 
   // Only execute if a new target is set
-  if (!data->newTarget.exchange(false)) return;
+  if (!data->newTarget.exchange(false))
+    return;
 
   // Move the motors to the target positions respecting the limits
   try
-    {
-      double clampedX = std::clamp(data->targetX.load(), NEG_X_LIMIT, POS_X_LIMIT);
-      double clampedY = std::clamp(data->targetY.load(), NEG_Y_LIMIT, POS_Y_LIMIT);
-      RTMultiAxisGet(0)->MoveSCurve(std::array{clampedX, clampedY}.data());
-    }
-    catch (const RsiError &e)
-    {
-      if (RTMultiAxisGet(0))
-        RTMultiAxisGet(0)->Abort();
-      throw std::runtime_error(std::string("RMP exception during velocity control: ") + e.what());
-    }
-    catch (const std::exception &ex)
-    {
-      if (RTMultiAxisGet(0))
-        RTMultiAxisGet(0)->Abort();
-      throw std::runtime_error(std::string("Error during velocity control: ") + ex.what());
-    }
+  {
+    double clampedX = std::clamp(data->targetX.load(), NEG_X_LIMIT, POS_X_LIMIT);
+    double clampedY = std::clamp(data->targetY.load(), NEG_Y_LIMIT, POS_Y_LIMIT);
+    RTMultiAxisGet(0)->MoveSCurve(std::array{clampedX, clampedY}.data());
+  }
+  catch (const RsiError &e)
+  {
+    if (RTMultiAxisGet(0))
+      RTMultiAxisGet(0)->Abort();
+    throw std::runtime_error(std::string("RMP exception during velocity control: ") + e.what());
+  }
+  catch (const std::exception &ex)
+  {
+    if (RTMultiAxisGet(0))
+      RTMultiAxisGet(0)->Abort();
+    throw std::runtime_error(std::string("Error during velocity control: ") + ex.what());
+  }
 }
 
 // Processes the image captured by the camera.
@@ -146,8 +150,10 @@ RSI_TASK(DetectBall)
 {
   static SharedDataHelpers::SPSCStorageManager frameWriter(g_frameStorage, true);
 
-  if (!data->initialized) return;
-  if (!data->cameraReady) return;
+  if (!data->initialized)
+    return;
+  if (!data->cameraReady)
+    return;
 
   bool frameGrabbed = false;
 
@@ -164,16 +170,18 @@ RSI_TASK(DetectBall)
   data->cameraGrabbing = true;
 
   // If frame grab failed due to a timeout, exit early but do not increment failure count
-  if (!frameGrabbed) return;
+  if (!frameGrabbed)
+    return;
 
   // Store image data for JSON file - for C# server communication
   static uint32_t sequenceNumber = 0;
   sequenceNumber++;
-  
+
   // Get current frame timestamp
   auto frameTimestamp = std::chrono::duration_cast<std::chrono::microseconds>(
-    std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-  
+                            std::chrono::high_resolution_clock::now().time_since_epoch())
+                            .count();
+
   // Update image streaming globals
   data->newImageAvailable = true;
   data->frameTimestamp = frameTimestamp;
@@ -186,8 +194,8 @@ RSI_TASK(DetectBall)
   double initialY(RTAxisGet(1)->ActualPositionGet());
 
   // Convert the grabbed frame to a CV mat format for processing
-  cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()), 
-                                                      CameraHelpers::IMAGE_WIDTH, 
+  cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()),
+                                                      CameraHelpers::IMAGE_WIDTH,
                                                       CameraHelpers::IMAGE_HEIGHT);
 
   // Detect the ball in the YUYV frame
@@ -205,12 +213,13 @@ RSI_TASK(DetectBall)
 
   // Calculate the target positions based on the offsets and the position at the time of frame grab
   double offsetX(0.0), offsetY(0.0);
-  if (ballDetected) {
+  if (ballDetected)
+  {
     ImageProcessing::CalculateTargetPosition(ball, offsetX, offsetY);
     data->targetX = initialX + offsetX;
     data->targetY = initialY + offsetY;
   }
-  
+
   // Store the YUYV frame and metadata in the shared memory
   memcpy(frameWriter.data().yuyvData, yuyvFrame.data, sizeof(CameraHelpers::YUYVFrame));
   frameWriter.data().frameNumber = data->imageSequenceNumber;
@@ -233,50 +242,59 @@ RSI_TASK(DetectBall)
 }
 
 // A simple rolling average class to smooth timing metrics
-class RollingAverage {
+class RollingAverage
+{
 public:
-    explicit RollingAverage(size_t sampleCount)
-        : buffer(sampleCount, 0.0), maxSize(sampleCount), index(0), filled(false), sum(0.0) {}
+  explicit RollingAverage(size_t sampleCount)
+      : buffer(sampleCount, 0.0), maxSize(sampleCount), index(0), filled(false), sum(0.0) {}
 
-    // Update the rolling average with a new value and return the current average
-    double update(double value) {
-        sum -= buffer[index];
-        buffer[index] = value;
-        sum += value;
-        index = (index + 1) % maxSize;
-        if (index == 0) filled = true;
-        return average();
-    }
+  // Update the rolling average with a new value and return the current average
+  double update(double value)
+  {
+    sum -= buffer[index];
+    buffer[index] = value;
+    sum += value;
+    index = (index + 1) % maxSize;
+    if (index == 0)
+      filled = true;
+    return average();
+  }
 
-    // Get the current average
-    double average() const {
-        size_t count = filled ? maxSize : index;
-        return count > 0 ? sum / count : 0.0;
-    }
+  // Get the current average
+  double average() const
+  {
+    size_t count = filled ? maxSize : index;
+    return count > 0 ? sum / count : 0.0;
+  }
 
 private:
-    std::vector<double> buffer;
-    size_t maxSize;
-    size_t index;
-    bool filled;
-    double sum;
+  std::vector<double> buffer;
+  size_t maxSize;
+  size_t index;
+  bool filled;
+  double sum;
 };
 
 // Function to convert image data to base64 for JSON embedding
-std::string EncodeBase64(const std::vector<uint8_t>& data) {
+std::string EncodeBase64(const std::vector<uint8_t> &data)
+{
   static const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   std::string result;
   int val = 0, valb = -6;
-  for (uint8_t c : data) {
+  for (uint8_t c : data)
+  {
     val = (val << 8) + c;
     valb += 8;
-    while (valb >= 0) {
+    while (valb >= 0)
+    {
       result.push_back(chars[(val >> valb) & 0x3F]);
       valb -= 6;
     }
   }
-  if (valb > -6) result.push_back(chars[((val << 8) >> (valb + 8)) & 0x3F]);
-  while (result.size() % 4) result.push_back('=');
+  if (valb > -6)
+    result.push_back(chars[((val << 8) >> (valb + 8)) & 0x3F]);
+  while (result.size() % 4)
+    result.push_back('=');
   return result;
 }
 
@@ -290,11 +308,13 @@ RSI_TASK(OutputImage)
   static int lastFrameNumber = -1;
   static RollingAverage fpsAverage(30); // 30-sample rolling average for FPS
 
-  if (!data->initialized) return;
+  if (!data->initialized)
+    return;
 
   // Check if new image data is available
   frameReader.exchange();
-  if (frameReader.flags() == 0) return;
+  if (frameReader.flags() == 0)
+    return;
 
   // Update FPS calculation
   if (lastTimeStamp != 0.0 && lastFrameNumber != -1)
@@ -302,24 +322,25 @@ RSI_TASK(OutputImage)
     double timeDelta = frameReader.data().timestamp - lastTimeStamp;
     int numImages = frameReader.data().frameNumber - lastFrameNumber;
     double fps = numImages * US_PER_SEC / timeDelta;
-    data->currentFPS = fpsAverage.update(fps);
+    data->cameraFPS = fpsAverage.update(fps);
   }
   lastTimeStamp = frameReader.data().timestamp;
   lastFrameNumber = frameReader.data().frameNumber;
 
-  try {
+  try
+  {
     // Construct cv::Mat from YUYVFrame data in the shared buffer
-    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void*)frameReader.data().yuyvData);
+    cv::Mat yuyvMat(CameraHelpers::IMAGE_HEIGHT, CameraHelpers::IMAGE_WIDTH, CV_8UC2, (void *)frameReader.data().yuyvData);
     cv::Mat rgbFrame;
     cv::cvtColor(yuyvMat, rgbFrame, cv::COLOR_YUV2RGB_YUYV);
     // Encode as JPEG with quality 80
     std::vector<uint8_t> jpegBuffer;
     std::vector<int> jpegParams = {cv::IMWRITE_JPEG_QUALITY, 80};
     cv::imencode(".jpg", rgbFrame, jpegBuffer, jpegParams);
-    
+
     // Convert to base64
     std::string base64Image = EncodeBase64(jpegBuffer);
-    
+
     // Write JSON with frame data
     std::ostringstream json;
     json << "{\n";
@@ -338,24 +359,27 @@ RSI_TASK(OutputImage)
     json << "  \"targetY\": " << std::fixed << std::setprecision(2) << frameReader.data().targetY << ",\n";
     json << "  \"rtTaskRunning\": true\n";
     json << "}";
-    
+
     // Write to file atomically
     std::ofstream dataFile("/tmp/rsi_camera_data.json.tmp");
-    if (dataFile.is_open()) {
+    if (dataFile.is_open())
+    {
       dataFile << json.str();
       dataFile.close();
       // Atomic rename to prevent partial reads
       std::rename("/tmp/rsi_camera_data.json.tmp", "/tmp/rsi_camera_data.json");
     }
-    
+
     // Create running flag file
     std::ofstream flagFile("/tmp/rsi_rt_task_running");
-    if (flagFile.is_open()) {
+    if (flagFile.is_open())
+    {
       flagFile << "1";
       flagFile.close();
     }
   }
-  catch (const std::exception& e) {
+  catch (const std::exception &e)
+  {
     std::cerr << "Error writing camera frame JSON: " << e.what() << std::endl;
   }
 
@@ -363,13 +387,15 @@ RSI_TASK(OutputImage)
   frameReader.flags() = 0;
 }
 
-template<typename T>
-bool atomic_max(std::atomic<T>& target, T value) {
+template <typename T>
+bool atomic_max(std::atomic<T> &target, T value)
+{
   T old = target.load(std::memory_order_relaxed);
   while (old < value &&
          !target.compare_exchange_weak(old, value,
                                        std::memory_order_release,
-                                       std::memory_order_relaxed)) {
+                                       std::memory_order_relaxed))
+  {
   }
 
   // Return true if we updated the max
@@ -378,14 +404,14 @@ bool atomic_max(std::atomic<T>& target, T value) {
 
 RSI_TASK(RecordTimingMetrics)
 {
-  static const uint64_t FIRMWARE_TIMING_DELTA_ADDR = 
-    RTMotionControllerGet()->AddressGet(RSIControllerAddressType::RSIControllerAddressTypeFIRMWARE_TIMING_DELTA);
+  static const uint64_t FIRMWARE_TIMING_DELTA_ADDR =
+      RTMotionControllerGet()->AddressGet(RSIControllerAddressType::RSIControllerAddressTypeFIRMWARE_TIMING_DELTA);
 
-  static const uint64_t NETWORK_TIMING_DELTA_ADDR = 
-    RTMotionControllerGet()->AddressGet(RSIControllerAddressType::RSIControllerAddressTypeNETWORK_TIMING_DELTA);
+  static const uint64_t NETWORK_TIMING_DELTA_ADDR =
+      RTMotionControllerGet()->AddressGet(RSIControllerAddressType::RSIControllerAddressTypeNETWORK_TIMING_DELTA);
 
-  static const uint64_t NETWORK_TIMING_RECEIVE_DELTA_ADDR = 
-    RTMotionControllerGet()->AddressGet(RSIControllerAddressType::RSIControllerAddressTypeNETWORK_TIMING_RECEIVE_DELTA);
+  static const uint64_t NETWORK_TIMING_RECEIVE_DELTA_ADDR =
+      RTMotionControllerGet()->AddressGet(RSIControllerAddressType::RSIControllerAddressTypeNETWORK_TIMING_RECEIVE_DELTA);
 
   int32_t sampleCount = RTMotionControllerGet()->SampleCounterGet();
   int32_t networkCount = RTMotionControllerGet()->NetworkCounterGet();
@@ -395,15 +421,18 @@ RSI_TASK(RecordTimingMetrics)
   int32_t networkTimingReceiveDelta = RTMotionControllerGet()->MemoryGet(NETWORK_TIMING_RECEIVE_DELTA_ADDR);
 
   // Update max values and their corresponding sample counts
-  if (atomic_max(data->firmwareTimingDeltaMax, firmwareTimingDelta)) {
+  if (atomic_max(data->firmwareTimingDeltaMax, firmwareTimingDelta))
+  {
     atomic_max(data->firmwareTimingDeltaMaxSampleCount, sampleCount);
   }
 
-  if (atomic_max(data->networkTimingDeltaMax, networkTimingDelta)) {
+  if (atomic_max(data->networkTimingDeltaMax, networkTimingDelta))
+  {
     atomic_max(data->networkTimingDeltaMaxSampleCount, sampleCount);
   }
 
-  if (atomic_max(data->networkTimingReceiveDeltaMax, networkTimingReceiveDelta)) {
+  if (atomic_max(data->networkTimingReceiveDeltaMax, networkTimingReceiveDelta))
+  {
     atomic_max(data->networkTimingReceiveDeltaMaxSampleCount, sampleCount);
   }
 }

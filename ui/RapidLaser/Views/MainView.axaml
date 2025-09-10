@@ -1298,12 +1298,13 @@
                                                 <TextBlock
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
-                                                    Text="{Binding CameraFps, FallbackValue=0, StringFormat='FPS: {0:F1}'}" />
+                                                    Text="{Binding CameraFrameNumber, FallbackValue='-', StringFormat='Frames: {0:N0}'}" />
 
                                                 <TextBlock
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
-                                                    Text="{Binding CameraFrameNumber, FallbackValue='-', StringFormat='Frames: {0:N0}'}" />
+                                                    Text="{Binding Program_CameraFps, FallbackValue=0, StringFormat='FPS: {0:F1}'}" />
+
 
                                             </StackPanel>
 
@@ -1602,7 +1603,7 @@
                             VerticalAlignment="Top"
                             Spacing="12">
 
-                            <!--  Server Card  -->
+                            <!--  RMP Staus Card  -->
                             <Border Classes="card">
                                 <StackPanel IsEnabled="{Binding IsConnected}">
 
@@ -1752,7 +1753,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <!--  Program Card  -->
+                            <!--  Mappings Card  -->
                             <Border Classes="card" IsEnabled="{Binding IsConnected}">
                                 <Border.Styles>
 
@@ -1907,6 +1908,29 @@
                                                 </StackPanel>
                                             </DockPanel>
 
+                                            <!--  current fpt  -->
+                                            <DockPanel LastChildFill="True">
+                                                <controls:StatusLabel Title="Camera FPS" IsActive="{Binding Global_IsCameraFpsValid}" />
+
+                                                <StackPanel
+                                                    HorizontalAlignment="Right"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8">
+
+                                                    <AutoCompleteBox
+                                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                        Classes="theme-soft"
+                                                        ItemsSource="{Binding GlobalValues}"
+                                                        Text="{Binding Global_CameraFps}"
+                                                        ValueMemberBinding="{Binding Name}">
+                                                        <AutoCompleteBox.InnerRightContent>
+                                                            <icons:MaterialIcon Tag="{Binding Global_IsCameraFpsValid}" />
+                                                        </AutoCompleteBox.InnerRightContent>
+                                                    </AutoCompleteBox>
+
+                                                </StackPanel>
+                                            </DockPanel>
+
                                         </StackPanel>
                                     </StackPanel>
 
@@ -1920,7 +1944,56 @@
 
                 <TabItem x:Name="RmpRtTaskTabItem" Header="RMP RTTasks">
                     <ScrollViewer>
-                        <StackPanel>
+                        <StackPanel Spacing="12">
+                            <!--  TaskManager Card  -->
+                            <Border Classes="card">
+                                <StackPanel IsEnabled="{Binding IsConnected}">
+
+                                    <StackPanel
+                                        Margin="0"
+                                        IsVisible="{Binding IsConnected}"
+                                        Spacing="12">
+
+                                        <!--  taskmanager  -->
+                                        <controls:StatusLabel
+                                            Title="TaskManager"
+                                            IsActive="{Binding TaskManagerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            IsValueVisible="{Binding $self.IsEnabled}"
+                                            TitleOpacity="1"
+                                            Value="{Binding TaskManagerStatus.State, FallbackValue='-'}" />
+
+                                        <controls:StatusLabel
+                                            Title="Cycle Count"
+                                            Margin="0,-10,0,0"
+                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsMonoFont="True"
+                                            IsValueVisible="{Binding $self.IsEnabled}"
+                                            Value="{Binding TaskManagerStatus.CycleCount, FallbackValue='-', StringFormat=N0}" />
+
+                                        <controls:StatusLabel
+                                            Title="Start Time Delta Max"
+                                            Margin="0,-10,0,0"
+                                            IsEnabled="{Binding NetworkStatus.State, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter='Operational', FallbackValue=False}"
+                                            IsMonoFont="True"
+                                            IsValueVisible="{Binding $self.IsEnabled}"
+                                            Value="{Binding TaskManagerStatus.StartTimeDeltaMax, FallbackValue='-', StringFormat=N0}" />
+
+
+                                        <!--  taskmanager  -->
+                                        <controls:StatusLabel
+                                            Title="Tasks"
+                                            Margin="0,0,0,0"
+                                            IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            IsMonoFont="True"
+                                            IsValueVisible="{Binding $self.IsEnabled}"
+                                            TitleOpacity="1"
+                                            Value="{Binding TaskManagerStatus.TaskIds.Count, FallbackValue='-'}" />
+
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
                             <ItemsControl ItemsSource="{Binding Tasks}">
 
                                 <ItemsControl.Styles>

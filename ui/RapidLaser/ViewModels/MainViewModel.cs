@@ -46,6 +46,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         OnGlobal_BallYChanged(Global_BallY);
         OnGlobal_BallRadiusChanged(Global_BallRadius);
         OnGlobal_IsMotionEnabledChanged(Global_IsMotionEnabled);
+        OnGlobal_CameraFpsChanged(Global_CameraFps);
     }
 
     //global names
@@ -89,6 +90,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _global_IsMotionEnabledValid;
 
+    [ObservableProperty]
+    private string? _global_CameraFps;
+    partial void OnGlobal_CameraFpsChanged(string? value)
+    {
+        Global_IsCameraFpsValid = GlobalValues.Any(g => string.Equals(g.Name, value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [ObservableProperty]
+    private bool _global_IsCameraFpsValid;
+
     //program mappings (these hold global values)
     [ObservableProperty]
     private double? _program_BallX = 320.0; // Default center position
@@ -101,6 +112,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool? _program_IsMotionEnabled;
+
+    [ObservableProperty]
+    private double? _program_CameraFps;
 
     [ObservableProperty]
     private double _detectionConfidence = 95.0;
@@ -155,9 +169,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private double _frameRate = CAMERA_TARGET_FPS;
-
-    [ObservableProperty]
-    private double _cameraFps = 0.0;
 
     [ObservableProperty]
     private int _binaryThreshold = 128;
@@ -810,7 +821,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         try
         {
-            var frameCounter = 0;
             var frameTimeTracker = DateTime.Now;
 
             // Calculate target frame interval for camera streaming
@@ -855,22 +865,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     {
                         // Process the frame
                         await ProcessHttpCameraFrameAsync(frameData);
-
-                        // Update frame count and FPS
-                        frameCounter++;
-                        if (frameCounter % 10 == 0) // Update FPS every 10 frames
-                        {
-                            var now = DateTime.Now;
-                            var elapsed = (now - frameTimeTracker).TotalSeconds;
-                            if (elapsed > 0)
-                            {
-                                await Dispatcher.UIThread.InvokeAsync(() =>
-                                {
-                                    CameraFps = 10.0 / elapsed;
-                                });
-                            }
-                            frameTimeTracker = now;
-                        }
                     }
 
                     // Calculate how long this frame took to process
@@ -1121,6 +1115,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Program_BallY           = GetDoubleValueFromGlobal(Global_BallY) ?? Program_BallY;
         Program_BallRadius      = GetDoubleValueFromGlobal(Global_BallRadius) ?? Program_BallRadius;
         Program_IsMotionEnabled = GetBooleanValueFromGlobal(Global_IsMotionEnabled) ?? Program_IsMotionEnabled;
+        Program_CameraFps       = GetDoubleValueFromGlobal(Global_CameraFps) ?? Program_CameraFps;
 
         // Uncomment and use if needed:
         // DetectionConfidence = GetDoubleValueFromGlobal("DetectionConfidence") ?? DetectionConfidence;
