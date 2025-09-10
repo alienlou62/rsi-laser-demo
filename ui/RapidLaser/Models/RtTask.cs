@@ -10,6 +10,9 @@ public partial class RtTask : ObservableObject
     private string _function = string.Empty;
 
     [ObservableProperty]
+    private TaskPriority? _priority;
+
+    [ObservableProperty]
     private int _period = 0;
 
     //status

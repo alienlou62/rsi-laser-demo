@@ -1681,7 +1681,15 @@
                                             IsValueVisible="{Binding $self.IsEnabled}"
                                             Value="{Binding TaskManagerStatus.StartTimeDeltaMax, FallbackValue='-', StringFormat=N0}" />
 
-                                        <!--  taskmanager  -->
+                                        <controls:StatusLabel
+                                            Title="RealTimeTasks"
+                                            Margin="0,-10,0,0"
+                                            IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            IsMonoFont="True"
+                                            IsValueVisible="{Binding $self.IsEnabled}"
+                                            Value="{Binding TaskManagerStatus.TaskIds.Count, FallbackValue='-'}" />
+
+                                        <!--  globals  -->
                                         <controls:StatusLabel
                                             Title="Global Variables"
                                             IsActive="{Binding TaskManagerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
@@ -1739,15 +1747,6 @@
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-
-                                        <controls:StatusLabel
-                                            Title="Tasks"
-                                            Margin="0,0,0,0"
-                                            IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                            IsMonoFont="True"
-                                            IsValueVisible="{Binding $self.IsEnabled}"
-                                            TitleOpacity="1"
-                                            Value="{Binding TaskManagerStatus.TaskIds.Count, FallbackValue='-'}" />
 
                                     </StackPanel>
                                 </StackPanel>
@@ -1980,14 +1979,13 @@
                                             Value="{Binding TaskManagerStatus.StartTimeDeltaMax, FallbackValue='-', StringFormat=N0}" />
 
 
-                                        <!--  taskmanager  -->
+                                        <!--  tasks  -->
                                         <controls:StatusLabel
-                                            Title="Tasks"
-                                            Margin="0,0,0,0"
+                                            Title="RealTimeTasks"
+                                            Margin="0,-10,0,0"
                                             IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
                                             IsMonoFont="True"
                                             IsValueVisible="{Binding $self.IsEnabled}"
-                                            TitleOpacity="1"
                                             Value="{Binding TaskManagerStatus.TaskIds.Count, FallbackValue='-'}" />
 
                                     </StackPanel>

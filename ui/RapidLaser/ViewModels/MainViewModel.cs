@@ -1000,7 +1000,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 {
                     var creationParameters = await _rmpGrpcService.GetTaskCreationParametersAsync(id);
                     task.Function = creationParameters.FunctionName ?? $"Task_{id}"; // Fallback if function name is null
-                    task.Period = creationParameters.Period; // Fallback if period is null
+                    task.Period = creationParameters.Period;
+                    task.Priority = creationParameters.Priority;
                 }
                 catch (Exception ex)
                 {
@@ -1009,6 +1010,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 }
 
                 Tasks.Add(task);
+
+                // sort by TaskPriority (highest priority first)
+                var sorted = Tasks.OrderByDescending(t => t.Priority).ToList();
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    if (!ReferenceEquals(Tasks[i], sorted[i]))
+                    {
+                        Tasks.Move(Tasks.IndexOf(sorted[i]), i);
+                    }
+                }
+
             }
 
             // Remove IDs & Tasks that no longer exist
