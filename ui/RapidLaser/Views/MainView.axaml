@@ -2041,7 +2041,9 @@
                                                             <TextBlock
                                                                 FontSize="14"
                                                                 FontWeight="SemiBold"
-                                                                Text="{Binding Function}" />
+                                                                Text="{Binding Function}"
+                                                                ToolTip.ShowDelay="0"
+                                                                ToolTip.Tip="{Binding Priority, StringFormat='{}Priority: {0}'}" />
                                                             <TextBlock
                                                                 Margin="0,0,0,1"
                                                                 VerticalAlignment="Bottom"
