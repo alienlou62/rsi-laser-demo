@@ -28,6 +28,8 @@ global using Avalonia.Threading;
 global using Avalonia.Controls;
 global using Avalonia.Controls.Templates;
 global using Avalonia.Controls.Primitives;
+global using Avalonia.Controls.ApplicationLifetimes;
+global using Avalonia.Data.Core.Plugins;
 
 // rsi
 global using RSI.RapidServer;
@@ -39,6 +41,7 @@ global using CommunityToolkit.Mvvm.ComponentModel;
 global using CommunityToolkit.Mvvm.Input;
 global using Renci.SshNet;
 global using Microsoft.Extensions.Configuration;
+global using Microsoft.Extensions.DependencyInjection;
 
 // gRPC
 global using Grpc.Net.Client;
@@ -49,3 +52,4 @@ global using RapidLaser.Services;
 global using RapidLaser.ViewModels;
 global using RapidLaser.Controls;
 global using RapidLaser.Models;
+global using RapidLaser.Views;

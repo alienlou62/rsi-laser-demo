@@ -1,24 +1,17 @@
 
-using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core.Plugins;
-using Avalonia.Markup.Xaml;
-using Microsoft.Extensions.DependencyInjection;
-using RapidLaser.Services;
-using RapidLaser.ViewModels;
-using RapidLaser.Views;
-
 namespace RapidLaser;
 
 public partial class App : Application
 {
     private ServiceProvider? _serviceProvider;
 
+
+    /** BASE **/
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
 
-        // Configure dependency injection
+        // configure dependency injection (DI)
         var services = new ServiceCollection();
         ConfigureServices(services);
         _serviceProvider = services.BuildServiceProvider();
@@ -26,8 +19,7 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
-        // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
+        // avoid duplicate validations from both Avalonia and MVVM CommunityToolkit 
         DisableAvaloniaDataAnnotationValidation();
 
         // get the mainviewmodel
@@ -51,6 +43,8 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
+
+    /** METHODS **/
     private void ConfigureServices(IServiceCollection services)
     {
         services.AddSingleton<ISshService, SshService>();
@@ -61,6 +55,8 @@ public partial class App : Application
 
     private void DisableAvaloniaDataAnnotationValidation()
     {
+        // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
+
         // Get an array of plugins to remove
         var dataValidationPluginsToRemove =
             BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
