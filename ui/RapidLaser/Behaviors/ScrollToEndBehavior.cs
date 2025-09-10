@@ -1,10 +1,4 @@
 
-using System;
-using System.Collections.Generic;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-
 namespace RapidLaser.Behaviors;
 
 public static class ScrollToEndBehavior
@@ -97,10 +91,10 @@ public static class ScrollToEndBehavior
     private static void ScrollToEnd(ScrollViewer scrollViewer, ScrollState scrollState)
     {
         scrollState.IsScrolling = true;
-        
+
         // Scroll to the bottom
         scrollViewer.ScrollToEnd();
-        
+
         scrollState.IsScrolling = false;
     }
 
