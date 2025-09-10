@@ -1,13 +1,9 @@
-using System;
-using System.Globalization;
-using Avalonia;
-using Avalonia.Data.Converters;
-using Avalonia.Media;
 
 namespace RapidLaser.Converters;
 
-public static class BoolConverters
+public static class GlobalConverters
 {
+    #region BoolConverters
     /// <summary>
     /// Converts connection status to color brush
     /// </summary>
@@ -105,7 +101,7 @@ public static class BoolConverters
     /// <summary>
     /// Converts a value to boolean by comparing with a parameter string
     /// Returns true if the value equals the parameter, false otherwise
-    /// Usage: {Binding SomeProperty, Converter={x:Static converters:BoolConverters.StringEqualsParameterConverter}, ConverterParameter=ExpectedValue}
+    /// Usage: {Binding SomeProperty, Converter={x:Static converters:GlobalConverters.StringEqualsParameterConverter}, ConverterParameter=ExpectedValue}
     /// </summary>
     public static readonly IValueConverter StringEqualsParameterConverter = new FuncValueConverter<object?, object?, bool>((value, parameter) =>
     {
@@ -348,7 +344,7 @@ public static class BoolConverters
     /// <summary>
     /// Converts execution count (samples) to runtime duration string
     /// Takes the cycle period (in ms) as a converter parameter
-    /// Usage: {Binding ExecutionCount, Converter={x:Static converters:BoolConverters.ExecutionCountToRuntimeConverter}, ConverterParameter={Binding Period}}
+    /// Usage: {Binding ExecutionCount, Converter={x:Static converters:GlobalConverters.ExecutionCountToRuntimeConverter}, ConverterParameter={Binding Period}}
     /// </summary>
     public static readonly IValueConverter ExecutionCountToRuntimeConverter = new FuncValueConverter<long, object?, string>((executionCount, parameter) =>
     {
@@ -385,7 +381,7 @@ public static class BoolConverters
     /// First binding: ExecutionCount (long)
     /// Second binding: Period (int/double) in milliseconds
     /// Usage: 
-    /// <MultiBinding Converter="{x:Static converters:BoolConverters.ExecutionCountPeriodToRuntimeConverter}">
+    /// <MultiBinding Converter="{x:Static converters:GlobalConverters.ExecutionCountPeriodToRuntimeConverter}">
     ///     <Binding Path="ExecutionCount" />
     ///     <Binding Path="Period" />
     /// </MultiBinding>
@@ -425,10 +421,9 @@ public static class BoolConverters
         // For smaller durations, show seconds or milliseconds
         return totalSeconds >= 1.0 ? $"{seconds}s" : $"{totalMs:F0}ms";
     });
-}
+    #endregion
 
-public static class StringConverters
-{
+    #region StringConverters
     /// <summary>
     /// Converts string to visibility (visible if not null or empty)
     /// </summary>
@@ -440,8 +435,6 @@ public static class StringConverters
     /// </summary>
     public static readonly FuncValueConverter<object, string> ToUpperConverter =
         new(obj => obj?.ToString()?.ToUpper(CultureInfo.CurrentCulture) ?? string.Empty);
-
-
 
     /// <summary>
     /// TaskPriority enum to short string
@@ -459,4 +452,7 @@ public static class StringConverters
             TaskPriority.Highest => "HT",
             _ => "?"
         });
+    #endregion
+
+
 }

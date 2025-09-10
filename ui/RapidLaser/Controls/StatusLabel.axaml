@@ -32,7 +32,7 @@
                         VerticalAlignment="Center"
                         FontSize="12"
                         FontWeight="SemiBold"
-                        Foreground="{TemplateBinding IsActive, Converter={x:Static converters:BoolConverters.StatusColorConverter}}"
+                        Foreground="{TemplateBinding IsActive, Converter={x:Static converters:GlobalConverters.StatusColorConverter}}"
                         IsVisible="{TemplateBinding IsValueVisible}"
                         Text="{TemplateBinding Value}" />
                 </Grid>
