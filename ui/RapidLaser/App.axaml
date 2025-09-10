@@ -64,12 +64,12 @@
         </ResourceDictionary>
     </Application.Resources>
 
-    <Application.DataTemplates>
-        <local:ViewLocator />
-    </Application.DataTemplates>
-
     <Application.Styles>
+
+        <!--  Avalonia Fluent Theme  -->
         <FluentTheme />
+
+        <!--  Actipro Theme  -->
         <actipro:ModernTheme />
 
         <!--  Material Icons  -->
@@ -125,7 +125,6 @@
                     Color="#0a0a0a" />
             </Setter>
         </Style>
-
 
         <!--  we need to adjust the baselineoffset of the Saira font  -->
         <Style Selector="Label, TextBlock, TextBox /template/ TextPresenter, Button /template/ TextPresenter, CheckBox /template/ TextPresenter, RadioButton /template/ TextPresenter">
@@ -225,4 +224,5 @@
         </Style>
 
     </Application.Styles>
+
 </Application>

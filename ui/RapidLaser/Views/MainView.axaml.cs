@@ -10,7 +10,7 @@ public partial class MainView : UserControl
 
     private void OnLoaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        // Set the main window reference in the ViewModel
+        // Set the main window reference in the ViewModel (we do this to attach to Window events)
         var window = TopLevel.GetTopLevel(this) as Window;
         if (DataContext is MainViewModel viewModel && window != null)
         {
