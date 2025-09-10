@@ -2073,7 +2073,7 @@
                                                                 ToolTip.Tip="{Binding Priority, StringFormat='{}Priority: {0}'}">
                                                                 <TextBlock
                                                                     MinHeight="0"
-                                                                    Margin="0,-1,0,0"
+                                                                    Margin="0,-2,0,0"
                                                                     Padding="0"
                                                                     HorizontalAlignment="Center"
                                                                     VerticalAlignment="Center"
@@ -2087,7 +2087,7 @@
                                                                 <controls:ProgressRing
                                                                     Width="19"
                                                                     Height="19"
-                                                                    Margin="-1,-2,-1,-1"
+                                                                    Margin="-1,-3,-1,-1"
                                                                     VerticalAlignment="Center"
                                                                     AnimationDuration="1.25"
                                                                     ArcAnimationDuration="1.75"
