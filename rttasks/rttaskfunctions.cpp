@@ -71,6 +71,7 @@ RSI_TASK(Initialize)
   data->targetX = 0.0;
   data->targetY = 0.0;
 
+  data->currentFPS = 0.0;
   data->firmwareTimingDeltaMax = 0;
   data->firmwareTimingDeltaMaxSampleCount = 0;
   data->networkTimingDeltaMax = 0;
@@ -231,6 +232,36 @@ RSI_TASK(DetectBall)
   data->newTarget = true;
 }
 
+// A simple rolling average class to smooth timing metrics
+class RollingAverage {
+public:
+    explicit RollingAverage(size_t sampleCount)
+        : buffer(sampleCount, 0.0), maxSize(sampleCount), index(0), filled(false), sum(0.0) {}
+
+    // Update the rolling average with a new value and return the current average
+    double update(double value) {
+        sum -= buffer[index];
+        buffer[index] = value;
+        sum += value;
+        index = (index + 1) % maxSize;
+        if (index == 0) filled = true;
+        return average();
+    }
+
+    // Get the current average
+    double average() const {
+        size_t count = filled ? maxSize : index;
+        return count > 0 ? sum / count : 0.0;
+    }
+
+private:
+    std::vector<double> buffer;
+    size_t maxSize;
+    size_t index;
+    bool filled;
+    double sum;
+};
+
 // Function to convert image data to base64 for JSON embedding
 std::string EncodeBase64(const std::vector<uint8_t>& data) {
   static const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -252,13 +283,29 @@ std::string EncodeBase64(const std::vector<uint8_t>& data) {
 // Writes the camera frame data to a JSON file and creates a running flag file
 RSI_TASK(OutputImage)
 {
+  constexpr int US_PER_SEC = 1000000;
+
   static SharedDataHelpers::SPSCStorageManager frameReader(g_frameStorage, false);
+  static double lastTimeStamp = 0.0;
+  static int lastFrameNumber = -1;
+  static RollingAverage fpsAverage(30); // 30-sample rolling average for FPS
 
   if (!data->initialized) return;
 
   // Check if new image data is available
   frameReader.exchange();
   if (frameReader.flags() == 0) return;
+
+  // Update FPS calculation
+  if (lastTimeStamp != 0.0 && lastFrameNumber != -1)
+  {
+    double timeDelta = frameReader.data().timestamp - lastTimeStamp;
+    int numImages = frameReader.data().frameNumber - lastFrameNumber;
+    double fps = numImages * US_PER_SEC / timeDelta;
+    data->currentFPS = fpsAverage.update(fps);
+  }
+  lastTimeStamp = frameReader.data().timestamp;
+  lastFrameNumber = frameReader.data().frameNumber;
 
   try {
     // Construct cv::Mat from YUYVFrame data in the shared buffer
