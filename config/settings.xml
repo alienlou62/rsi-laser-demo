@@ -6,7 +6,7 @@
     <RSINodeType>RSINodeTypeMITSUBISHI_MR_J5_TM</RSINodeType>
   </ExpectedNodeTypes>
   <NetworkStartTimeoutMilliseconds xsi:nil="true" />
-  <SampleRate>1000</SampleRate>
+  <SampleRate>4000</SampleRate>
   <AxisCount>2</AxisCount>
   <MotionCount>3</MotionCount>
   <UserLimitCount>0</UserLimitCount>
