@@ -8,7 +8,7 @@
 
     "ssh_Username": "",
     "ssh_Password": "",
-    "ssh_RunCommand": "rsiconfig /etc/laser_demo/settings.xml --cpu-affinity 7 --primary-nic enp1s0",
+    "ssh_RunCommand": "rsiconfig /etc/laser_demo/settings.xml --cpu-affinity 3 --primary-nic enp1s0",
 
     "polling_IntervalMs": 10,
 
