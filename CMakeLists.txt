@@ -48,9 +48,11 @@ setup_rmp_target(RTTaskFunctions)
 # Copy config files to /etc/laser_demo after build
 set(SOURCE_CONFIG_DIR ${CMAKE_SOURCE_DIR}/config)
 set(TARGET_CONFIG_DIR /etc/laser_demo)
-add_custom_command(
-  TARGET RTTaskFunctions POST_BUILD
+
+add_custom_target(CopyConfig ALL
   COMMAND ${CMAKE_COMMAND} -E make_directory ${TARGET_CONFIG_DIR}
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${SOURCE_CONFIG_DIR} ${TARGET_CONFIG_DIR}
-  COMMENT "Copying config files to ${TARGET_CONFIG_DIR}"
+  COMMENT "Syncing config files to ${TARGET_CONFIG_DIR}"
 )
+
+add_dependencies(RTTaskFunctions CopyConfig)
