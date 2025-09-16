@@ -84,7 +84,7 @@
           <UserLabel>OutputImage</UserLabel>
           <Priority>Low</Priority>
           <Repeats>-1</Repeats>
-          <Period>16</Period>
+          <Period>66</Period>
           <Phase>0</Phase>
           <EnableTiming>true</EnableTiming>
         </RTTask>
