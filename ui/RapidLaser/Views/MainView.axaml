@@ -782,6 +782,7 @@
                                                     <MultiBinding Converter="{x:Static resources:Converters.ExecutionCountPeriodToRuntimeConverter}">
                                                         <Binding Path="ExecutionCount" />
                                                         <Binding Path="Period" />
+                                                        <Binding Path="$parent[UserControl].DataContext.ControllerSampleRate_khz" />
                                                     </MultiBinding>
                                                 </TextBlock.Text>
                                             </TextBlock>
@@ -864,6 +865,7 @@
                                                     <MultiBinding Converter="{x:Static resources:Converters.ExecutionCountPeriodToRuntimeConverter}">
                                                         <Binding Path="ExecutionCount" />
                                                         <Binding Path="Period" />
+                                                        <Binding Path="$parent[UserControl].DataContext.ControllerSampleRate_khz" />
                                                     </MultiBinding>
                                                 </TextBlock.Text>
                                             </TextBlock>
@@ -1634,6 +1636,13 @@
                                         </controls:StatusLabel>
 
                                         <controls:StatusLabel
+                                            Title="Sample Rate [kHz]"
+                                            Margin="0,-10,0,0"
+                                            IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                            IsMonoFont="True"
+                                            Value="{Binding ControllerSampleRate_khz, FallbackValue='-', StringFormat=N0}" />
+
+                                        <controls:StatusLabel
                                             Title="Counter"
                                             Margin="0,-10,0,0"
                                             IsEnabled="{Binding ControllerStatus, Converter={x:Static ObjectConverters.IsNotNull}}"
@@ -2136,6 +2145,7 @@
                                                                 <MultiBinding Converter="{x:Static resources:Converters.ExecutionCountPeriodToRuntimeConverter}">
                                                                     <Binding Path="ExecutionCount" />
                                                                     <Binding Path="Period" />
+                                                                    <Binding Path="$parent[UserControl].DataContext.ControllerSampleRate_khz" />
                                                                 </MultiBinding>
                                                             </TextBlock.Text>
                                                         </TextBlock>
@@ -2219,6 +2229,7 @@
                                                                 <MultiBinding Converter="{x:Static resources:Converters.ExecutionCountPeriodToRuntimeConverter}">
                                                                     <Binding Path="ExecutionCount" />
                                                                     <Binding Path="Period" />
+                                                                    <Binding Path="$parent[UserControl].DataContext.ControllerSampleRate_khz" />
                                                                 </MultiBinding>
                                                             </TextBlock.Text>
                                                         </TextBlock>

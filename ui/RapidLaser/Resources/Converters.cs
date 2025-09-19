@@ -377,30 +377,37 @@ public static class Converters
     });
 
     /// <summary>
-    /// Converts execution count and period to runtime duration string using MultiBinding
-    /// First binding: ExecutionCount (long)
-    /// Second binding: Period (int/double) in milliseconds
+    /// Converts execution count, period, and sample rate to runtime duration string using MultiBinding
+    /// First binding: ExecutionCount (long) - number of cycles/samples
+    /// Second binding: Period (int/double) - period value in samples
+    /// Third binding: SampleRate (double) - sample rate in kHz
     /// Usage: 
     /// <MultiBinding Converter="{x:Static converters:resources:Converters.ExecutionCountPeriodToRuntimeConverter}">
     ///     <Binding Path="ExecutionCount" />
     ///     <Binding Path="Period" />
+    ///     <Binding Path="ControllerSampleRate_khz" />
     /// </MultiBinding>
     /// </summary>
     public static readonly FuncMultiValueConverter<object?, string> ExecutionCountPeriodToRuntimeConverter = new(values =>
     {
         var valueList = values.ToList();
-        if (valueList.Count < 2) return "0s";
+        if (valueList.Count < 3) return "0s";
 
         // Parse execution count
         if (!long.TryParse(valueList[0]?.ToString(), out long executionCount) || executionCount <= 0)
             return "0s";
 
-        // Parse period
-        if (!double.TryParse(valueList[1]?.ToString(), out double periodMs) || periodMs <= 0)
-            periodMs = 1.0; // Default to 1ms
+        // Parse period (in samples)
+        if (!double.TryParse(valueList[1]?.ToString(), out double period) || period <= 0)
+            period = 1.0; // Default to 1 sample
 
-        var totalMs = executionCount * periodMs;
-        var totalSeconds = totalMs / 1000.0;
+        // Parse sample rate in kHz
+        if (!double.TryParse(valueList[2]?.ToString(), out double sampleRateKhz) || sampleRateKhz <= 0)
+            sampleRateKhz = 1.0; // Default to 1kHz
+
+        // Calculate total runtime: (ExecutionCount * Period) / (SampleRate * 1000)
+        // Period is in samples, SampleRate is in kHz (so multiply by 1000 for samples per second)
+        var totalSeconds = (executionCount * period) / (sampleRateKhz * 1000.0);
 
         // Calculate time components
         var days = (int)(totalSeconds / 86400);
@@ -419,6 +426,7 @@ public static class Converters
             return string.Join(" ", parts);
 
         // For smaller durations, show seconds or milliseconds
+        var totalMs = totalSeconds * 1000.0;
         return totalSeconds >= 1.0 ? $"{seconds}s" : $"{totalMs:F0}ms";
     });
     #endregion
