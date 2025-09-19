@@ -453,4 +453,30 @@ public static class Converters
             _ => "?"
         });
     #endregion
+
+    #region NumericConverters
+
+    /// <summary>
+    /// Converts ball X position to canvas position (centers the ball circle and clamps to canvas bounds)
+    /// Takes both position and radius as input via MultiBinding
+    /// </summary>
+    public static readonly FuncMultiValueConverter<object?, string> DivisionConverter =
+        new(values =>
+        {
+            var valueList = values.ToList();
+            if (valueList.Count < 2) return "0";
+
+            if (!double.TryParse(valueList[0]?.ToString(), out double numerator)) return "0";
+            if (!double.TryParse(valueList[1]?.ToString(), out double denominator)) return "0";
+
+            // Avoid division by zero
+            if (denominator == 0) return "0";
+
+            var result = numerator / denominator;
+
+            return result.ToString();
+        });
+
+    #endregion
+
 }

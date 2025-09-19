@@ -1062,7 +1062,7 @@
                                                     Margin="0,1,0,-1"
                                                     Classes="Mono"
                                                     Foreground="{StaticResource TextBrush}"
-                                                    Text="Sample Rate: 1 ms" />
+                                                    Text="{Binding ControllerSampleRate_khz, StringFormat='{}Sample Rate: {0:F0} kHz'}" />
                                             </StackPanel>
 
                                         </Grid>
@@ -2157,8 +2157,18 @@
                                                             Text="Cycle" />
 
                                                         <StackPanel Orientation="Horizontal" Spacing="2">
-                                                            <TextBlock Classes="Mono value" Text="{Binding Period, StringFormat=N0}" />
+
+                                                            <TextBlock x:CompileBindings="False" Classes="Mono value">
+                                                                <TextBox.Text>
+                                                                    <MultiBinding Converter="{x:Static resources:Converters.DivisionConverter}">
+                                                                        <Binding Path="Period" />
+                                                                        <Binding Path="$parent[UserControl].DataContext.ControllerSampleRate_khz" />
+                                                                    </MultiBinding>
+                                                                </TextBox.Text>
+                                                            </TextBlock>
+
                                                             <TextBlock Classes="label unit" Text="ms" />
+
                                                         </StackPanel>
                                                     </StackPanel>
 

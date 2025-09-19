@@ -1,14 +1,6 @@
-using System;
-using System.Threading;
-using Avalonia;
-using Avalonia.Animation;
-using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
-using Avalonia.Controls.Shapes;
-using Avalonia.Media;
-using Avalonia.Styling;
-using Avalonia.Threading;
 
+using Avalonia.Animation;
+using Avalonia.Styling;
 namespace RapidLaser.Controls;
 
 public class ProgressRing : TemplatedControl
@@ -74,7 +66,7 @@ public class ProgressRing : TemplatedControl
     private Animation? _arcLengthAnimation;
     private DispatcherTimer? _spinTimer;
     private double _currentSpinAngle = 0;
-    
+
     // Cached geometry objects for performance
     private PathGeometry? _pathGeometry;
     private PathFigure? _pathFigure;
@@ -218,7 +210,7 @@ public class ProgressRing : TemplatedControl
             {
                 SweepDirection = SweepDirection.Clockwise
             };
-            
+
             _pathFigure.Segments?.Add(_arcSegment);
             _pathGeometry.Figures?.Add(_pathFigure);
             _progressRingElement!.Data = _pathGeometry;

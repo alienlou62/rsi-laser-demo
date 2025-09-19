@@ -26,6 +26,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private MotionControllerStatus? _controllerStatus;
 
     [ObservableProperty]
+    private double? _controllerSampleRate_khz;
+
+    [ObservableProperty]
     private NetworkStatus? _networkStatus;
 
     [ObservableProperty]
@@ -559,8 +562,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             if (success)
             {
-                IsConnected = true;
-
                 // try to connect to camera server
                 if (!IsCameraConnected)
                 {
@@ -702,6 +703,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+
     /** CONSTRUCTOR **/
     public MainViewModel(ISshService sshService, ICameraService cameraService, IRmpGrpcService rmpGrpcService)
     {
@@ -728,7 +730,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
 
         //connection
-        IsConnected = _rmpGrpcService.IsConnected;
+        _rmpGrpcService.IsConnectedChanged += (s, isConnected) =>
+        {
+            IsConnected = isConnected;
+
+            if (isConnected)
+            {
+                ControllerSampleRate_khz = _rmpGrpcService.ControllerConfig?.SampleRate / 1000.0; // convert to khz
+            }
+        };
     }
 
 

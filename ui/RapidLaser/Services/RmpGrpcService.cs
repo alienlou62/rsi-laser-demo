@@ -3,7 +3,12 @@ namespace RapidLaser.Services;
 
 public interface IRmpGrpcService
 {
+    // fields
     bool IsConnected { get; }
+    MotionControllerConfig? ControllerConfig { get; }
+
+    // events
+    event EventHandler<bool> IsConnectedChanged;
 
     // ping
     Task<bool> CheckConnectionAsync();
@@ -13,6 +18,7 @@ public interface IRmpGrpcService
     Task DisconnectAsync();
 
     //controller
+    Task<MotionControllerConfig> GetControllerConfigAsync();
     Task<MotionControllerStatus> GetControllerStatusAsync();
 
     //network
@@ -40,13 +46,34 @@ public class RmpGrpcService : IRmpGrpcService
 
     RequestHeader statusOptimizationHeader = new() { Optimization = new() { SkipConfig = true, SkipInfo = true, SkipStatus = false } };
     RequestHeader infoOptimizationHeader = new() { Optimization = new() { SkipConfig = true, SkipInfo = false, SkipStatus = true } };
+    RequestHeader configOptimizationHeader = new() { Optimization = new() { SkipConfig = false, SkipInfo = true, SkipStatus = true } };
 
+    //events
+    public event EventHandler<bool>? IsConnectedChanged;
 
     //public
-    public bool IsConnected => _isConnected;
+    public bool IsConnected
+    {
+        get => _isConnected;
+        private set
+        {
+            if (_isConnected != value)
+            {
+                _isConnected = value;
+
+                _ = HandleConnectionChangedAsync(_isConnected);
+            }
+        }
+    }
+
+    public MotionControllerConfig? ControllerConfig { get; private set; }
 
 
-    /** METHODS **/
+    /** CONSTRUCTOR **/
+    public RmpGrpcService() { }
+
+
+    /** PUBLIC METHODS **/
     //ping
     public async Task<bool> CheckConnectionAsync()
     {
@@ -87,19 +114,24 @@ public class RmpGrpcService : IRmpGrpcService
     {
         try
         {
-            // Create gRPC channel
+            // create gRPC channel
             _channel = GrpcChannel.ForAddress($"http://{ip}:{port}");
 
-            // Check if the channel is valid
+            // check if server client is available (quick test)
             _serverClient = new ServerControlServiceClient(_channel);
             var reply = await _serverClient.GetInfoAsync(new(), options: new CallOptions(deadline: DateTime.UtcNow.AddSeconds(2)));
 
-            _isConnected = (reply != null);
+            if (reply == null)
+                return false;
 
-            // Initialize the gRPC clients with the generated proto clients
+            // init rmp grpc client
             _rmpClient = new RMPService.RMPServiceClient(_channel);
 
-            return _isConnected;
+            // set connection state
+            IsConnected = true;
+
+            // return success
+            return true;
         }
         catch (Exception ex)
         {
@@ -123,6 +155,16 @@ public class RmpGrpcService : IRmpGrpcService
     }
 
     //controller
+    public async Task<MotionControllerConfig> GetControllerConfigAsync()
+    {
+        if (!_isConnected)
+            throw new InvalidOperationException("Not connected to gRPC server");
+
+        MotionControllerResponse response = await _rmpClient.MotionControllerAsync(new() { Header = configOptimizationHeader });
+        var config = response.Config;
+        return config;
+    }
+
     public async Task<MotionControllerStatus> GetControllerStatusAsync()
     {
         if (!_isConnected)
@@ -300,5 +342,26 @@ public class RmpGrpcService : IRmpGrpcService
 
         // action
         await _rmpClient.RTTaskBatchAsync(request);
+    }
+
+
+    /** PRIVATE METHODS **/
+    private async Task HandleConnectionChangedAsync(bool isConnected)
+    {
+        // update needed data
+        if (isConnected)
+        {
+            try
+            {
+                ControllerConfig = await GetControllerConfigAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load controller config: {ex.Message}");
+            }
+        }
+
+        // notify change
+        IsConnectedChanged?.Invoke(this, isConnected);
     }
 }
