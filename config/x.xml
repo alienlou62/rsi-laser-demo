@@ -4,7 +4,7 @@
   <UserUnits>67108864</UserUnits>
   <MotorType>RSIMotorTypeSERVO</MotorType>
   <Properties>
-    <string>OriginPosition=11.347931639</string>
+    <string>OriginPosition=0</string>
     <string>CompensationPosition=0</string>
     <string>HomeMethod=RSIHomeMethodNONE</string>
     <string>HomeOffset=0</string>

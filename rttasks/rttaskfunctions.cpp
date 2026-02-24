@@ -100,7 +100,7 @@ RSI_TASK(Initialize)
 
   data->multiAxisReady = true;
   data->initialized = true;
-  data->motionEnabled = true;
+  data->motionEnabled = false;  // DISABLED FOR SAFETY - enable after verifying camera
 }
 
 // Moves the motors based on the target positions.
@@ -142,6 +142,77 @@ RSI_TASK(MoveMotors)
     if (RTMultiAxisGet(0))
       RTMultiAxisGet(0)->Abort();
     throw std::runtime_error(std::string("Error during velocity control: ") + ex.what());
+  }
+}
+
+// Cycles the third motor back and forth every 3 seconds.
+RSI_TASK(CycleThirdMotor)
+{
+  static constexpr double NEG_Z_LIMIT = -0.1;
+  static constexpr double POS_Z_LIMIT = 0.1;
+  static constexpr int64_t CYCLE_PERIOD_MS = 3000; // 3 seconds per full cycle
+
+  // Check if the system is initialized and cycling is enabled
+  if (!data->initialized)
+    return;
+  if (!data->cyclingEnabled)
+    return;
+  if (!data->multiAxisReady)
+    return;
+
+  try
+  {
+    // Initialize cycle start time if not set
+    if (data->cycleStartTime == 0)
+    {
+      data->cycleStartTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+      data->cyclePosition1 = NEG_Z_LIMIT;
+      data->cyclePosition2 = POS_Z_LIMIT;
+      data->cycleVelocity = 2.0; // units per second
+    }
+
+    // Get elapsed time since cycle start
+    int64_t currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    int64_t elapsedMs = currentTime - data->cycleStartTime;
+    int64_t cyclePhase = elapsedMs % CYCLE_PERIOD_MS;
+
+    // Calculate target position based on cycle phase
+    // Phase 0-1500ms: move from NEG to POS
+    // Phase 1500-3000ms: move from POS to NEG
+    double targetZ;
+    if (cyclePhase < CYCLE_PERIOD_MS / 2)
+    {
+      // First half: interpolate from position1 to position2
+      double progress = static_cast<double>(cyclePhase) / (CYCLE_PERIOD_MS / 2.0);
+      targetZ = data->cyclePosition1 + (data->cyclePosition2 - data->cyclePosition1) * progress;
+    }
+    else
+    {
+      // Second half: interpolate from position2 to position1
+      double progress = static_cast<double>(cyclePhase - CYCLE_PERIOD_MS / 2) / (CYCLE_PERIOD_MS / 2.0);
+      targetZ = data->cyclePosition2 + (data->cyclePosition1 - data->cyclePosition2) * progress;
+    }
+
+    // Clamp to limits
+    targetZ = std::clamp(targetZ, NEG_Z_LIMIT, POS_Z_LIMIT);
+
+    // Move the third axis only (x and y stay at current position)
+    auto axis = RTAxisGet(2);
+    axis->MoveSCurve(targetZ);
+  }
+  catch (const RsiError &e)
+  {
+    if (RTAxisGet(2))
+      RTAxisGet(2)->Abort();
+    throw std::runtime_error(std::string("RMP exception during third motor cycling: ") + e.what());
+  }
+  catch (const std::exception &ex)
+  {
+    if (RTAxisGet(2))
+      RTAxisGet(2)->Abort();
+    throw std::runtime_error(std::string("Error during third motor cycling: ") + ex.what());
   }
 }
 

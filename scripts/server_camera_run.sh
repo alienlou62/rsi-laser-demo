@@ -5,7 +5,7 @@
 # Listens on http://localhost:50080/ with endpoints:
 #   - GET /camera/frame - Returns latest camera frame data as JSON
 #   - GET /status - Returns server health status
-# Uses .NET 10 file-based execution (no project files needed)
+# Uses the project file at servers/camera/HttpCameraServer.csproj
 
 
 ## METHODS
@@ -34,7 +34,7 @@ printTitleBox() {
 
 ## APP
 # Print title
-printTitleBox "Http Camera Server (.NET 10 app-style)"
+printTitleBox "Http Camera Server (.NET project)"
 echo
 
 # Check if .NET is installed
@@ -43,17 +43,17 @@ if ! command -v dotnet &> /dev/null; then
     exit 1
 fi
 
-# Check if .NET 10 SDK is available
-echo "Checking for .NET 10 SDK..."
-if ! dotnet --list-sdks | grep -q "^10\."; then
-    echo "ERROR: .NET 10 SDK is not installed."
+# Check if .NET 9+ SDK is available
+echo "Checking for .NET 9+ SDK..."
+if ! dotnet --list-sdks | grep -Eq "^(9|10)\."; then
+    echo "ERROR: .NET 9+ SDK is not installed."
     echo "Available SDKs:"
     dotnet --list-sdks
-    echo "Please install .NET 10 SDK."
+    echo "Please install .NET 9 or newer SDK."
     exit 1
 fi
 
-echo ".NET 10 SDK found."
+echo ".NET 9+ SDK found."
 echo
 
 # Change to the camera server directory
@@ -61,11 +61,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CAMERA_DIR="$(cd "$SCRIPT_DIR/../servers/camera" && pwd)"
 cd "$CAMERA_DIR"
 
-# Run HttpCameraServer.cs with .NET 10 app-style execution
-echo "🟢 Starting HTTP Camera Server (dotnet run HttpCameraServer.cs)..."
+# Run camera server project
+echo "🟢 Starting HTTP Camera Server (dotnet run --project HttpCameraServer.csproj)..."
 echo
 
-dotnet run HttpCameraServer.cs
+dotnet run --project HttpCameraServer.csproj
 
 echo
 echo "🔴 Camera server ended."

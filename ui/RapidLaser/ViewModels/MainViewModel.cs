@@ -134,7 +134,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     //camera frame data
     [ObservableProperty]
-    private WriteableBitmap? _cameraImage;
+    private IImage? _cameraImage;
 
     [ObservableProperty]
     private double _cameraCenterX;
@@ -946,27 +946,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     CameraTargetY = frameData.TargetY;
 
                     // Process image data - For HTTP camera service, imageData is a JPEG byte array
-                    // We can load it directly into a bitmap
+                    // Load it into an Avalonia Bitmap and assign directly to the UI image source.
+                    // Avoid CopyPixels which may not be supported for some bitmap backends.
                     using var stream = new MemoryStream(frameData.ImageData);
                     var bitmap = new Bitmap(stream);
 
-                    // Convert to WriteableBitmap for UI binding
-                    var writeableBitmap = new WriteableBitmap(new PixelSize(bitmap.PixelSize.Width, bitmap.PixelSize.Height),
-                                                              new Vector(96, 96),
-                                                              PixelFormat.Rgba8888,
-                                                              AlphaFormat.Premul);
-
-                    // Copy pixels from the bitmap to the WriteableBitmap (lock the bitmap for writing)
-                    using var lockedBitmap = writeableBitmap.Lock();
-                    var sourceRect = new PixelRect(0, 0, bitmap.PixelSize.Width, bitmap.PixelSize.Height);
-                    var buffer = lockedBitmap.Address;
-                    var bufferSize = lockedBitmap.RowBytes * bitmap.PixelSize.Height;
-                    var stride = lockedBitmap.RowBytes;
-
-                    bitmap.CopyPixels(sourceRect, buffer, bufferSize, stride);
-
-                    // Update the camera image
-                    CameraImage = writeableBitmap;
+                    CameraImage = bitmap;
                 }
                 catch (Exception ex)
                 {

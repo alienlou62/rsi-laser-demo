@@ -94,6 +94,13 @@ namespace RSI
         RSI_GLOBAL(double, targetX);
         RSI_GLOBAL(double, targetY);
 
+        // Third motor cycling state
+        RSI_GLOBAL(bool, cyclingEnabled);
+        RSI_GLOBAL(double, cyclePosition1);
+        RSI_GLOBAL(double, cyclePosition2);
+        RSI_GLOBAL(double, cycleVelocity);
+        RSI_GLOBAL(int64_t, cycleStartTime);
+
         // Timing Metrics
         RSI_GLOBAL(int32_t, firmwareTimingDeltaMax);
         RSI_GLOBAL(int32_t, firmwareTimingDeltaMaxSampleCount);
@@ -134,6 +141,13 @@ namespace RSI
            REGISTER_GLOBAL(newTarget),
            REGISTER_GLOBAL(targetX),
            REGISTER_GLOBAL(targetY),
+
+           // Third motor cycling state
+           REGISTER_GLOBAL(cyclingEnabled),
+           REGISTER_GLOBAL(cyclePosition1),
+           REGISTER_GLOBAL(cyclePosition2),
+           REGISTER_GLOBAL(cycleVelocity),
+           REGISTER_GLOBAL(cycleStartTime),
 
            // Timing Metrics
            REGISTER_GLOBAL(firmwareTimingDeltaMax),
