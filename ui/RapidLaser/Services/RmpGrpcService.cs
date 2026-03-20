@@ -28,6 +28,7 @@ public interface IRmpGrpcService
     Task<RTTaskManagerStatus> GetTaskManagerStatusAsync(int index = 0);
     Task<bool> StopTaskManagerAsync();
     Task<RTTaskManagerResponse> SetBoolGlobalValueAsync(string name, bool value);
+    Task<bool> DisableDemoAxesAsync();
 
     //tasks
     Task<RTTaskCreationParameters> GetTaskCreationParametersAsync(int taskId);
@@ -270,6 +271,81 @@ public class RmpGrpcService : IRmpGrpcService
         });
 
         return response;
+    }
+
+    public async Task<bool> DisableDemoAxesAsync()
+    {
+        if (!_isConnected)
+            throw new InvalidOperationException("Not connected to gRPC server");
+
+        if (_rmpClient == null)
+            throw new InvalidOperationException("RMP client is not available.");
+
+        await _rmpClient.MultiAxisAsync(new()
+        {
+            Index = 0,
+            Header = infoOptimizationHeader,
+            Action = new MultiAxisAction
+            {
+                Abort = new MultiAxisAction.Types.Abort()
+            }
+        });
+
+        await _rmpClient.AxisAsync(new()
+        {
+            Index = 2,
+            Header = infoOptimizationHeader,
+            Action = new AxisAction
+            {
+                Abort = new AxisAction.Types.Abort()
+            }
+        });
+
+        await Task.Delay(300);
+
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            await _rmpClient.MultiAxisAsync(new()
+            {
+                Index = 0,
+                Header = infoOptimizationHeader,
+                Action = new MultiAxisAction
+                {
+                    AmpDisable = new MultiAxisAction.Types.AmpDisable()
+                }
+            });
+
+            await _rmpClient.AxisAsync(new()
+            {
+                Index = 2,
+                Header = infoOptimizationHeader,
+                Action = new AxisAction
+                {
+                    AmpDisable = new AxisAction.Types.AmpDisable()
+                }
+            });
+
+            await Task.Delay(250);
+
+            var multiAxisResponse = await _rmpClient.MultiAxisAsync(new()
+            {
+                Index = 0,
+                Header = statusOptimizationHeader
+            });
+
+            var axisResponse = await _rmpClient.AxisAsync(new()
+            {
+                Index = 2,
+                Header = statusOptimizationHeader
+            });
+
+            if (!multiAxisResponse.Status.AmpEnabled && !axisResponse.Status.AmpEnabled)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     //tasks

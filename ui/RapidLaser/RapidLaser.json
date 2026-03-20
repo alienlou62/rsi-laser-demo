@@ -12,9 +12,13 @@
 
     "polling_IntervalMs": 10,
 
-    "global_BallX": "",
-    "global_BallY": "",
-    "global_BallRadius": "",
-    "global_IsMotionEnabled": ""
+    "global_BallX": "ballCenterX",
+    "global_BallY": "ballCenterY",
+    "global_BallRadius": "ballRadius",
+    "global_IsMotionEnabled": "motionEnabled",
+    "global_IsCyclingEnabled": "cyclingEnabled",
+    "global_YAxisActualPosition": "yAxisActualPosition",
+    "global_ZAxisActualPosition": "zAxisActualPosition",
+    "global_CameraFps": "cameraFPS"
   }
 }

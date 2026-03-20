@@ -1460,6 +1460,47 @@
                             </ToggleButton.Styles>
                         </ToggleButton>
 
+                        <ToggleButton
+                            HorizontalAlignment="Stretch"
+                            Classes="theme-subtle"
+                            Classes.danger="{Binding !Program_IsCyclingEnabled}"
+                            Classes.success="{Binding Program_IsCyclingEnabled}"
+                            Command="{Binding ToggleProgramCyclingEnabledCommand}"
+                            CommandParameter="{Binding $self.IsChecked}"
+                            IsChecked="{Binding Program_IsCyclingEnabled, FallbackValue=False, TargetNullValue=False}"
+                            IsEnabled="{Binding Global_IsCyclingEnabledValid}"
+                            IsVisible="{Binding IsProgramRunning}"
+                            ToolTip.Tip="Enable/Disable Fishpole Motor">
+                            <ToggleButton.Styles>
+                                <Style Selector="ToggleButton">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="15"
+                                                    Height="15"
+                                                    Kind="Sync" />
+                                                <TextBlock VerticalAlignment="Center" Text="Fishpole" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                                <Style Selector="ToggleButton:checked">
+                                    <Setter Property="Content">
+                                        <Template>
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <icons:MaterialIcon
+                                                    Width="15"
+                                                    Height="15"
+                                                    Kind="Sync" />
+                                                <TextBlock VerticalAlignment="Center" Text="Fishpole" />
+                                            </StackPanel>
+                                        </Template>
+                                    </Setter>
+                                </Style>
+                            </ToggleButton.Styles>
+                        </ToggleButton>
+
                         <!--  Camera Toggle  -->
                         <ToggleButton
                             HorizontalAlignment="Stretch"
@@ -1916,9 +1957,9 @@
                                                 </StackPanel>
                                             </DockPanel>
 
-                                            <!--  current fpt  -->
+                                            <!--  axis positions  -->
                                             <DockPanel LastChildFill="True">
-                                                <controls:StatusLabel Title="Camera FPS" IsActive="{Binding Global_IsCameraFpsValid}" />
+                                                <controls:StatusLabel Title="Y Axis Position" IsActive="{Binding Global_YAxisActualPositionValid}" />
 
                                                 <StackPanel
                                                     HorizontalAlignment="Right"
@@ -1929,10 +1970,32 @@
                                                         behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
                                                         Classes="theme-soft"
                                                         ItemsSource="{Binding GlobalValues}"
-                                                        Text="{Binding Global_CameraFps}"
+                                                        Text="{Binding Global_YAxisActualPosition}"
                                                         ValueMemberBinding="{Binding Name}">
                                                         <AutoCompleteBox.InnerRightContent>
-                                                            <icons:MaterialIcon Tag="{Binding Global_IsCameraFpsValid}" />
+                                                            <icons:MaterialIcon Tag="{Binding Global_YAxisActualPositionValid}" />
+                                                        </AutoCompleteBox.InnerRightContent>
+                                                    </AutoCompleteBox>
+
+                                                </StackPanel>
+                                            </DockPanel>
+
+                                            <DockPanel LastChildFill="True">
+                                                <controls:StatusLabel Title="Z Axis Position" IsActive="{Binding Global_ZAxisActualPositionValid}" />
+
+                                                <StackPanel
+                                                    HorizontalAlignment="Right"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8">
+
+                                                    <AutoCompleteBox
+                                                        behaviors:AutoCompleteBehaviors.ShowSuggestionsOnClick="True"
+                                                        Classes="theme-soft"
+                                                        ItemsSource="{Binding GlobalValues}"
+                                                        Text="{Binding Global_ZAxisActualPosition}"
+                                                        ValueMemberBinding="{Binding Name}">
+                                                        <AutoCompleteBox.InnerRightContent>
+                                                            <icons:MaterialIcon Tag="{Binding Global_ZAxisActualPositionValid}" />
                                                         </AutoCompleteBox.InnerRightContent>
                                                     </AutoCompleteBox>
 

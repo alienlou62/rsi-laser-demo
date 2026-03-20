@@ -14,11 +14,22 @@ namespace CameraHelpers {
   {
     try
     {
-      camera.Attach(CTlFactory::GetInstance().CreateFirstDevice());
+      std::cerr << "[CameraHelpers] CreateFirstDevice begin" << std::endl;
+      auto device = CTlFactory::GetInstance().CreateFirstDevice();
+      std::cerr << "[CameraHelpers] CreateFirstDevice complete" << std::endl;
+
+      std::cerr << "[CameraHelpers] Attach begin" << std::endl;
+      camera.Attach(device);
+      std::cerr << "[CameraHelpers] Attach complete" << std::endl;
+
+      std::cerr << "[CameraHelpers] Open begin" << std::endl;
       camera.Open();
+      std::cerr << "[CameraHelpers] Open complete" << std::endl;
 
       INodeMap &nodeMap = camera.GetNodeMap();
+      std::cerr << "[CameraHelpers] Load PFS begin" << std::endl;
       CFeaturePersistence::Load(CONFIG_FILE, &nodeMap);
+      std::cerr << "[CameraHelpers] Load PFS complete" << std::endl;
     }
     catch (const GenericException &e)
     {

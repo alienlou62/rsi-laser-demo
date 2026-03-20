@@ -21,6 +21,37 @@ using namespace Pylon;
 using namespace RSI::RapidCode;
 using namespace RSI::RapidCode::RealTimeTasks;
 
+namespace
+{
+  constexpr bool kEnableCameraPrime = true;
+
+  void SyncAmpState(GlobalData *data)
+  {
+    if (!data->multiAxisReady)
+      return;
+
+    const bool wantXyAmpsEnabled = data->motionEnabled;
+    if (data->xyAmpsEnabled != wantXyAmpsEnabled)
+    {
+      auto multiAxis = RTMultiAxisGet(0);
+      if (!wantXyAmpsEnabled)
+        multiAxis->Abort();
+      multiAxis->AmpEnableSet(wantXyAmpsEnabled);
+      data->xyAmpsEnabled = wantXyAmpsEnabled;
+    }
+
+    const bool wantZAmpEnabled = data->cyclingEnabled;
+    if (data->zAmpEnabled != wantZAmpEnabled)
+    {
+      auto axis = RTAxisGet(2);
+      if (!wantZAmpEnabled)
+        axis->Abort();
+      axis->AmpEnableSet(wantZAmpEnabled);
+      data->zAmpEnabled = wantZAmpEnabled;
+    }
+  }
+}
+
 // Global variable (different from RTTASK_GLOBAL)
 PylonAutoInitTerm g_PylonAutoInitTerm;
 CInstantCamera g_camera;
@@ -68,9 +99,20 @@ RSI_TASK(Initialize)
 
   data->multiAxisReady = false;
   data->motionEnabled = false;
+  data->xyAmpsEnabled = false;
+  data->zAmpEnabled = false;
   data->newTarget = false;
   data->targetX = 0.0;
   data->targetY = 0.0;
+  data->yAxisActualPosition = 0.0;
+  data->zAxisActualPosition = 0.0;
+  data->cyclingEnabled = false;
+  data->cycleWasEnabled = false;
+  data->cyclePosition1 = 0.0;
+  data->cyclePosition2 = 0.0;
+  data->cycleVelocity = 0.0;
+  data->cycleStartTime = 0;
+  data->cyclePausedPhaseMs = -1;
 
   data->firmwareTimingDeltaMax = 0;
   data->firmwareTimingDeltaMaxSampleCount = 0;
@@ -83,9 +125,24 @@ RSI_TASK(Initialize)
   RTMotionControllerGet()->NetworkTimingEnableSet(true);
 
   // Setup the camera
+  std::cerr << "[Initialize] Camera setup begin" << std::endl;
+  std::cerr << "[Initialize] ConfigureCamera begin" << std::endl;
   CameraHelpers::ConfigureCamera(g_camera);
-  CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
-  data->cameraReady = true;
+  std::cerr << "[Initialize] ConfigureCamera complete" << std::endl;
+
+  if (kEnableCameraPrime)
+  {
+    std::cerr << "[Initialize] PrimeCamera begin" << std::endl;
+    CameraHelpers::PrimeCamera(g_camera, g_ptrGrabResult);
+    std::cerr << "[Initialize] PrimeCamera complete" << std::endl;
+    data->cameraReady = true;
+  }
+  else
+  {
+    std::cerr << "[Initialize] PrimeCamera skipped for diagnostics" << std::endl;
+    data->cameraReady = false;
+  }
+  std::cerr << "[Initialize] Camera setup complete" << std::endl;
 
   // Setup the multi-axis
   RTMultiAxisGet(0)->Abort();
@@ -93,10 +150,18 @@ RSI_TASK(Initialize)
   RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
   RTMultiAxisGet(0)->MotionAttributeMaskOnSet(RSIMotionAttrMask::RSIMotionAttrMaskNO_WAIT);
   RTMultiAxisGet(0)->AmpEnableSet(true);
+  data->xyAmpsEnabled = true;
+
+  auto thirdAxis = RTAxisGet(2);
+  thirdAxis->ClearFaults();
+  thirdAxis->AmpEnableSet(true);
+  data->zAmpEnabled = true;
 
   // Set the initial target positions to the current positions
   data->targetX = RTAxisGet(0)->ActualPositionGet();
   data->targetY = RTAxisGet(1)->ActualPositionGet();
+  data->yAxisActualPosition = data->targetY.load();
+  data->zAxisActualPosition = RTAxisGet(2)->ActualPositionGet();
 
   data->multiAxisReady = true;
   data->initialized = true;
@@ -109,12 +174,13 @@ RSI_TASK(MoveMotors)
   // Define limits for the target positions
   static constexpr double NEG_X_LIMIT = -0.19;
   static constexpr double POS_X_LIMIT = 0.19;
-  static constexpr double NEG_Y_LIMIT = -0.14;
+  static constexpr double NEG_Y_LIMIT = -0.3;
   static constexpr double POS_Y_LIMIT = 0.14;
 
   // Check if the system is initialized and motion is enabled
   if (!data->initialized)
     return;
+  SyncAmpState(data);
   if (!data->motionEnabled)
     return;
   if (!data->multiAxisReady)
@@ -135,52 +201,71 @@ RSI_TASK(MoveMotors)
   {
     if (RTMultiAxisGet(0))
       RTMultiAxisGet(0)->Abort();
-    throw std::runtime_error(std::string("RMP exception during velocity control: ") + e.what());
+    std::cerr << "MoveMotors multiaxis error: " << e.what() << std::endl;
+    return;
   }
   catch (const std::exception &ex)
   {
     if (RTMultiAxisGet(0))
       RTMultiAxisGet(0)->Abort();
-    throw std::runtime_error(std::string("Error during velocity control: ") + ex.what());
+    std::cerr << "MoveMotors exception: " << ex.what() << std::endl;
+    return;
   }
 }
 
-// Cycles the third motor back and forth every 3 seconds.
+// Cycles the third motor back and forth every 5 seconds.
 RSI_TASK(CycleThirdMotor)
 {
-  static constexpr double NEG_Z_LIMIT = -0.1;
-  static constexpr double POS_Z_LIMIT = 0.1;
-  static constexpr int64_t CYCLE_PERIOD_MS = 3000; // 3 seconds per full cycle
+  static constexpr double NEG_Z_LIMIT = 0.2;
+  static constexpr double POS_Z_LIMIT = 0.4;
+  static constexpr int64_t CYCLE_PERIOD_MS = 3000; // 5 seconds per full cycle
 
-  // Check if the system is initialized and cycling is enabled
+  // Check if the system is initialized and cycling is enabled.
   if (!data->initialized)
-    return;
-  if (!data->cyclingEnabled)
     return;
   if (!data->multiAxisReady)
     return;
 
+  SyncAmpState(data);
+
   try
   {
-    // Initialize cycle start time if not set
-    if (data->cycleStartTime == 0)
+    auto axis = RTAxisGet(2);
+    double currentZ = axis->ActualPositionGet();
+    data->zAxisActualPosition = currentZ;
+    int64_t currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+
+    if (!data->cyclingEnabled)
     {
-      data->cycleStartTime = std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+      if (data->cycleWasEnabled && data->cycleStartTime != 0)
+      {
+        data->cyclePausedPhaseMs = (currentTime - data->cycleStartTime) % CYCLE_PERIOD_MS;
+      }
+      data->cycleWasEnabled = false;
+      return;
+    }
+
+    // Initialize or resume cycle timing when fishpole is enabled.
+    if (!data->cycleWasEnabled)
+    {
       data->cyclePosition1 = NEG_Z_LIMIT;
       data->cyclePosition2 = POS_Z_LIMIT;
       data->cycleVelocity = 2.0; // units per second
+      data->cycleStartTime = data->cyclePausedPhaseMs >= 0
+          ? currentTime - data->cyclePausedPhaseMs
+          : currentTime;
+      data->cycleWasEnabled = true;
+      data->cyclePausedPhaseMs = -1;
     }
 
     // Get elapsed time since cycle start
-    int64_t currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     int64_t elapsedMs = currentTime - data->cycleStartTime;
     int64_t cyclePhase = elapsedMs % CYCLE_PERIOD_MS;
 
     // Calculate target position based on cycle phase
-    // Phase 0-1500ms: move from NEG to POS
-    // Phase 1500-3000ms: move from POS to NEG
+    // Phase 0-2500ms: move from NEG to POS
+    // Phase 2500-5000ms: move from POS to NEG
     double targetZ;
     if (cyclePhase < CYCLE_PERIOD_MS / 2)
     {
@@ -199,7 +284,6 @@ RSI_TASK(CycleThirdMotor)
     targetZ = std::clamp(targetZ, NEG_Z_LIMIT, POS_Z_LIMIT);
 
     // Move the third axis only (x and y stay at current position)
-    auto axis = RTAxisGet(2);
     axis->MoveSCurve(targetZ);
   }
   catch (const RsiError &e)
@@ -263,6 +347,7 @@ RSI_TASK(DetectBall)
   // Record the axis positions at the time of frame grab
   double initialX(RTAxisGet(0)->ActualPositionGet());
   double initialY(RTAxisGet(1)->ActualPositionGet());
+  data->yAxisActualPosition = initialY;
 
   // Convert the grabbed frame to a CV mat format for processing
   cv::Mat yuyvFrame = ImageProcessing::WrapYUYVBuffer(static_cast<uint8_t *>(g_ptrGrabResult->GetBuffer()),
@@ -490,6 +575,10 @@ RSI_TASK(RecordTimingMetrics)
   int32_t firmwareTimingDelta = RTMotionControllerGet()->MemoryGet(FIRMWARE_TIMING_DELTA_ADDR);
   int32_t networkTimingDelta = RTMotionControllerGet()->MemoryGet(NETWORK_TIMING_DELTA_ADDR);
   int32_t networkTimingReceiveDelta = RTMotionControllerGet()->MemoryGet(NETWORK_TIMING_RECEIVE_DELTA_ADDR);
+
+  // Keep live motor positions available to the UI even when no new image is processed.
+  data->yAxisActualPosition = RTAxisGet(1)->ActualPositionGet();
+  data->zAxisActualPosition = RTAxisGet(2)->ActualPositionGet();
 
   // Update max values and their corresponding sample counts
   if (atomic_max(data->firmwareTimingDeltaMax, firmwareTimingDelta))

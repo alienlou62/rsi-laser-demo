@@ -90,16 +90,22 @@ namespace RSI
         // Multi-axis and motion control state
         RSI_GLOBAL(bool, multiAxisReady);
         RSI_GLOBAL(bool, motionEnabled);
+        RSI_GLOBAL(bool, xyAmpsEnabled);
+        RSI_GLOBAL(bool, zAmpEnabled);
         RSI_GLOBAL(bool, newTarget);
         RSI_GLOBAL(double, targetX);
         RSI_GLOBAL(double, targetY);
+        RSI_GLOBAL(double, yAxisActualPosition);
+        RSI_GLOBAL(double, zAxisActualPosition);
 
         // Third motor cycling state
         RSI_GLOBAL(bool, cyclingEnabled);
+        RSI_GLOBAL(bool, cycleWasEnabled);
         RSI_GLOBAL(double, cyclePosition1);
         RSI_GLOBAL(double, cyclePosition2);
         RSI_GLOBAL(double, cycleVelocity);
         RSI_GLOBAL(int64_t, cycleStartTime);
+        RSI_GLOBAL(int64_t, cyclePausedPhaseMs);
 
         // Timing Metrics
         RSI_GLOBAL(int32_t, firmwareTimingDeltaMax);
@@ -138,16 +144,22 @@ namespace RSI
            // Multi-axis and motion control state
            REGISTER_GLOBAL(multiAxisReady),
            REGISTER_GLOBAL(motionEnabled),
+           REGISTER_GLOBAL(xyAmpsEnabled),
+           REGISTER_GLOBAL(zAmpEnabled),
            REGISTER_GLOBAL(newTarget),
            REGISTER_GLOBAL(targetX),
            REGISTER_GLOBAL(targetY),
+           REGISTER_GLOBAL(yAxisActualPosition),
+           REGISTER_GLOBAL(zAxisActualPosition),
 
            // Third motor cycling state
            REGISTER_GLOBAL(cyclingEnabled),
+           REGISTER_GLOBAL(cycleWasEnabled),
            REGISTER_GLOBAL(cyclePosition1),
            REGISTER_GLOBAL(cyclePosition2),
            REGISTER_GLOBAL(cycleVelocity),
            REGISTER_GLOBAL(cycleStartTime),
+           REGISTER_GLOBAL(cyclePausedPhaseMs),
 
            // Timing Metrics
            REGISTER_GLOBAL(firmwareTimingDeltaMax),

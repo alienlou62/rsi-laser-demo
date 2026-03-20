@@ -2,6 +2,9 @@
 
 public partial class MainViewModel : ObservableObject, IDisposable
 {
+    private const string SshStopRsiProcessesCommand =
+        "sudo pkill -9 -f '/rsi/rapidserver|/rsi/rmpnetwork|/rsi/rttaskmanager|/rsi/rmp' || true";
+
     /** UI **/
     private Window? _mainWindow;
 
@@ -49,6 +52,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         OnGlobal_BallYChanged(Global_BallY);
         OnGlobal_BallRadiusChanged(Global_BallRadius);
         OnGlobal_IsMotionEnabledChanged(Global_IsMotionEnabled);
+        OnGlobal_IsCyclingEnabledChanged(Global_IsCyclingEnabled);
+        OnGlobal_YAxisActualPositionChanged(Global_YAxisActualPosition);
+        OnGlobal_ZAxisActualPositionChanged(Global_ZAxisActualPosition);
         OnGlobal_CameraFpsChanged(Global_CameraFps);
     }
 
@@ -94,6 +100,36 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private bool _global_IsMotionEnabledValid;
 
     [ObservableProperty]
+    private string? _global_IsCyclingEnabled;
+    partial void OnGlobal_IsCyclingEnabledChanged(string? value)
+    {
+        Global_IsCyclingEnabledValid = GlobalValues.Any(g => string.Equals(g.Name, value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [ObservableProperty]
+    private bool _global_IsCyclingEnabledValid;
+
+    [ObservableProperty]
+    private string? _global_YAxisActualPosition;
+    partial void OnGlobal_YAxisActualPositionChanged(string? value)
+    {
+        Global_YAxisActualPositionValid = GlobalValues.Any(g => string.Equals(g.Name, value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [ObservableProperty]
+    private bool _global_YAxisActualPositionValid;
+
+    [ObservableProperty]
+    private string? _global_ZAxisActualPosition;
+    partial void OnGlobal_ZAxisActualPositionChanged(string? value)
+    {
+        Global_ZAxisActualPositionValid = GlobalValues.Any(g => string.Equals(g.Name, value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [ObservableProperty]
+    private bool _global_ZAxisActualPositionValid;
+
+    [ObservableProperty]
     private string? _global_CameraFps;
     partial void OnGlobal_CameraFpsChanged(string? value)
     {
@@ -115,6 +151,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool? _program_IsMotionEnabled;
+
+    [ObservableProperty]
+    private bool? _program_IsCyclingEnabled;
+
+    [ObservableProperty]
+    private double? _program_YAxisActualPosition;
+
+    [ObservableProperty]
+    private double? _program_ZAxisActualPosition;
 
     [ObservableProperty]
     private double? _program_CameraFps;
@@ -312,10 +357,38 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             if (_rmpGrpcService != null)
             {
+                try
+                {
+                    var motorsDisabled = await _rmpGrpcService.DisableDemoAxesAsync();
+                    LogMessage(motorsDisabled
+                        ? "Motor amps disabled"
+                        : "Motor amp disable command ran, but the drives still reported enabled");
+                }
+                catch (Exception ex)
+                {
+                    LogMessage($"Motor disable error: {ex.Message}");
+                }
+
                 // stop camera streaming
                 await _cameraService.StopGrabbingAsync();
                 IsCameraStreaming = false;
                 CameraImage = null;
+
+                if (!string.IsNullOrEmpty(Global_IsCyclingEnabled))
+                {
+                    await _rmpGrpcService.SetBoolGlobalValueAsync(Global_IsCyclingEnabled, false);
+                    Program_IsCyclingEnabled = false;
+                    LogMessage("Third motor cycling disabled");
+                }
+
+                if (!string.IsNullOrEmpty(Global_IsMotionEnabled))
+                {
+                    await _rmpGrpcService.SetBoolGlobalValueAsync(Global_IsMotionEnabled, false);
+                    Program_IsMotionEnabled = false;
+                    LogMessage("Motion disabled");
+                }
+
+                await Task.Delay(250);
 
                 // shut down task manager
                 LogMessage("Stopping task manager...");
@@ -326,6 +399,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     //reset global variables
                     await Dispatcher.UIThread.InvokeAsync(GlobalValues.Clear);
                     LogMessage("Task manager stopped successfully");
+                }
+
+                LogMessage("Running RSI process cleanup...");
+                var sshResult = await ExecuteSshCommandAsync(SshStopRsiProcessesCommand);
+                if (sshResult == null)
+                {
+                    LogMessage("RSI process cleanup did not run");
                 }
             }
             else
@@ -362,6 +442,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
             LogMessage($"Motion Control Error: {ex.Message}");
         }
 
+    }
+
+    [RelayCommand]
+    private async Task ToggleProgramCyclingEnabledAsync(object isCyclingEnabled)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(Global_IsCyclingEnabled) || _rmpGrpcService == null)
+                return;
+
+            var response = await _rmpGrpcService.SetBoolGlobalValueAsync(Global_IsCyclingEnabled, (bool)isCyclingEnabled);
+            LogMessage($"Third motor cycling set to: {(bool)isCyclingEnabled}");
+        }
+        catch (Exception ex)
+        {
+            LogMessage($"Third Motor Control Error: {ex.Message}");
+        }
     }
 
     //camera
@@ -1122,6 +1219,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Program_BallY           = GetDoubleValueFromGlobal(Global_BallY) ?? Program_BallY;
         Program_BallRadius      = GetDoubleValueFromGlobal(Global_BallRadius) ?? Program_BallRadius;
         Program_IsMotionEnabled = GetBooleanValueFromGlobal(Global_IsMotionEnabled) ?? Program_IsMotionEnabled;
+        Program_IsCyclingEnabled = GetBooleanValueFromGlobal(Global_IsCyclingEnabled) ?? Program_IsCyclingEnabled;
+        Program_YAxisActualPosition = GetDoubleValueFromGlobal(Global_YAxisActualPosition) ?? Program_YAxisActualPosition;
+        Program_ZAxisActualPosition = GetDoubleValueFromGlobal(Global_ZAxisActualPosition) ?? Program_ZAxisActualPosition;
         Program_CameraFps       = GetDoubleValueFromGlobal(Global_CameraFps) ?? Program_CameraFps;
 
         // Uncomment and use if needed:
@@ -1257,6 +1357,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Global_BallY      = settings["global_BallY"] ?? "";
         Global_BallRadius = settings["global_BallRadius"] ?? "";
         Global_IsMotionEnabled = settings["global_IsMotionEnabled"] ?? "";
+        Global_IsCyclingEnabled = settings["global_IsCyclingEnabled"] ?? "";
+        Global_YAxisActualPosition = settings["global_YAxisActualPosition"] ?? "";
+        Global_ZAxisActualPosition = settings["global_ZAxisActualPosition"] ?? "";
 
         //camera
         FrameRate = double.TryParse(settings["camera_FrameRate"], out var frameRate) ? frameRate : CAMERA_TARGET_FPS;
@@ -1292,6 +1395,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
                     global_BallY = Global_BallY,
                     global_BallRadius = Global_BallRadius,
                     global_IsMotionEnabled = Global_IsMotionEnabled,
+                    global_IsCyclingEnabled = Global_IsCyclingEnabled,
+                    global_YAxisActualPosition = Global_YAxisActualPosition,
+                    global_ZAxisActualPosition = Global_ZAxisActualPosition,
                 }
             };
 

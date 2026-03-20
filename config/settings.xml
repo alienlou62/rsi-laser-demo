@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <XMLSettings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <ExpectedNodeCount>2</ExpectedNodeCount>
+  <ExpectedNodeCount>3</ExpectedNodeCount>
   <ExpectedNodeTypes>
+    <RSINodeType>RSINodeTypeMITSUBISHI_MR_J5_TM</RSINodeType>
     <RSINodeType>RSINodeTypeMITSUBISHI_MR_J5_TM</RSINodeType>
     <RSINodeType>RSINodeTypeMITSUBISHI_MR_J5_TM</RSINodeType>
   </ExpectedNodeTypes>
   <NetworkStartTimeoutMilliseconds xsi:nil="true" />
   <SampleRate>1000</SampleRate>
-  <AxisCount>2</AxisCount>
-  <MotionCount>3</MotionCount>
+  <AxisCount>3</AxisCount>
+  <MotionCount>4</MotionCount>
   <UserLimitCount>0</UserLimitCount>
   <RecorderCount>0</RecorderCount>
   <RecorderBufferSize />
   <CompensatorCount>0</CompensatorCount>
   <CompensatorPointCount />
   <AxisFrameBufferSize>
+    <int>1024</int>
     <int>1024</int>
     <int>1024</int>
   </AxisFrameBufferSize>
@@ -28,10 +30,14 @@
       <AxisNumber>1</AxisNumber>
       <XMLFile>y.xml</XMLFile>
     </AxisXML>
+    <AxisXML>
+      <AxisNumber>2</AxisNumber>
+      <XMLFile>z.xml</XMLFile>
+    </AxisXML>
   </XMLFiles>
   <MultiAxisXMLFiles>
     <MultiAxisXML>
-      <MotionSupervisorIndex>2</MotionSupervisorIndex>
+      <MotionSupervisorIndex>3</MotionSupervisorIndex>
       <XMLFile>multiaxis.xml</XMLFile>
     </MultiAxisXML>
   </MultiAxisXMLFiles>
@@ -72,6 +78,17 @@
           <LibraryDirectory />
           <UserLabel>MoveMotors</UserLabel>
           <Priority>Highest</Priority>
+          <Repeats>-1</Repeats>
+          <Period>1</Period>
+          <Phase>0</Phase>
+          <EnableTiming>true</EnableTiming>
+        </RTTask>
+        <RTTask>
+          <FunctionName>CycleThirdMotor</FunctionName>
+          <LibraryName>RTTaskFunctions</LibraryName>
+          <LibraryDirectory />
+          <UserLabel>CycleThirdMotor</UserLabel>
+          <Priority>High</Priority>
           <Repeats>-1</Repeats>
           <Period>1</Period>
           <Phase>0</Phase>
