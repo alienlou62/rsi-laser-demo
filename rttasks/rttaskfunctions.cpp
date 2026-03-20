@@ -24,32 +24,6 @@ using namespace RSI::RapidCode::RealTimeTasks;
 namespace
 {
   constexpr bool kEnableCameraPrime = true;
-
-  void SyncAmpState(GlobalData *data)
-  {
-    if (!data->multiAxisReady)
-      return;
-
-    const bool wantXyAmpsEnabled = data->motionEnabled;
-    if (data->xyAmpsEnabled != wantXyAmpsEnabled)
-    {
-      auto multiAxis = RTMultiAxisGet(0);
-      if (!wantXyAmpsEnabled)
-        multiAxis->Abort();
-      multiAxis->AmpEnableSet(wantXyAmpsEnabled);
-      data->xyAmpsEnabled = wantXyAmpsEnabled;
-    }
-
-    const bool wantZAmpEnabled = data->cyclingEnabled;
-    if (data->zAmpEnabled != wantZAmpEnabled)
-    {
-      auto axis = RTAxisGet(2);
-      if (!wantZAmpEnabled)
-        axis->Abort();
-      axis->AmpEnableSet(wantZAmpEnabled);
-      data->zAmpEnabled = wantZAmpEnabled;
-    }
-  }
 }
 
 // Global variable (different from RTTASK_GLOBAL)
@@ -180,7 +154,6 @@ RSI_TASK(MoveMotors)
   // Check if the system is initialized and motion is enabled
   if (!data->initialized)
     return;
-  SyncAmpState(data);
   if (!data->motionEnabled)
     return;
   if (!data->multiAxisReady)
@@ -226,7 +199,6 @@ RSI_TASK(CycleThirdMotor)
   if (!data->multiAxisReady)
     return;
 
-  SyncAmpState(data);
 
   try
   {
