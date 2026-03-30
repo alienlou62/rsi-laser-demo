@@ -2,11 +2,9 @@
 CMakeFiles/
 build/
 temp/
-test_img_input/
-test_img_output/
-test_video.mp4
 bin/
 obj/
+logs/
 
 *.log
 *.out
