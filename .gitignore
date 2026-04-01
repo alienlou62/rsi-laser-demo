@@ -4,7 +4,9 @@ build/
 temp/
 bin/
 obj/
-logs/
+*logs/
+*pids/
 
 *.log
 *.out
+*.pid
