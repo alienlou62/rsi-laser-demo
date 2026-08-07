@@ -206,7 +206,7 @@ extern "C"
   LIBRARY_IMPORT RSI::RapidCode::MotionController *MotionControllerGet(char *errorBuffer, const uint32_t errorBufferSize);
   LIBRARY_IMPORT RSI::RapidCode::Axis *AxisGet(const int32_t axisIndex, char *errorBuffer, const uint32_t errorBufferSize);
   LIBRARY_IMPORT RSI::RapidCode::RapidCodeNetworkNode *NetworkNodeGet(const int32_t index, char *errorBuffer, const uint32_t errorBufferSize);
-  LIBRARY_IMPORT RSI::RapidCode::MultiAxis *MultiAxisGet(const int32_t index, char *errorBuffer, const uint32_t errorBufferSize);
+  LIBRARY_IMPORT RSI::RapidCode::MultiAxis *MultiAxisLoad(const int32_t motionSupervisorIndex, char *errorBuffer, const uint32_t errorBufferSize);
 }
 
 template <typename FunctionType, typename... Args>
@@ -222,7 +222,7 @@ auto RTObjectGet(FunctionType &&func, Args &&...args)
 }
 inline auto RTMotionControllerGet() { return RTObjectGet(MotionControllerGet); }
 inline auto RTAxisGet(const int32_t index) { return RTObjectGet(AxisGet, index); }
-inline auto RTMultiAxisGet(const int32_t index) { return RTObjectGet(MultiAxisGet, index); }
+inline auto RTMultiAxisLoad(const int32_t motionSupervisorIndex) { return RTObjectGet(MultiAxisLoad, motionSupervisorIndex); }
 inline auto RTNetworkNodeGet(const int32_t index) { return RTObjectGet(NetworkNodeGet, index); }
 
 #endif // !defined(RT_TASKS_GLOBALS_H)

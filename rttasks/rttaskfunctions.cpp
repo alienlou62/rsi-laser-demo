@@ -119,11 +119,11 @@ RSI_TASK(Initialize)
   std::cerr << "[Initialize] Camera setup complete" << std::endl;
 
   // Setup the multi-axis
-  RTMultiAxisGet(0)->Abort();
-  RTMultiAxisGet(0)->ClearFaults();
-  RTMultiAxisGet(0)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
-  RTMultiAxisGet(0)->MotionAttributeMaskOnSet(RSIMotionAttrMask::RSIMotionAttrMaskNO_WAIT);
-  RTMultiAxisGet(0)->AmpEnableSet(true);
+  RTMultiAxisLoad(3)->Abort();
+  RTMultiAxisLoad(3)->ClearFaults();
+  RTMultiAxisLoad(3)->MotionAttributeMaskOffSet(RSIMotionAttrMask::RSIMotionAttrMaskAPPEND);
+  RTMultiAxisLoad(3)->MotionAttributeMaskOnSet(RSIMotionAttrMask::RSIMotionAttrMaskNO_WAIT);
+  RTMultiAxisLoad(3)->AmpEnableSet(true);
   data->xyAmpsEnabled = true;
 
   auto thirdAxis = RTAxisGet(2);
@@ -168,19 +168,19 @@ RSI_TASK(MoveMotors)
   {
     double clampedX = std::clamp(data->targetX.load(), NEG_X_LIMIT, POS_X_LIMIT);
     double clampedY = std::clamp(data->targetY.load(), NEG_Y_LIMIT, POS_Y_LIMIT);
-    RTMultiAxisGet(0)->MoveSCurve(std::array{clampedX, clampedY}.data());
+    RTMultiAxisLoad(3)->MoveSCurve(std::array{clampedX, clampedY}.data());
   }
   catch (const RsiError &e)
   {
-    if (RTMultiAxisGet(0))
-      RTMultiAxisGet(0)->Abort();
+    if (RTMultiAxisLoad(3))
+      RTMultiAxisLoad(3)->Abort();
     std::cerr << "MoveMotors multiaxis error: " << e.what() << std::endl;
     return;
   }
   catch (const std::exception &ex)
   {
-    if (RTMultiAxisGet(0))
-      RTMultiAxisGet(0)->Abort();
+    if (RTMultiAxisLoad(3))
+      RTMultiAxisLoad(3)->Abort();
     std::cerr << "MoveMotors exception: " << ex.what() << std::endl;
     return;
   }
